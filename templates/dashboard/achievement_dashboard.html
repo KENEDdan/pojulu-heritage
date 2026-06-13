@@ -1,0 +1,40 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Achievements{% endblock %}
+{% block page_title %}🏆 Achievements Management{% endblock %}
+{% block content %}
+<div class="row g-4 mb-4">
+  <div class="col-6 col-lg-4"><div class="dash-stat-card"><div class="dash-stat-icon">🏆</div><div class="dash-stat-num">{{ total }}</div><div class="dash-stat-label">Total Achievements</div><a href="/admin/achievements/achievement/" class="dash-stat-link" target="_blank">Manage</a></div></div>
+  <div class="col-6 col-lg-4"><div class="dash-stat-card"><div class="dash-stat-icon">✅</div><div class="dash-stat-num">{{ verified }}</div><div class="dash-stat-label">Published</div></div></div>
+  <div class="col-6 col-lg-4"><div class="dash-stat-card"><div class="dash-stat-icon">⭐</div><div class="dash-stat-num">{{ featured }}</div><div class="dash-stat-label">Featured on Homepage</div></div></div>
+</div>
+<div class="row g-3 mb-4">
+  {% for label, count in cat_counts.items %}
+  <div class="col-6 col-lg-2"><div style="background:var(--g0);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center"><div style="font-size:1.3rem;font-weight:700;color:var(--g7)">{{ count }}</div><div style="font-size:.72rem;color:var(--mid)">{{ label }}</div></div></div>
+  {% endfor %}
+</div>
+<div class="d-flex gap-2 mb-4">
+  <a href="{% url 'dashboard:achievement_add' %}" class="dash-btn dash-btn-primary"><i class="bi bi-trophy me-1"></i> Add Achievement</a>
+</div>
+<div class="dash-table-card">
+  <div class="dash-table-header"><span class="dash-table-title">All Achievements</span></div>
+  <div style="overflow-x:auto">
+    <table class="dash-table">
+      <thead><tr><th>Person</th><th>Category</th><th>Year</th><th>Clan</th><th>Status</th><th>Action</th></tr></thead>
+      <tbody>
+        {% for ach in achievements %}
+        <tr>
+          <td class="td-name">{{ ach.person_name }}</td>
+          <td><span class="dash-badge dash-badge-grey">{{ ach.category_label }}</span></td>
+          <td>{{ ach.year|default:"—" }}</td>
+          <td>{{ ach.clan.name|default:"—" }}</td>
+          <td>{% if ach.is_verified %}<span class="dash-badge dash-badge-green">Published</span>{% else %}<span class="dash-badge dash-badge-yellow">Draft</span>{% endif %}</td>
+          <td><a href="/admin/achievements/achievement/{{ ach.pk }}/change/" class="dash-btn dash-btn-outline dash-btn-sm" target="_blank">Edit</a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--light)">No achievements yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Marriages & Lineage{% endblock %}
+{% block content %}
+<div class="phf-page-header"><div class="container-xl"><div class="phf-breadcrumb"><a href="{% url 'core:home' %}">Home</a><span class="phf-breadcrumb-sep">›</span>Marriages</div><h1>Marriage &amp; <em>Lineage</em></h1><p>A record of unions connecting Pojulu families, clans, and neighboring communities across generations.</p></div></div>
+<section class="phf-section"><div class="container-xl">
+<form method="get" class="phf-search-bar">
+  <input type="text" name="q" class="form-control" placeholder="Search by name or clan…" value="{{ query }}">
+  <select name="clan" class="form-select phf-auto-submit" style="max-width:200px"><option value="">All Clans</option>{% for c in clans %}<option value="{{ c.slug }}" {% if selected_clan == c.slug %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select>
+  <button type="submit" class="phf-btn phf-btn-primary">Search</button>
+  <a href="{% url 'submissions:form' %}" class="phf-btn phf-btn-outline ms-auto"><i class="bi bi-plus-lg"></i> Add Record</a>
+</form>
+{% if marriages %}
+<div class="phf-table-wrap">
+  <table class="table phf-table">
+    <thead><tr><th>Husband</th><th>Wife</th><th>Husband's Clan</th><th>Wife's Clan</th><th>Year</th><th>Payam</th><th></th></tr></thead>
+    <tbody>
+    {% for m in marriages %}
+    <tr onclick="window.location='{{ m.get_absolute_url }}'">
+      <td class="td-primary">{{ m.husband_display }}</td>
+      <td class="td-primary">{{ m.wife_display }}</td>
+      <td><span class="phf-tag">{{ m.husband_clan_display }}</span></td>
+      <td><span class="phf-tag">{{ m.wife_clan_display }}</span></td>
+      <td>{{ m.year|default:"—" }}</td>
+      <td>{{ m.payam|default:"—" }}</td>
+      <td class="td-action">View →</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% include "partials/pagination.html" %}
+{% else %}<div class="phf-empty"><span class="phf-empty-icon">💍</span><h5>No marriage records yet</h5><p><a href="{% url 'submissions:form' %}">Submit a marriage record</a>.</p></div>{% endif %}
+</div></section>{% endblock %}

@@ -1,0 +1,151 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Dashboard Home{% endblock %}
+{% block page_title %}
+  {% if is_super %}Super Administrator Dashboard{% else %}Admin Dashboard{% endif %}
+{% endblock %}
+
+{% block content %}
+
+<!-- Stats Grid -->
+<div class="row g-4 mb-4">
+  <div class="col-6 col-lg-3">
+    <div class="dash-stat-card">
+      <div class="dash-stat-icon">🌿</div>
+      <div class="dash-stat-num">{{ stats.clans }}</div>
+      <div class="dash-stat-label">Clans Published</div>
+      <a href="/admin/clans/clan/" class="dash-stat-link" target="_blank">Manage</a>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="dash-stat-card">
+      <div class="dash-stat-icon">👤</div>
+      <div class="dash-stat-num">{{ stats.persons }}</div>
+      <div class="dash-stat-label">Persons Recorded</div>
+      <a href="/admin/genealogy/person/" class="dash-stat-link" target="_blank">Manage</a>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="dash-stat-card">
+      <div class="dash-stat-icon">🌳</div>
+      <div class="dash-stat-num">{{ stats.families }}</div>
+      <div class="dash-stat-label">Family Records</div>
+      <a href="/admin/genealogy/family/" class="dash-stat-link" target="_blank">Manage</a>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="dash-stat-card">
+      <div class="dash-stat-icon">🎙️</div>
+      <div class="dash-stat-num">{{ stats.interviews }}</div>
+      <div class="dash-stat-label">Elder Interviews</div>
+      <a href="/admin/elders/elderinterview/" class="dash-stat-link" target="_blank">Manage</a>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="dash-stat-card">
+      <div class="dash-stat-icon">🕊️</div>
+      <div class="dash-stat-num">{{ stats.memorial }}</div>
+      <div class="dash-stat-label">Memorial Records</div>
+      <a href="/admin/memorial/memorialrecord/" class="dash-stat-link" target="_blank">Manage</a>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="dash-stat-card">
+      <div class="dash-stat-icon">🏆</div>
+      <div class="dash-stat-num">{{ stats.achievements }}</div>
+      <div class="dash-stat-label">Achievements</div>
+      <a href="/admin/achievements/achievement/" class="dash-stat-link" target="_blank">Manage</a>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="dash-stat-card">
+      <div class="dash-stat-icon">🎵</div>
+      <div class="dash-stat-num">{{ stats.cultural }}</div>
+      <div class="dash-stat-label">Cultural Records</div>
+      <a href="/admin/cultural/culturalrecord/" class="dash-stat-link" target="_blank">Manage</a>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="dash-stat-card" style="border-color:{% if stats.pending_submissions > 0 %}#FFB300{% else %}var(--border){% endif %}">
+      <div class="dash-stat-icon">📥</div>
+      <div class="dash-stat-num" style="color:{% if stats.pending_submissions > 0 %}#F57F17{% else %}var(--g7){% endif %}">{{ stats.pending_submissions }}</div>
+      <div class="dash-stat-label">Pending Submissions</div>
+      <a href="/admin/submissions/submission/?status__exact=pending" class="dash-stat-link" target="_blank">Review</a>
+    </div>
+  </div>
+</div>
+
+<!-- Pending submissions -->
+{% if recent_submissions %}
+<div class="dash-table-card mb-4">
+  <div class="dash-table-header">
+    <span class="dash-table-title">⚠️ Submissions Awaiting Review</span>
+    <a href="/admin/submissions/submission/?status__exact=pending" class="dash-btn dash-btn-outline dash-btn-sm" target="_blank">View All in Admin</a>
+  </div>
+  <div style="overflow-x:auto">
+    <table class="dash-table">
+      <thead>
+        <tr><th>Subject</th><th>Type</th><th>Submitted By</th><th>Date</th><th>Action</th></tr>
+      </thead>
+      <tbody>
+        {% for sub in recent_submissions %}
+        <tr>
+          <td class="td-name">{{ sub.subject_name|default:"—" }}</td>
+          <td><span class="dash-badge dash-badge-grey">{{ sub.get_submission_type_display }}</span></td>
+          <td>{{ sub.submitter_name }}</td>
+          <td style="font-size:.78rem;color:var(--light)">{{ sub.created_at|date:"d M Y" }}</td>
+          <td>
+            <div class="d-flex gap-1">
+              <form method="post" action="{% url 'dashboard:approve_submission' sub.pk %}">
+                {% csrf_token %}<input type="hidden" name="action" value="approve">
+                <button type="submit" class="dash-btn dash-btn-primary dash-btn-sm dash-btn-icon" title="Approve"><i class="bi bi-check-lg"></i></button>
+              </form>
+              <form method="post" action="{% url 'dashboard:approve_submission' sub.pk %}">
+                {% csrf_token %}<input type="hidden" name="action" value="reject">
+                <button type="submit" class="dash-btn dash-btn-danger dash-btn-sm dash-btn-icon" title="Reject"><i class="bi bi-x-lg"></i></button>
+              </form>
+              <a href="/admin/submissions/submission/{{ sub.pk }}/change/" class="dash-btn dash-btn-outline dash-btn-sm dash-btn-icon" target="_blank" title="View full detail"><i class="bi bi-eye"></i></a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<!-- Admin accounts overview (superadmin only) -->
+{% if is_super and admin_profiles %}
+<div class="dash-table-card">
+  <div class="dash-table-header">
+    <span class="dash-table-title">👥 Recent Admin Accounts</span>
+    <a href="{% url 'dashboard:accounts' %}" class="dash-btn dash-btn-outline dash-btn-sm">View All</a>
+  </div>
+  <div style="overflow-x:auto">
+    <table class="dash-table">
+      <thead>
+        <tr><th>Name</th><th>Role</th><th>Status</th><th>Created</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for profile in admin_profiles %}
+        <tr>
+          <td class="td-name">{{ profile.user.get_full_name|default:profile.user.username }}</td>
+          <td>{{ profile.get_role_display }}</td>
+          <td>
+            {% if profile.is_active %}
+            <span class="dash-badge dash-badge-green">Active</span>
+            {% else %}
+            <span class="dash-badge dash-badge-red">Inactive</span>
+            {% endif %}
+          </td>
+          <td style="font-size:.78rem;color:var(--light)">{{ profile.created_at|date:"d M Y" }}</td>
+          <td><a href="{% url 'dashboard:edit_account' profile.pk %}" class="dash-btn dash-btn-outline dash-btn-sm">Edit</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

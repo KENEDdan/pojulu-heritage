@@ -1,0 +1,41 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Cultural Archive{% endblock %}
+{% block page_title %}🎵 Cultural Archive Management{% endblock %}
+{% block content %}
+<div class="row g-4 mb-4">
+  <div class="col-6 col-lg-3"><div class="dash-stat-card"><div class="dash-stat-icon">🎵</div><div class="dash-stat-num">{{ total }}</div><div class="dash-stat-label">Total Cultural Records</div><a href="/admin/cultural/culturalrecord/" class="dash-stat-link" target="_blank">Manage</a></div></div>
+  <div class="col-6 col-lg-3"><div class="dash-stat-card"><div class="dash-stat-icon">✅</div><div class="dash-stat-num">{{ verified }}</div><div class="dash-stat-label">Published</div></div></div>
+  <div class="col-6 col-lg-3"><div class="dash-stat-card"><div class="dash-stat-icon">📝</div><div class="dash-stat-num">{{ total|add:"-"|add:verified|default:0 }}</div><div class="dash-stat-label">Awaiting Review</div></div></div>
+</div>
+<div class="row g-3 mb-4">
+  {% for label, count in type_counts.items %}
+  <div class="col-6 col-lg-2"><div style="background:var(--g0);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center"><div style="font-size:1.3rem;margin-bottom:6px">📄</div><div style="font-size:1.3rem;font-weight:700;color:var(--g7)">{{ count }}</div><div style="font-size:.72rem;color:var(--mid)">{{ label }}</div></div></div>
+  {% endfor %}
+</div>
+<div class="d-flex gap-2 mb-4 flex-wrap">
+  <a href="{% url 'dashboard:cultural_add' %}" class="dash-btn dash-btn-primary"><i class="bi bi-plus-lg me-1"></i> Add Cultural Record</a>
+  <a href="{% url 'dashboard:elder_add' %}" class="dash-btn dash-btn-outline"><i class="bi bi-mic me-1"></i> Add Elder Interview</a>
+</div>
+<div class="dash-table-card">
+  <div class="dash-table-header"><span class="dash-table-title">Recent Cultural Records</span><a href="/admin/cultural/culturalrecord/" class="dash-btn dash-btn-outline dash-btn-sm" target="_blank">View All</a></div>
+  <div style="overflow-x:auto">
+    <table class="dash-table">
+      <thead><tr><th>Title</th><th>Type</th><th>Clan</th><th>Language</th><th>Status</th><th>Action</th></tr></thead>
+      <tbody>
+        {% for rec in records %}
+        <tr>
+          <td class="td-name">{{ rec.title }}</td>
+          <td><span class="dash-badge dash-badge-grey">{{ rec.get_record_type_display }}</span></td>
+          <td>{{ rec.clan.name|default:"—" }}</td>
+          <td>{{ rec.language }}</td>
+          <td>{% if rec.is_verified %}<span class="dash-badge dash-badge-green">Published</span>{% else %}<span class="dash-badge dash-badge-yellow">Draft</span>{% endif %}</td>
+          <td><a href="{% url 'dashboard:cultural_edit' rec.pk %}" class="dash-btn dash-btn-outline dash-btn-sm">Edit</a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--light)">No records yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

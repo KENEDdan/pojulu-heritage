@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Achievements{% endblock %}
+{% block content %}
+<div class="phf-page-header"><div class="container-xl"><div class="phf-breadcrumb"><a href="{% url 'core:home' %}">Home</a><span class="phf-breadcrumb-sep">›</span>Achievements</div><h1>Pojulu <em>Achievements</em></h1><p>Celebrating the accomplishments of Pojulu people across generations — in leadership, education, culture, and service.</p></div></div>
+<section class="phf-section"><div class="container-xl">
+<form method="get" class="phf-search-bar">
+  <input type="text" name="q" class="form-control" placeholder="Search achievements…" value="{{ query }}">
+  <select name="category" class="form-select phf-auto-submit" style="max-width:200px"><option value="">All Categories</option>{% for val,label in category_choices %}<option value="{{ val }}" {% if selected_category == val %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+  <button type="submit" class="phf-btn phf-btn-primary">Search</button>
+</form>
+<div class="phf-tabs mb-4">
+  <button class="phf-tab {% if not selected_category %}active{% endif %}" onclick="window.location='{% url 'achievements:list' %}'">All</button>
+  {% for val,label in category_choices %}<button class="phf-tab {% if selected_category == val %}active{% endif %}" onclick="window.location='{% url 'achievements:list' %}?category={{ val }}'">{{ label }}</button>{% endfor %}
+</div>
+{% if achievements %}
+<div class="d-flex flex-column gap-4">
+{% for ach in achievements %}
+<a href="{{ ach.get_absolute_url }}" class="text-decoration-none"><div class="phf-achievement-card"><div class="phf-achievement-icon">{{ ach.icon }}</div><div class="flex-fill"><p class="phf-achievement-category">{{ ach.category_label }}</p><h5 class="phf-achievement-name">{{ ach.person_name }}</h5><p class="phf-achievement-title">{{ ach.title }}</p><p class="phf-achievement-desc">{{ ach.description|truncatewords:30 }}</p><p class="phf-achievement-meta">{{ ach.year }}{% if ach.clan %} · {{ ach.clan.name }} Clan{% endif %}</p></div></div></a>
+{% endfor %}
+</div>
+{% include "partials/pagination.html" %}
+{% else %}<div class="phf-empty"><span class="phf-empty-icon">🏆</span><h5>No achievements found</h5></div>{% endif %}
+</div></section>{% endblock %}

@@ -1,0 +1,33 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Edit Admin{% endblock %}
+{% block page_title %}Edit Administrator Account{% endblock %}
+
+{% block content %}
+<div style="max-width:720px">
+  <div class="dash-form-card">
+    <div class="dash-form-title">{{ profile.user.get_full_name|default:profile.user.username }}</div>
+    <p class="dash-form-sub">Edit this administrator's details, role, and access status.</p>
+    <form method="post">
+      {% csrf_token %}
+      <div class="row g-3 mb-3">
+        <div class="col-md-6"><label class="dash-label">First Name</label>{{ form.first_name }}</div>
+        <div class="col-md-6"><label class="dash-label">Last Name</label>{{ form.last_name }}</div>
+        <div class="col-md-6"><label class="dash-label">Email</label>{{ form.email }}</div>
+        <div class="col-md-6"><label class="dash-label">Phone</label>{{ form.phone }}</div>
+        <div class="col-12"><label class="dash-label">Role</label>{{ form.role }}</div>
+        <div class="col-12"><label class="dash-label">Notes</label>{{ form.notes }}</div>
+        <div class="col-12">
+          <div class="form-check">
+            {{ form.is_active }}
+            <label class="form-check-label" style="font-size:.85rem">Account is active (uncheck to deactivate)</label>
+          </div>
+        </div>
+      </div>
+      <div class="d-flex gap-3">
+        <button type="submit" class="dash-btn dash-btn-primary"><i class="bi bi-save me-1"></i> Save Changes</button>
+        <a href="{% url 'dashboard:accounts' %}" class="dash-btn dash-btn-outline">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

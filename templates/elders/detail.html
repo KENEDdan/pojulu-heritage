@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Interview: {{ interview.elder_name }}{% endblock %}
+{% block content %}
+<div class="phf-page-header"><div class="container-xl"><div class="phf-breadcrumb"><a href="{% url 'core:home' %}">Home</a><span class="phf-breadcrumb-sep">›</span><a href="{% url 'elders:list' %}">Elder Interviews</a><span class="phf-breadcrumb-sep">›</span>{{ interview.elder_name }}</div><h1>Elder <em>{{ interview.elder_name }}</em></h1><p>{% if interview.clan %}{{ interview.clan.name }} Clan · {% endif %}{% if interview.interview_date %}Recorded {{ interview.interview_date|date:"F Y" }}{% endif %}</p></div></div>
+<section class="phf-section"><div class="container-xl">
+<div class="row g-5">
+  <div class="col-lg-4">
+    <div class="phf-detail-block mb-4" style="text-align:center;padding:28px">
+      <div class="phf-elder-avatar mx-auto mb-3" style="width:80px;height:80px;font-size:1.8rem">{% if interview.photo_of_elder %}<img src="{{ interview.photo_of_elder.url }}" alt="">{% else %}{{ interview.initials }}{% endif %}</div>
+      <h5 class="text-display">{{ interview.elder_name }}</h5>
+      {% if interview.approximate_age %}<p style="font-size:.84rem;color:var(--text-light)">Approx. age {{ interview.approximate_age }}</p>{% endif %}
+    </div>
+    <div class="phf-detail-block mb-4">
+      <div class="phf-detail-block-header"><h6 class="phf-detail-block-title">Interview Details</h6></div>
+      {% if interview.clan %}<div class="phf-detail-row"><span class="phf-detail-label">Clan</span><span class="phf-detail-value"><a href="{{ interview.clan.get_absolute_url }}">{{ interview.clan.name }}</a></span></div>{% endif %}
+      {% if interview.payam %}<div class="phf-detail-row"><span class="phf-detail-label">Payam</span><span class="phf-detail-value">{{ interview.payam }}</span></div>{% endif %}
+      {% if interview.interview_date %}<div class="phf-detail-row"><span class="phf-detail-label">Date</span><span class="phf-detail-value">{{ interview.interview_date|date:"j F Y" }}</span></div>{% endif %}
+      {% if interview.interview_location %}<div class="phf-detail-row"><span class="phf-detail-label">Location</span><span class="phf-detail-value">{{ interview.interview_location }}</span></div>{% endif %}
+      <div class="phf-detail-row"><span class="phf-detail-label">Interviewer</span><span class="phf-detail-value">{{ interview.interviewer }}</span></div>
+      <div class="phf-detail-row"><span class="phf-detail-label">Language</span><span class="phf-detail-value">{{ interview.language }}</span></div>
+    </div>
+    {% if interview.topics_list %}
+    <div class="phf-detail-block">
+      <div class="phf-detail-block-header"><h6 class="phf-detail-block-title">Topics Covered</h6></div>
+      <div style="padding:16px 20px;display:flex;flex-wrap:wrap;gap:8px">{% for topic in interview.topics_list %}<span class="phf-tag">{{ topic }}</span>{% endfor %}</div>
+    </div>
+    {% endif %}
+  </div>
+  <div class="col-lg-8">
+    {% if interview.has_audio %}
+    <div class="phf-audio-player mb-4"><div class="phf-audio-icon"><i class="bi bi-mic-fill"></i></div><div class="flex-fill"><p style="font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--g700);margin-bottom:6px">Audio Recording</p><audio controls style="width:100%;accent-color:var(--g700)"><source src="{{ interview.audio_file.url }}">Audio not supported.</audio></div></div>
+    {% endif %}
+    {% if interview.has_video %}
+    <div class="mb-4">
+      {% if interview.video_file %}<video controls class="w-100 rounded" style="max-height:400px"><source src="{{ interview.video_file.url }}">Video not supported.</video>
+      {% elif interview.video_url %}<div class="ratio ratio-16x9" style="border-radius:var(--radius-lg);overflow:hidden"><iframe src="{{ interview.video_url }}" allowfullscreen></iframe></div>{% endif %}
+    </div>
+    {% endif %}
+    <div class="phf-detail-block mb-4"><div class="phf-detail-block-header"><i class="bi bi-journal-text text-success me-2"></i><h6 class="phf-detail-block-title">Interview Summary</h6></div><div style="padding:24px;font-size:.93rem;line-height:1.85;color:var(--text-mid)">{{ interview.summary }}</div></div>
+    {% if interview.has_transcript %}
+    <div class="phf-detail-block"><div class="phf-detail-block-header"><i class="bi bi-file-text text-success me-2"></i><h6 class="phf-detail-block-title">Full Transcript</h6></div><div style="padding:24px;font-size:.88rem;line-height:1.9;color:var(--text-mid);white-space:pre-line;max-height:600px;overflow-y:auto">{{ interview.transcript }}</div></div>
+    {% endif %}
+    <div class="mt-4"><a href="{% url 'elders:list' %}" class="phf-btn phf-btn-outline"><i class="bi bi-arrow-left"></i> Back to Interviews</a></div>
+  </div>
+</div>
+</div></section>{% endblock %}

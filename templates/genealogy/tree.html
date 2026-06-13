@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}{{ person.full_name }} — Family Tree{% endblock %}
+{% block content %}
+
+<div class="phf-page-header">
+  <div class="container-xl">
+    <div class="phf-breadcrumb">
+      <a href="{% url 'core:home' %}">Home</a><span class="phf-breadcrumb-sep">›</span>
+      <a href="{% url 'genealogy:list' %}">Families</a><span class="phf-breadcrumb-sep">›</span>
+      <a href="{{ person.get_absolute_url }}">{{ person.full_name }}</a><span class="phf-breadcrumb-sep">›</span>
+      Family Tree
+    </div>
+    <h1>Family Tree of <em>{{ person.full_name }}</em></h1>
+    <p>{% if person.clan %}{{ person.clan.name }} Clan{% endif %}{% if person.payam %} · {{ person.get_payam_display }}{% endif %}</p>
+  </div>
+</div>
+
+<section class="phf-section">
+  <div class="container-xl">
+    <div class="phf-tree-chart">
+
+      <!-- Grandparents -->
+      {% if grandparents %}
+      <div class="phf-tree-row">
+        {% for gp in grandparents %}
+        <a href="{{ gp.get_absolute_url }}" class="phf-tree-box phf-tree-box-ancestor">
+          <span class="phf-tree-box-rel">{% if gp.gender == 'M' %}Grandfather{% else %}Grandmother{% endif %}</span>
+          <span class="phf-tree-box-name">{{ gp.full_name }}</span>
+          <span class="phf-tree-box-meta">{{ gp.lifespan }}</span>
+        </a>
+        {% endfor %}
+      </div>
+      <div class="phf-tree-connector"></div>
+      {% endif %}
+
+      <!-- Parents + Aunts/Uncles -->
+      {% if parents or aunts_uncles %}
+      <div class="phf-tree-row">
+        {% for p in parents %}
+        <a href="{{ p.get_absolute_url }}" class="phf-tree-box phf-tree-box-direct">
+          <span class="phf-tree-box-rel">{% if p == person.father %}Father{% else %}Mother{% endif %}</span>
+          <span class="phf-tree-box-name">{{ p.full_name }}</span>
+          <span class="phf-tree-box-meta">{{ p.lifespan }}</span>
+        </a>
+        {% endfor %}
+        {% for au in aunts_uncles %}
+        <a href="{{ au.get_absolute_url }}" class="phf-tree-box phf-tree-box-extended">
+          <span class="phf-tree-box-rel">{% if au.gender == 'M' %}Uncle{% else %}Aunt{% endif %}</span>
+          <span class="phf-tree-box-name">{{ au.full_name }}</span>
+          <span class="phf-tree-box-meta">{{ au.lifespan }}</span>
+        </a>
+        {% endfor %}
+      </div>
+      <div class="phf-tree-connector"></div>
+      {% endif %}
+
+      <!-- Person + Siblings + Spouses + Cousins -->
+      <div class="phf-tree-row">
+        <a href="{{ person.get_absolute_url }}" class="phf-tree-box phf-tree-box-subject">
+          <span class="phf-tree-box-name">{{ person.full_name }}</span>
+          <span class="phf-tree-box-meta">{{ person.lifespan }}</span>
+        </a>
+        {% for sp in spouses %}
+        <a href="{{ sp.get_absolute_url }}" class="phf-tree-box phf-tree-box-spouse">
+          <span class="phf-tree-box-rel">Spouse</span>
+          <span class="phf-tree-box-name">{{ sp.full_name }}</span>
+          <span class="phf-tree-box-meta">{{ sp.lifespan }}</span>
+        </a>
+        {% endfor %}
+        {% for sib in siblings %}
+        <a href="{{ sib.get_absolute_url }}" class="phf-tree-box phf-tree-box-direct">
+          <span class="phf-tree-box-rel">{% if sib.gender == 'M' %}Brother{% else %}Sister{% endif %}</span>
+          <span class="phf-tree-box-name">{{ sib.full_name }}</span>
+          <span class="phf-tree-box-meta">{{ sib.lifespan }}</span>
+        </a>
+        {% endfor %}
+        {% for c in cousins %}
+        <a href="{{ c.get_absolute_url }}" class="phf-tree-box phf-tree-box-extended">
+          <span class="phf-tree-box-rel">Cousin</span>
+          <span class="phf-tree-box-name">{{ c.full_name }}</span>
+          <span class="phf-tree-box-meta">{{ c.lifespan }}</span>
+        </a>
+        {% endfor %}
+      </div>
+
+      <!-- Children + Nieces/Nephews -->
+      {% if children or nieces_nephews %}
+      <div class="phf-tree-connector"></div>
+      <div class="phf-tree-row">
+        {% for child in children %}
+        <a href="{{ child.get_absolute_url }}" class="phf-tree-box phf-tree-box-direct">
+          <span class="phf-tree-box-rel">{% if child.gender == 'M' %}Son{% else %}Daughter{% endif %}</span>
+          <span class="phf-tree-box-name">{{ child.full_name }}</span>
+          <span class="phf-tree-box-meta">{{ child.lifespan }}</span>
+        </a>
+        {% endfor %}
+        {% for nn in nieces_nephews %}
+        <a href="{{ nn.get_absolute_url }}" class="phf-tree-box phf-tree-box-extended">
+          <span class="phf-tree-box-rel">{% if nn.gender == 'M' %}Nephew{% else %}Niece{% endif %}</span>
+          <span class="phf-tree-box-name">{{ nn.full_name }}</span>
+          <span class="phf-tree-box-meta">{{ nn.lifespan }}</span>
+        </a>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% if not grandparents and not parents and not siblings and not children %}
+      <div class="phf-empty">
+        <span class="phf-empty-icon">🌳</span>
+        <h5>Family connections not yet recorded</h5>
+        <p>This person's parent, sibling, and child relationships haven't been linked yet. Connect them through the dashboard to build out this tree.</p>
+      </div>
+      {% endif %}
+
+    </div>
+
+    <div class="mt-4 text-center">
+      <a href="{{ person.get_absolute_url }}" class="phf-btn phf-btn-outline">
+        <i class="bi bi-arrow-left me-1"></i> Back to Profile
+      </a>
+    </div>
+  </div>
+</section>
+{% endblock %}

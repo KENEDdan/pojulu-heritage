@@ -1,0 +1,32 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Genealogy Management{% endblock %}
+{% block page_title %}🌳 Genealogy & Families{% endblock %}
+{% block content %}
+<div class="d-flex gap-2 mb-4 flex-wrap">
+  <a href="{% url 'dashboard:person_add' %}" class="dash-btn dash-btn-primary"><i class="bi bi-person-plus me-1"></i> Add Person</a>
+  <a href="{% url 'dashboard:family_add' %}" class="dash-btn dash-btn-outline"><i class="bi bi-diagram-3 me-1"></i> Add Family</a>
+  <a href="{% url 'dashboard:marriage_add' %}" class="dash-btn dash-btn-outline"><i class="bi bi-heart me-1"></i> Add Marriage Record</a>
+</div>
+
+<div class="dash-table-card mb-4">
+  <div class="dash-table-header"><span class="dash-table-title">Recent Persons Added</span><a href="/admin/genealogy/person/" class="dash-btn dash-btn-outline dash-btn-sm" target="_blank">View All</a></div>
+  <div style="overflow-x:auto">
+    <table class="dash-table">
+      <thead><tr><th>Full Name</th><th>Clan</th><th>Birth Year</th><th>Status</th><th>Action</th></tr></thead>
+      <tbody>
+        {% for p in persons %}
+        <tr>
+          <td class="td-name">{{ p.full_name }}</td>
+          <td>{{ p.clan.name|default:"—" }}</td>
+          <td>{{ p.birth_year|default:"—" }}</td>
+          <td>{% if p.is_verified %}<span class="dash-badge dash-badge-green">Published</span>{% else %}<span class="dash-badge dash-badge-yellow">Draft</span>{% endif %}</td>
+          <td><a href="{% url 'dashboard:person_edit' p.pk %}" class="dash-btn dash-btn-outline dash-btn-sm">Edit</a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" style="text-align:center;padding:40px;color:var(--light)">No persons yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

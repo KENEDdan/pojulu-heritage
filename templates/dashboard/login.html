@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Login | Pojulu Heritage Foundation</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Cormorant+Garamond:wght@600;700&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<style>
+body { background: #1B5E20; font-family: 'DM Sans', sans-serif; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+.login-card { background: white; border-radius: 12px; padding: 48px 44px; max-width: 440px; width: 100%; box-shadow: 0 24px 80px rgba(0,0,0,.3); }
+.login-logo { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; font-weight: 700; color: #1B5E20; margin-bottom: 4px; }
+.login-sub { font-size: .75rem; color: #6B8F6B; letter-spacing: .1em; text-transform: uppercase; margin-bottom: 36px; }
+.form-label { font-size: .74rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: #3A5A3A; }
+.form-control { border-color: #C8E6C9; padding: 11px 14px; font-size: .9rem; }
+.form-control:focus { border-color: #43A047; box-shadow: 0 0 0 3px rgba(67,160,71,.15); }
+.login-btn { background: #2E7D32; color: white; border: none; border-radius: 6px; padding: 13px; width: 100%; font-size: .88rem; font-weight: 700; letter-spacing: .06em; cursor: pointer; transition: background .2s; margin-top: 8px; font-family: 'DM Sans', sans-serif; }
+.login-btn:hover { background: #1B5E20; }
+.back-link { display: block; text-align: center; margin-top: 20px; font-size: .82rem; color: #6B8F6B; text-decoration: none; }
+.back-link:hover { color: #2E7D32; }
+.login-icon { font-size: 2rem; margin-bottom: 16px; display: block; }
+</style>
+</head>
+<body>
+<div class="login-card">
+  <span class="login-icon">🌿</span>
+  <div class="login-logo">Pojulu Heritage Foundation</div>
+  <div class="login-sub">Administrator Access</div>
+
+  {% if messages %}
+    {% for msg in messages %}
+    <div class="alert alert-danger py-2 mb-3" style="font-size:.84rem">{{ msg }}</div>
+    {% endfor %}
+  {% endif %}
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="mb-3">
+      <label class="form-label">Username</label>
+      <input type="text" name="username" class="form-control" placeholder="Enter your username" autofocus required>
+    </div>
+    <div class="mb-4">
+      <label class="form-label">Password</label>
+      <input type="password" name="password" class="form-control" placeholder="Enter your password" required>
+    </div>
+    <button type="submit" class="login-btn"><i class="bi bi-shield-lock me-2"></i>Sign In to Dashboard</button>
+  </form>
+  <a href="{% url 'core:home' %}" class="back-link">← Return to public site</a>
+</div>
+</body>
+</html>

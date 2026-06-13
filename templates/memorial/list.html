@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}In Memoriam{% endblock %}
+{% block content %}
+<div class="phf-page-header">
+  <div class="container-xl">
+    <div class="phf-breadcrumb"><a href="{% url 'core:home' %}">Home</a><span class="phf-breadcrumb-sep">›</span>Memorial</div>
+    <h1>In <em>Memoriam</em></h1>
+    <p>Honouring the memory of those who came before us — the elders, leaders, parents, and community pillars whose lives shaped who we are.</p>
+  </div>
+</div>
+<section class="phf-section">
+  <div class="container-xl">
+    <form method="get" class="phf-search-bar">
+      <input type="text" name="q" class="form-control" placeholder="Search by name or tribute…" value="{{ query }}">
+      <select name="clan" class="form-select phf-auto-submit" style="max-width:200px">
+        <option value="">All Clans</option>
+        {% for clan in clans %}<option value="{{ clan.slug }}" {% if selected_clan == clan.slug %}selected{% endif %}>{{ clan.name }}</option>{% endfor %}
+      </select>
+      <button type="submit" class="phf-btn phf-btn-primary"><i class="bi bi-search"></i> Search</button>
+      {% if query or selected_clan %}<a href="{% url 'memorial:list' %}" class="phf-btn phf-btn-outline">Clear</a>{% endif %}
+    </form>
+    {% if memorials %}
+    <div class="row g-4">
+      {% for mem in memorials %}
+      <div class="col-md-6 col-lg-4">
+        <a href="{{ mem.get_absolute_url }}" class="text-decoration-none">
+          <div class="phf-memorial-card">
+            <div class="phf-memorial-avatar">{{ mem.person.initials }}</div>
+            <h5 class="phf-memorial-name">{{ mem.person.full_name }}</h5>
+            <p class="phf-memorial-years">{{ mem.person.lifespan }}</p>
+            {% if mem.person.clan %}<p class="phf-memorial-clan">{{ mem.person.clan.name }} Clan &bull; {{ mem.person.get_payam_display }}</p>{% endif %}
+            <p class="phf-memorial-excerpt">{{ mem.tribute|truncatewords:24 }}</p>
+          </div>
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+    {% include "partials/pagination.html" %}
+    {% else %}
+    <div class="phf-empty"><span class="phf-empty-icon">🕊️</span><h5>No memorial records yet</h5></div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}{{ post.title }}{% endblock %}
+{% block content %}
+<div class="phf-page-header">
+  <div class="container-xl">
+    <div class="phf-breadcrumb"><a href="{% url 'core:home' %}">Home</a><span class="phf-breadcrumb-sep">›</span><a href="{% url 'news:list' %}">News</a><span class="phf-breadcrumb-sep">›</span>{{ post.get_post_type_display }}</div>
+    <span class="phf-tag phf-tag-dark mb-3 d-inline-block">{{ post.get_post_type_display }}</span>
+    <h1><em>{{ post.title }}</em></h1>
+    <div class="d-flex gap-3 flex-wrap mt-2" style="color:rgba(255,255,255,.65);font-size:.85rem">
+      {% if post.published_at %}<span><i class="bi bi-calendar3 me-1"></i>{{ post.published_at|date:"j F Y" }}</span>{% endif %}
+      {% if post.author %}<span><i class="bi bi-person me-1"></i>{{ post.author.get_full_name|default:post.author.username }}</span>{% endif %}
+      {% if post.event_location %}<span><i class="bi bi-geo-alt me-1"></i>{{ post.event_location }}</span>{% endif %}
+      <span><i class="bi bi-eye me-1"></i>{{ post.views }} views</span>
+    </div>
+  </div>
+</div>
+
+<section class="phf-section">
+  <div class="container-xl">
+    <div class="row g-5">
+      <div class="col-lg-8">
+
+        <!-- Cover image or video -->
+        {% if post.cover_image %}
+        <img src="{{ post.cover_image.url }}" alt="{{ post.title }}" class="img-fluid rounded mb-4" style="width:100%;max-height:480px;object-fit:cover">
+        {% elif post.has_video %}
+        <div class="ratio ratio-16x9 mb-4" style="border-radius:var(--radius-lg);overflow:hidden">
+          <iframe src="{{ post.video_url }}" allowfullscreen title="{{ post.title }}"></iframe>
+        </div>
+        {% endif %}
+
+        <!-- Event date box -->
+        {% if post.post_type == 'event' and post.event_date %}
+        <div style="background:var(--g50);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px 24px;margin-bottom:28px;display:flex;gap:24px;flex-wrap:wrap;align-items:center">
+          <div style="text-align:center;background:var(--g700);border-radius:8px;padding:12px 20px;color:white;min-width:80px">
+            <div style="font-family:var(--font-display);font-size:2rem;font-weight:700;line-height:1">{{ post.event_date|date:"d" }}</div>
+            <div style="font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;opacity:.8">{{ post.event_date|date:"M Y" }}</div>
+          </div>
+          <div>
+            {% if post.event_location %}<p style="font-size:.9rem;color:var(--text-mid);margin:0"><i class="bi bi-geo-alt-fill me-2 text-success"></i>{{ post.event_location }}</p>{% endif %}
+            {% if post.event_end_date %}<p style="font-size:.85rem;color:var(--text-light);margin-top:4px"><i class="bi bi-clock me-2"></i>Ends: {{ post.event_end_date|date:"j M Y, P" }}</p>{% endif %}
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Excerpt -->
+        <p style="font-size:1.1rem;color:var(--text-mid);line-height:1.75;font-style:italic;border-left:4px solid var(--g400);padding-left:20px;margin-bottom:28px">{{ post.excerpt }}</p>
+
+        <!-- Full content -->
+        <div style="font-size:.95rem;line-height:1.9;color:var(--text-mid)" class="phf-article-body">
+          {{ post.content|linebreaks }}
+        </div>
+
+        <!-- Media gallery -->
+        {% if media %}
+        <div class="mt-5">
+          <h5 class="text-display mb-3" style="color:var(--g700)">Photos & Documents</h5>
+          <div class="row g-3">
+            {% for item in media %}
+            {% if item.media_type == 'photo' %}
+            <div class="col-6 col-md-4">
+              <a href="{{ item.file.url }}" target="_blank">
+                <img src="{{ item.file.url }}" alt="{{ item.title }}" class="img-fluid rounded" style="height:180px;width:100%;object-fit:cover">
+                {% if item.caption %}<p style="font-size:.75rem;color:var(--text-light);margin-top:4px">{{ item.caption }}</p>{% endif %}
+              </a>
+            </div>
+            {% elif item.media_type == 'document' %}
+            <div class="col-12">
+              <a href="{{ item.file.url }}" class="phf-btn phf-btn-outline" target="_blank"><i class="bi bi-file-pdf me-1"></i> {{ item.title|default:"Download Document" }}</a>
+            </div>
+            {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Tags -->
+        {% if post.tag_list %}
+        <div class="mt-4 d-flex flex-wrap gap-2">
+          {% for tag in post.tag_list %}<span class="phf-tag">{{ tag }}</span>{% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="mt-4"><a href="{% url 'news:list' %}" class="phf-btn phf-btn-outline"><i class="bi bi-arrow-left me-1"></i> Back to News</a></div>
+      </div>
+
+      <!-- Sidebar -->
+      <div class="col-lg-4">
+        {% if related %}
+        <div class="phf-detail-block">
+          <div class="phf-detail-block-header"><h6 class="phf-detail-block-title">Related Stories</h6></div>
+          <div style="padding:16px">
+            {% for r in related %}
+            <a href="{{ r.get_absolute_url }}" class="text-decoration-none" style="display:block;padding:12px 0;border-bottom:1px solid var(--g100)">
+              <span class="phf-tag phf-tag-outline" style="font-size:.6rem;margin-bottom:6px;display:inline-block">{{ r.get_post_type_display }}</span>
+              <h6 style="font-family:var(--font-display);font-size:1rem;color:var(--text);margin:4px 0">{{ r.title }}</h6>
+              <span style="font-size:.76rem;color:var(--text-light)">{{ r.published_at|date:"d M Y" }}</span>
+            </a>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

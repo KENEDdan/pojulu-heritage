@@ -1,0 +1,38 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Clan Management{% endblock %}
+{% block page_title %}🌿 Clan Management{% endblock %}
+{% block content %}
+<div class="row g-4 mb-4">
+  <div class="col-6 col-lg-3"><div class="dash-stat-card"><div class="dash-stat-icon">📋</div><div class="dash-stat-num">{{ total }}</div><div class="dash-stat-label">Total Clans</div><a href="/admin/clans/clan/" class="dash-stat-link" target="_blank">Manage All</a></div></div>
+  <div class="col-6 col-lg-3"><div class="dash-stat-card"><div class="dash-stat-icon">✅</div><div class="dash-stat-num">{{ verified }}</div><div class="dash-stat-label">Published</div></div></div>
+  <div class="col-6 col-lg-3"><div class="dash-stat-card" style="border-color:{% if draft > 0 %}#FFB300{% else %}var(--border){% endif %}"><div class="dash-stat-icon">📝</div><div class="dash-stat-num" style="color:{% if draft > 0 %}#F57F17{% else %}var(--g7){% endif %}">{{ draft }}</div><div class="dash-stat-label">Drafts (Unpublished)</div></div></div>
+  <div class="col-6 col-lg-3"><div class="dash-stat-card"><div class="dash-stat-icon">👤</div><div class="dash-stat-num">{{ chiefs_total }}</div><div class="dash-stat-label">Chiefs / Elders Recorded</div></div></div>
+</div>
+<div class="d-flex gap-2 mb-4 flex-wrap">
+  <a href="{% url 'dashboard:clan_add' %}" class="dash-btn dash-btn-primary"><i class="bi bi-plus-lg me-1"></i> Add New Clan</a>
+  <a href="{% url 'dashboard:chief_add' %}" class="dash-btn dash-btn-outline"><i class="bi bi-person-plus me-1"></i> Add Chief / Elder</a>
+  <a href="{% url 'dashboard:event_add' %}" class="dash-btn dash-btn-outline"><i class="bi bi-calendar-plus me-1"></i> Add Historical Event</a>
+</div>
+<div class="dash-table-card">
+  <div class="dash-table-header"><span class="dash-table-title">All Clans</span><a href="/admin/clans/clan/" class="dash-btn dash-btn-outline dash-btn-sm" target="_blank">Open in Admin</a></div>
+  <div style="overflow-x:auto">
+    <table class="dash-table">
+      <thead><tr><th>Clan Name</th><th>Settlement</th><th>Status</th><th>Families</th><th>Persons</th><th>Action</th></tr></thead>
+      <tbody>
+        {% for clan in clans %}
+        <tr>
+          <td class="td-name">{{ clan.name }} Clan</td>
+          <td>{{ clan.get_payam_display }}</td>
+          <td>{% if clan.is_verified %}<span class="dash-badge dash-badge-green">Published</span>{% else %}<span class="dash-badge dash-badge-yellow">Draft</span>{% endif %}</td>
+          <td>{{ clan.family_count }}</td>
+          <td>{{ clan.person_count }}</td>
+          <td><a href="{% url 'dashboard:clan_edit' clan.pk %}" class="dash-btn dash-btn-outline dash-btn-sm">Edit</a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--light)">No clans yet. <a href="/admin/clans/clan/add/" target="_blank">Add the first clan.</a></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

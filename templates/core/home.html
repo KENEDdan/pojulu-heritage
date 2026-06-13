@@ -1,0 +1,303 @@
+{% extends "base.html" %}
+{% load static humanize %}
+{% block title %}Home{% endblock %}
+
+{% block content %}
+
+<!-- ══ HERO ══ -->
+<section class="phf-hero">
+  <div class="phf-hero-pattern"></div>
+  <div class="phf-hero-geo"></div>
+  <div class="phf-hero-content">
+    <div class="phf-hero-eyebrow">Pojulu Heritage Foundation</div>
+    <h1 class="phf-hero-title">Our Roots.<br><em>Preserved Forever.</em></h1>
+    <p class="phf-hero-subtitle">The living digital archive of the Pojulu People — Lainya County, Central Equatoria</p>
+    <form action="{% url 'core:search' %}" method="get" class="phf-hero-search">
+      <select name="kind">
+        <option value="all">All Records</option>
+        <option value="clans">Clans</option>
+        <option value="persons">Persons</option>
+        <option value="families">Families</option>
+        <option value="memorial">Memorial</option>
+        <option value="news">News</option>
+      </select>
+      <input type="text" name="q" placeholder="Search by name, clan, family, or location…">
+      <button type="submit">Search</button>
+    </form>
+    <div class="phf-hero-tags">
+      <a href="{% url 'clans:list' %}" class="phf-hero-tag">Browse Clans</a>
+      <a href="{% url 'genealogy:list' %}" class="phf-hero-tag">Family Trees</a>
+      <a href="{% url 'elders:list' %}" class="phf-hero-tag">Elder Interviews</a>
+      <a href="{% url 'memorial:list' %}" class="phf-hero-tag">In Memoriam</a>
+      <a href="{% url 'news:list' %}" class="phf-hero-tag">News & Events</a>
+    </div>
+  </div>
+  <div class="phf-hero-stats">
+    <div class="phf-hero-stat"><span class="phf-hero-stat-num" data-counter data-target="{{ stats.clans }}">{{ stats.clans }}</span><span class="phf-hero-stat-label">Clans Documented</span></div>
+    <div class="phf-hero-stat"><span class="phf-hero-stat-num" data-counter data-target="{{ stats.persons }}">{{ stats.persons }}</span><span class="phf-hero-stat-label">Persons Recorded</span></div>
+    <div class="phf-hero-stat"><span class="phf-hero-stat-num" data-counter data-target="{{ stats.families }}">{{ stats.families }}</span><span class="phf-hero-stat-label">Family Records</span></div>
+    <div class="phf-hero-stat"><span class="phf-hero-stat-num" data-counter data-target="{{ stats.memorial }}">{{ stats.memorial }}</span><span class="phf-hero-stat-label">In Memoriam</span></div>
+    <div class="phf-hero-stat"><span class="phf-hero-stat-num" data-counter data-target="{{ stats.interviews }}">{{ stats.interviews }}</span><span class="phf-hero-stat-label">Elder Interviews</span></div>
+  </div>
+</section>
+
+<!-- ══ NEWS & UPDATES FEED ══ -->
+<section class="phf-section phf-section-alt">
+  <div class="container-xl">
+    <div class="d-flex align-items-end justify-content-between flex-wrap gap-3 mb-5">
+      <div>
+        <div class="phf-section-eyebrow">Latest from PHF</div>
+        <h2 class="phf-section-title">News, Events & <em>Updates</em></h2>
+        <p class="phf-section-body">Current happenings, upcoming events, and important announcements from the Pojulu Heritage Foundation.</p>
+      </div>
+      <a href="{% url 'news:list' %}" class="phf-btn phf-btn-outline flex-shrink-0">All News →</a>
+    </div>
+
+    {% if featured_post or news_posts %}
+    <div class="row g-4">
+
+      <!-- Featured story -->
+      {% if featured_post %}
+      <div class="col-lg-7">
+        <a href="{{ featured_post.get_absolute_url }}" class="phf-news-featured text-decoration-none">
+          <div class="phf-news-featured-img">
+            {% if featured_post.cover_image %}
+              <img src="{{ featured_post.cover_image.url }}" alt="{{ featured_post.title }}">
+            {% elif featured_post.has_video %}
+              <div class="phf-news-video-thumb"><i class="bi bi-play-circle-fill"></i></div>
+            {% else %}
+              <div class="phf-news-placeholder"><i class="bi bi-newspaper"></i></div>
+            {% endif %}
+            <span class="phf-news-badge phf-news-badge-{{ featured_post.post_type }}">{{ featured_post.get_post_type_display }}</span>
+          </div>
+          <div class="phf-news-featured-body">
+            <h3 class="phf-news-featured-title">{{ featured_post.title }}</h3>
+            <p class="phf-news-featured-excerpt">{{ featured_post.excerpt }}</p>
+            <div class="phf-news-meta">
+              {% if featured_post.published_at %}<span><i class="bi bi-calendar3 me-1"></i>{{ featured_post.published_at|date:"d M Y" }}</span>{% endif %}
+              {% if featured_post.event_location %}<span class="ms-3"><i class="bi bi-geo-alt me-1"></i>{{ featured_post.event_location }}</span>{% endif %}
+              <span class="ms-auto phf-news-readmore">Read full story →</span>
+            </div>
+          </div>
+        </a>
+      </div>
+      {% endif %}
+
+      <!-- Side posts -->
+      <div class="col-lg-5">
+        <div class="d-flex flex-column gap-3 h-100">
+          {% for post in side_posts %}
+          <a href="{{ post.get_absolute_url }}" class="phf-news-side text-decoration-none">
+            <div class="phf-news-side-img">
+              {% if post.cover_image %}<img src="{{ post.cover_image.url }}" alt="">{% else %}<div class="phf-news-placeholder-sm"><i class="bi bi-newspaper"></i></div>{% endif %}
+              <span class="phf-news-badge phf-news-badge-{{ post.post_type }}">{{ post.get_post_type_display }}</span>
+            </div>
+            <div class="phf-news-side-body">
+              <h5 class="phf-news-side-title">{{ post.title }}</h5>
+              <p class="phf-news-side-excerpt">{{ post.excerpt|truncatewords:16 }}</p>
+              <span class="phf-news-meta-sm">{{ post.published_at|date:"d M Y" }}</span>
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- News grid -->
+    {% if news_posts %}
+    <div class="row g-4 mt-2">
+      {% for post in news_posts %}
+      <div class="col-md-6 col-lg-4">
+        <a href="{{ post.get_absolute_url }}" class="text-decoration-none">
+          <div class="phf-news-card">
+            <div class="phf-news-card-img">
+              {% if post.cover_image %}
+                <img src="{{ post.cover_image.url }}" alt="{{ post.title }}">
+              {% elif post.has_video %}
+                <div class="phf-news-video-thumb-sm"><i class="bi bi-play-circle-fill"></i></div>
+              {% else %}
+                <div class="phf-news-placeholder-card"><i class="bi bi-newspaper"></i></div>
+              {% endif %}
+              <span class="phf-news-badge phf-news-badge-{{ post.post_type }}">{{ post.get_post_type_display }}</span>
+            </div>
+            <div class="phf-news-card-body">
+              <h5 class="phf-news-card-title">{{ post.title }}</h5>
+              <p class="phf-news-card-excerpt">{{ post.excerpt|truncatewords:18 }}</p>
+              <div class="d-flex align-items-center justify-content-between mt-2">
+                <span class="phf-news-meta-sm">{{ post.published_at|date:"d M Y" }}</span>
+                <span class="phf-news-readmore-sm">Read →</span>
+              </div>
+            </div>
+          </div>
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="phf-empty"><span class="phf-empty-icon">📰</span><h5>No news published yet</h5><p>News and events will appear here once published by the editorial team.</p></div>
+    {% endif %}
+  </div>
+</section>
+
+<!-- ══ UPCOMING EVENTS ══ -->
+{% if events %}
+<section class="phf-section">
+  <div class="container-xl">
+    <div class="d-flex align-items-end justify-content-between flex-wrap gap-3 mb-4">
+      <div>
+        <div class="phf-section-eyebrow">Coming Up</div>
+        <h2 class="phf-section-title">Upcoming <em>Events</em></h2>
+      </div>
+      <a href="{% url 'news:list' %}?type=event" class="phf-btn phf-btn-outline">All Events →</a>
+    </div>
+    <div class="row g-4">
+      {% for event in events %}
+      <div class="col-md-6 col-lg-4">
+        <a href="{{ event.get_absolute_url }}" class="text-decoration-none">
+          <div class="phf-event-card">
+            {% if event.event_date %}
+            <div class="phf-event-date-block">
+              <span class="phf-event-day">{{ event.event_date|date:"d" }}</span>
+              <span class="phf-event-month">{{ event.event_date|date:"M Y" }}</span>
+            </div>
+            {% endif %}
+            <div class="phf-event-body">
+              <h5 class="phf-event-title">{{ event.title }}</h5>
+              {% if event.event_location %}<p class="phf-event-location"><i class="bi bi-geo-alt me-1"></i>{{ event.event_location }}</p>{% endif %}
+              <p class="phf-event-excerpt">{{ event.excerpt|truncatewords:12 }}</p>
+            </div>
+          </div>
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- ══ FEATURED CLANS ══ -->
+{% if featured_clans %}
+<section class="phf-section phf-section-alt">
+  <div class="container-xl">
+    <div class="d-flex align-items-end justify-content-between flex-wrap gap-3 mb-5">
+      <div>
+        <div class="phf-section-eyebrow">Explore the Archive</div>
+        <h2 class="phf-section-title">Featured <em>Clans</em></h2>
+        <p class="phf-section-body">Discover the histories, lineages, and legacies of the great Pojulu clans.</p>
+      </div>
+      <a href="{% url 'clans:list' %}" class="phf-btn phf-btn-outline flex-shrink-0">View All Clans →</a>
+    </div>
+    <div class="row g-4">
+      {% for clan in featured_clans %}
+      <div class="col-md-6 col-lg-4">
+        <a href="{{ clan.get_absolute_url }}" class="text-decoration-none">
+          <div class="phf-card">
+            <div class="phf-card-header">
+              <div class="phf-card-icon">🌿</div>
+              <h5 class="phf-card-title">{{ clan.name }} Clan</h5>
+              <p class="phf-card-subtitle"><i class="bi bi-geo-alt me-1"></i>{{ clan.get_payam_display }}</p>
+            </div>
+            <div class="phf-card-body">
+              <p class="phf-card-desc">{{ clan.tagline|default:clan.description|truncatewords:22 }}</p>
+              <div class="d-flex flex-wrap gap-2">
+                <span class="phf-tag">{{ clan.family_count }} Families</span>
+                <span class="phf-tag">{{ clan.person_count }} Persons</span>
+                {% if clan.bomas.exists %}<span class="phf-tag">{{ clan.bomas.count }} Boma{{ clan.bomas.count|pluralize }}</span>{% endif %}
+              </div>
+              <span class="phf-card-link">View Clan History</span>
+            </div>
+          </div>
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- ══ ELDER INTERVIEWS ══ -->
+{% if recent_interviews %}
+<section class="phf-section">
+  <div class="container-xl">
+    <div class="d-flex align-items-end justify-content-between flex-wrap gap-3 mb-5">
+      <div>
+        <div class="phf-section-eyebrow">Living Memory</div>
+        <h2 class="phf-section-title">Elder <em>Interviews</em></h2>
+        <p class="phf-section-body">Voices of our elders — the most irreplaceable resource in this archive.</p>
+      </div>
+      <a href="{% url 'elders:list' %}" class="phf-btn phf-btn-outline flex-shrink-0">All Interviews →</a>
+    </div>
+    <div class="row g-4">
+      {% for iv in recent_interviews %}
+      <div class="col-md-6 col-lg-4">
+        <a href="{{ iv.get_absolute_url }}" class="text-decoration-none">
+          <div class="phf-elder-card">
+            <div class="phf-elder-card-header">
+              <div class="phf-elder-avatar">{% if iv.photo_of_elder %}<img src="{{ iv.photo_of_elder.url }}" alt="">{% else %}{{ iv.initials }}{% endif %}</div>
+              <div><h6 class="phf-elder-name">{{ iv.elder_name }}</h6><p class="phf-elder-meta">{% if iv.clan %}{{ iv.clan.name }} · {% endif %}{% if iv.interview_date %}{{ iv.interview_date|date:"M Y" }}{% endif %}</p></div>
+            </div>
+            <div class="phf-elder-body">
+              <p class="phf-elder-summary">{{ iv.summary|truncatewords:20 }}</p>
+              <div class="phf-elder-media-badges mt-2">
+                {% if iv.has_audio %}<span class="phf-media-badge"><i class="bi bi-mic-fill"></i> Audio</span>{% endif %}
+                {% if iv.has_video %}<span class="phf-media-badge"><i class="bi bi-camera-video-fill"></i> Video</span>{% endif %}
+                {% if iv.has_transcript %}<span class="phf-media-badge"><i class="bi bi-file-text-fill"></i> Transcript</span>{% endif %}
+              </div>
+            </div>
+          </div>
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- ══ MEMORIAL ══ -->
+{% if recent_memorials %}
+<section class="phf-section phf-section-alt">
+  <div class="container-xl">
+    <div class="d-flex align-items-end justify-content-between flex-wrap gap-3 mb-5">
+      <div>
+        <div class="phf-section-eyebrow">In Memoriam</div>
+        <h2 class="phf-section-title">Honouring Those <em>Who Came Before</em></h2>
+      </div>
+      <a href="{% url 'memorial:list' %}" class="phf-btn phf-btn-outline flex-shrink-0">Full Memorial →</a>
+    </div>
+    <div class="row g-4">
+      {% for mem in recent_memorials %}
+      <div class="col-md-6 col-lg-4">
+        <a href="{{ mem.get_absolute_url }}" class="text-decoration-none">
+          <div class="phf-memorial-card">
+            <div class="phf-memorial-avatar">{{ mem.person.initials }}</div>
+            <h5 class="phf-memorial-name">{{ mem.person.full_name }}</h5>
+            <p class="phf-memorial-years">{{ mem.person.lifespan }}</p>
+            {% if mem.person.clan %}<p class="phf-memorial-clan">{{ mem.person.clan.name }} Clan · {{ mem.person.get_payam_display }}</p>{% endif %}
+            <p class="phf-memorial-excerpt">{{ mem.tribute|truncatewords:24 }}</p>
+          </div>
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- ══ CTA ══ -->
+<section class="phf-section phf-section-dark text-center">
+  <div class="container-xl">
+    <div class="phf-section-eyebrow justify-content-center">About the Foundation</div>
+    <h2 class="phf-section-title">Preserving <em>Pojulu Heritage</em> for Future Generations</h2>
+    <p class="phf-section-body mx-auto text-center mb-5" style="max-width:560px">
+      The Pojulu Heritage Foundation is a community-driven initiative documenting the history, genealogy, culture, and legacy of the Pojulu people of Lainya County. All records are managed and verified by our editorial team.
+    </p>
+    <div class="d-flex gap-3 justify-content-center flex-wrap">
+      <a href="{% url 'core:about' %}" class="phf-btn phf-btn-white phf-btn-lg">About the Foundation</a>
+      <a href="mailto:pojuluheritage@gmail.com" class="phf-btn phf-btn-white-outline phf-btn-lg"><i class="bi bi-envelope me-1"></i> Contact Us</a>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

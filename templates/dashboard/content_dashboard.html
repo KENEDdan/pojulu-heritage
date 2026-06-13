@@ -1,0 +1,36 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Content Administration{% endblock %}
+{% block page_title %}📋 Full Content Administration{% endblock %}
+{% block content %}
+<div class="row g-4 mb-4">
+  <div class="col-6 col-lg-3"><div class="dash-stat-card"><div class="dash-stat-icon">🌿</div><div class="dash-stat-num">{{ stats.clans }}</div><div class="dash-stat-label">Clans</div><a href="/admin/clans/clan/" class="dash-stat-link" target="_blank">Manage</a></div></div>
+  <div class="col-6 col-lg-3"><div class="dash-stat-card"><div class="dash-stat-icon">👤</div><div class="dash-stat-num">{{ stats.persons }}</div><div class="dash-stat-label">Persons</div><a href="/admin/genealogy/person/" class="dash-stat-link" target="_blank">Manage</a></div></div>
+  <div class="col-6 col-lg-3"><div class="dash-stat-card"><div class="dash-stat-icon">🌳</div><div class="dash-stat-num">{{ stats.families }}</div><div class="dash-stat-label">Families</div><a href="/admin/genealogy/family/" class="dash-stat-link" target="_blank">Manage</a></div></div>
+  <div class="col-6 col-lg-3"><div class="dash-stat-card"><div class="dash-stat-icon">🕊️</div><div class="dash-stat-num">{{ stats.memorial }}</div><div class="dash-stat-label">Memorial</div><a href="/admin/memorial/memorialrecord/" class="dash-stat-link" target="_blank">Manage</a></div></div>
+  <div class="col-6 col-lg-3"><div class="dash-stat-card"><div class="dash-stat-icon">🏆</div><div class="dash-stat-num">{{ stats.achievements }}</div><div class="dash-stat-label">Achievements</div><a href="/admin/achievements/achievement/" class="dash-stat-link" target="_blank">Manage</a></div></div>
+  <div class="col-6 col-lg-3"><div class="dash-stat-card"><div class="dash-stat-icon">🎵</div><div class="dash-stat-num">{{ stats.cultural }}</div><div class="dash-stat-label">Cultural Records</div><a href="/admin/cultural/culturalrecord/" class="dash-stat-link" target="_blank">Manage</a></div></div>
+  <div class="col-6 col-lg-3"><div class="dash-stat-card"><div class="dash-stat-icon">🎙️</div><div class="dash-stat-num">{{ stats.interviews }}</div><div class="dash-stat-label">Elder Interviews</div><a href="/admin/elders/elderinterview/" class="dash-stat-link" target="_blank">Manage</a></div></div>
+  <div class="col-6 col-lg-3"><div class="dash-stat-card" style="{% if stats.pending > 0 %}border-color:#FFB300{% endif %}"><div class="dash-stat-icon">📥</div><div class="dash-stat-num" style="{% if stats.pending > 0 %}color:#F57F17{% endif %}">{{ stats.pending }}</div><div class="dash-stat-label">Pending Submissions</div><a href="/admin/submissions/submission/?status__exact=pending" class="dash-stat-link" target="_blank">Review</a></div></div>
+</div>
+{% if recent_submissions %}
+<div class="dash-table-card">
+  <div class="dash-table-header"><span class="dash-table-title">⚠️ Pending Submissions</span><a href="/admin/submissions/submission/?status__exact=pending" class="dash-btn dash-btn-outline dash-btn-sm" target="_blank">View All</a></div>
+  <div style="overflow-x:auto">
+    <table class="dash-table">
+      <thead><tr><th>Subject</th><th>Type</th><th>From</th><th>Date</th><th>Action</th></tr></thead>
+      <tbody>
+        {% for sub in recent_submissions %}
+        <tr>
+          <td class="td-name">{{ sub.subject_name|default:"—" }}</td>
+          <td><span class="dash-badge dash-badge-grey">{{ sub.get_submission_type_display }}</span></td>
+          <td>{{ sub.submitter_name }}</td>
+          <td style="font-size:.78rem;color:var(--light)">{{ sub.created_at|date:"d M Y" }}</td>
+          <td><a href="{% url 'dashboard:submission_review' sub.pk %}" class="dash-btn dash-btn-outline dash-btn-sm">Review</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,10 @@
+Django==4.2.9
+psycopg2-binary==2.9.9
+Pillow==10.2.0
+python-decouple==3.8
+django-crispy-forms==2.1
+crispy-bootstrap5==0.7
+django-mptt==0.16.0
+whitenoise==6.6.0
+django-extensions==3.2.3
+django-filter==23.5

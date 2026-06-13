@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Clan Histories{% endblock %}
+{% block content %}
+<div class="phf-page-header">
+  <div class="container-xl">
+    <div class="phf-breadcrumb"><a href="{% url 'core:home' %}">Home</a><span class="phf-breadcrumb-sep">›</span>Clans</div>
+    <h1>Pojulu <em>Clan Histories</em></h1>
+    <p>The documented histories of the great Pojulu clans — their origins, leadership lineages, territorial roots, and cultural legacies.</p>
+  </div>
+</div>
+<section class="phf-section">
+  <div class="container-xl">
+    <form method="get" class="phf-search-bar">
+      <input type="text" name="q" class="form-control" placeholder="Search clans…" value="{{ query }}">
+      <select name="payam" class="form-select phf-auto-submit" style="max-width:180px">
+        <option value="">All Payams</option>
+        {% for val,label in payam_choices %}<option value="{{ val }}" {% if selected_payam == val %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+      <button type="submit" class="phf-btn phf-btn-primary">Search</button>
+      {% if query or selected_payam %}<a href="{% url 'clans:list' %}" class="phf-btn phf-btn-outline">Clear</a>{% endif %}
+    </form>
+    <p class="text-muted mb-4" style="font-size:.84rem">{{ total_count }} clan{{ total_count|pluralize }} found</p>
+    {% if clans %}
+    <div class="row g-4">
+      {% for clan in clans %}
+      <div class="col-md-6 col-lg-4">
+        <a href="{{ clan.get_absolute_url }}" class="text-decoration-none">
+          <div class="phf-card">
+            <div class="phf-card-header">
+              <div class="phf-card-icon">🌿</div>
+              <h5 class="phf-card-title">{{ clan.name }} Clan</h5>
+              <p class="phf-card-subtitle"><i class="bi bi-geo-alt me-1"></i>{{ clan.get_payam_display }}</p>
+            </div>
+            <div class="phf-card-body">
+              <p class="phf-card-desc">{{ clan.tagline|default:clan.description|truncatewords:22 }}</p>
+              <div class="d-flex flex-wrap gap-2">
+                <span class="phf-tag">{{ clan.family_count }} Families</span>
+                <span class="phf-tag">{{ clan.person_count }} Persons</span>
+                {% if clan.chiefs.count %}<span class="phf-tag">{{ clan.chiefs.count }} Chief{{ clan.chiefs.count|pluralize }}</span>{% endif %}
+              </div>
+              <span class="phf-card-link">View Full History</span>
+            </div>
+          </div>
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+    {% include "partials/pagination.html" %}
+    {% else %}
+    <div class="phf-empty"><span class="phf-empty-icon">🔍</span><h5>No clans found</h5><p>Try a different search.
+  </div>
+</section>
+{% endif%}
+{% endblock %}

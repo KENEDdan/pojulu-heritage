@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Search: {{ query }}{% endblock %}
+{% block content %}
+<div class="phf-page-header"><div class="container-xl"><h1>Search <em>Results</em></h1><p>{% if query %}Showing results for &ldquo;{{ query }}&rdquo;{% else %}Search the entire archive{% endif %}</p></div></div>
+<section class="phf-section"><div class="container-xl">
+  <form method="get" action="{% url 'core:search' %}" class="phf-search-bar mb-5">
+    <select name="kind" class="form-select" style="max-width:160px"><option value="all" {% if kind == 'all' %}selected{% endif %}>All</option><option value="clans" {% if kind == 'clans' %}selected{% endif %}>Clans</option><option value="persons" {% if kind == 'persons' %}selected{% endif %}>Persons</option><option value="families" {% if kind == 'families' %}selected{% endif %}>Families</option><option value="memorial" {% if kind == 'memorial' %}selected{% endif %}>Memorial</option><option value="achievements" {% if kind == 'achievements' %}selected{% endif %}>Achievements</option></select>
+    <input type="text" name="q" class="form-control" value="{{ query }}" placeholder="Search the archive…">
+    <button type="submit" class="phf-btn phf-btn-primary"><i class="bi bi-search"></i> Search</button>
+  </form>
+
+  {% if query %}
+    {% if total_results == 0 %}
+    <div class="phf-empty"><span class="phf-empty-icon">🔍</span><h5>No results found for &ldquo;{{ query }}&rdquo;</h5><p>Try different keywords, or <a href="{% url 'submissions:form' %}">submit this record</a> if it doesn&rsquo;t exist yet.</p></div>
+    {% else %}
+    <p class="mb-5" style="color:var(--text-light);font-size:.88rem">{{ total_results }} result{{ total_results|pluralize }} found</p>
+
+    {% if results.clans %}<h4 class="text-display mb-3" style="color:var(--g700)"><i class="bi bi-tree me-2"></i>Clans</h4><div class="row g-3 mb-5">{% for clan in results.clans %}<div class="col-md-6 col-lg-4"><a href="{{ clan.get_absolute_url }}" class="text-decoration-none"><div class="phf-card"><div class="phf-card-header"><div class="phf-card-icon">🌿</div><h5 class="phf-card-title">{{ clan.name }} Clan</h5><p class="phf-card-subtitle">{{ clan.get_payam_display }}</p></div><div class="phf-card-body"><p class="phf-card-desc">{{ clan.description|truncatewords:16 }}</p><span class="phf-card-link">View</span></div></div></a></div>{% endfor %}</div>{% endif %}
+
+    {% if results.persons %}<h4 class="text-display mb-3" style="color:var(--g700)"><i class="bi bi-person me-2"></i>Persons</h4><div class="phf-table-wrap mb-5"><table class="table phf-table"><thead><tr><th>Name</th><th>Clan</th><th>Payam</th><th>Born</th><th></th></tr></thead><tbody>{% for p in results.persons %}<tr onclick="window.location='{{ p.get_absolute_url }}'"><td class="td-primary">{{ p.full_name }}</td><td>{% if p.clan %}{{ p.clan.name }}{% else %}—{% endif %}</td><td>{{ p.get_payam_display|default:"—" }}</td><td>{{ p.birth_year|default:"—" }}</td><td class="td-action">View →</td></tr>{% endfor %}</tbody></table></div>{% endif %}
+    <a href="{% url 'genealogy:tree' p.slug %}" class="phf-card-link" style="margin-left:auto">
+  <i class="bi bi-diagram-3 me-1"></i>View in Tree
+</a>
+
+    {% if results.families %}<h4 class="text-display mb-3" style="color:var(--g700)"><i class="bi bi-diagram-3 me-2"></i>Families</h4><div class="row g-3 mb-5">{% for fam in results.families %}<div class="col-md-6"><a href="{{ fam.get_absolute_url }}" class="text-decoration-none"><div class="phf-family-card"><div class="phf-family-card-header"><div class="phf-family-initials">{{ fam.name.0 }}</div><div><h6 class="phf-family-card-name">{{ fam.name }}</h6><p class="phf-family-card-clan">{% if fam.clan %}{{ fam.clan.name }} · {% endif %}{{ fam.get_payam_display }}</p></div></div></div></a></div>{% endfor %}</div>{% endif %}
+
+    {% if results.memorial %}<h4 class="text-display mb-3" style="color:var(--g700)"><i class="bi bi-flower1 me-2"></i>Memorial</h4><div class="row g-3 mb-5">{% for mem in results.memorial %}<div class="col-md-6 col-lg-4"><a href="{{ mem.get_absolute_url }}" class="text-decoration-none"><div class="phf-memorial-card"><div class="phf-memorial-avatar">{{ mem.person.initials }}</div><h5 class="phf-memorial-name">{{ mem.person.full_name }}</h5><p class="phf-memorial-years">{{ mem.person.lifespan }}</p><p class="phf-memorial-excerpt">{{ mem.tribute|truncatewords:16 }}</p></div></a></div>{% endfor %}</div>{% endif %}
+
+    {% if results.achievements %}<h4 class="text-display mb-3" style="color:var(--g700)"><i class="bi bi-trophy me-2"></i>Achievements</h4><div class="d-flex flex-column gap-3">{% for ach in results.achievements %}<a href="{{ ach.get_absolute_url }}" class="text-decoration-none"><div class="phf-achievement-card"><div class="phf-achievement-icon">{{ ach.icon }}</div><div><p class="phf-achievement-category">{{ ach.category_label }}</p><h5 class="phf-achievement-name">{{ ach.person_name }}</h5><p class="phf-achievement-title">{{ ach.title }}</p></div></div></a>{% endfor %}</div>{% endif %}
+
+    {% endif %}
+  {% else %}
+  <div class="phf-empty"><span class="phf-empty-icon">🔍</span><h5>Search the Archive</h5><p>Type a name, clan, family, location, or keyword to search all records.</p></div>
+  {% endif %}
+</div></section>{% endblock %}

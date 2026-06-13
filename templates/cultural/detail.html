@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}{{ record.title }}{% endblock %}
+{% block content %}
+<div class="phf-page-header"><div class="container-xl"><div class="phf-breadcrumb"><a href="{% url 'core:home' %}">Home</a><span class="phf-breadcrumb-sep">›</span><a href="{% url 'cultural:list' %}">Cultural Archive</a><span class="phf-breadcrumb-sep">›</span>{{ record.title }}</div><h1><em>{{ record.title }}</em></h1><p>{{ record.get_record_type_display }} {% if record.clan %}· {{ record.clan.name }} Clan{% endif %}</p></div></div>
+<section class="phf-section"><div class="container-xl" style="max-width:860px">
+  {% if record.has_audio %}
+  <div class="phf-audio-player mb-4">
+    <div class="phf-audio-icon"><i class="bi bi-mic-fill"></i></div>
+    <audio controls class="flex-fill"><source src="{{ record.audio_file.url }}">Your browser does not support audio playback.</audio>
+  </div>
+  {% endif %}
+  {% if record.has_video %}
+  <div class="ratio ratio-16x9 mb-4" style="border-radius:var(--radius-lg);overflow:hidden">
+    <iframe src="{{ record.video_url }}" allowfullscreen title="{{ record.title }}"></iframe>
+  </div>
+  {% endif %}
+  {% if record.image %}<img src="{{ record.image.url }}" alt="{{ record.title }}" class="img-fluid rounded mb-4">{% endif %}
+  <div class="phf-detail-block mb-4">
+    <div class="phf-detail-block-header"><span style="font-size:1.4rem;margin-right:10px">{{ record.icon }}</span><h6 class="phf-detail-block-title">{{ record.get_record_type_display }}</h6></div>
+    <div style="padding:24px;font-size:.95rem;line-height:1.9;color:var(--text-mid);white-space:pre-line">{{ record.content }}</div>
+  </div>
+  {% if record.translation %}<div class="phf-detail-block mb-4"><div class="phf-detail-block-header"><i class="bi bi-translate text-success me-2"></i><h6 class="phf-detail-block-title">English Translation</h6></div><div style="padding:24px;font-size:.93rem;line-height:1.85;color:var(--text-mid);font-style:italic">{{ record.translation }}</div></div>{% endif %}
+  {% if record.context %}<div class="phf-detail-block mb-4"><div class="phf-detail-block-header"><h6 class="phf-detail-block-title">Context & Usage</h6></div><div style="padding:24px;font-size:.9rem;line-height:1.8;color:var(--text-mid)">{{ record.context }}</div></div>{% endif %}
+  <div class="phf-detail-block mb-4">
+    {% if record.clan %}<div class="phf-detail-row"><span class="phf-detail-label">Clan</span><span class="phf-detail-value"><a href="{{ record.clan.get_absolute_url }}">{{ record.clan.name }}</a></span></div>{% endif %}
+    <div class="phf-detail-row"><span class="phf-detail-label">Language</span><span class="phf-detail-value">{{ record.language }}</span></div>
+    {% if record.performers %}<div class="phf-detail-row"><span class="phf-detail-label">Performers</span><span class="phf-detail-value">{{ record.performers }}</span></div>{% endif %}
+    {% if record.source %}<div class="phf-detail-row"><span class="phf-detail-label">Source</span><span class="phf-detail-value">{{ record.source }}</span></div>{% endif %}
+  </div>
+  <a href="{% url 'cultural:list' %}" class="phf-btn phf-btn-outline"><i class="bi bi-arrow-left"></i> Back to Cultural Archive</a>
+</div></section>{% endblock %}

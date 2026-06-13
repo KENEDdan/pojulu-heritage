@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}{{ person.full_name }}{% endblock %}
+{% block content %}
+
+<a href="{% url 'genealogy:tree' person.slug %}" class="phf-btn phf-btn-outline">
+  <i class="bi bi-diagram-3 me-1"></i> View Family Tree
+</a>
+<div class="phf-page-header"><div class="container-xl"><div class="phf-breadcrumb"><a href="{% url 'core:home' %}">Home</a><span class="phf-breadcrumb-sep">›</span><a href="{% url 'genealogy:list' %}">Families</a><span class="phf-breadcrumb-sep">›</span>{{ person.full_name }}</div><h1><em>{{ person.full_name }}</em></h1><p>{% if person.clan %}{{ person.clan.name }} Clan · {% endif %}{{ person.lifespan }}</p></div></div>
+<section class="phf-section"><div class="container-xl">
+<div class="row g-5">
+  <div class="col-lg-4">
+    <div class="phf-detail-block mb-4">
+      <div style="padding:28px;text-align:center">
+        <div class="phf-person-photo mx-auto mb-3">{% if person.photo %}<img src="{{ person.photo.url }}" alt="{{ person.full_name }}">{% else %}{{ person.initials }}{% endif %}</div>
+        <h4 class="text-display mb-1">{{ person.full_name }}</h4>
+        {% if person.other_names %}<p style="font-size:.82rem;color:var(--text-light)">Also known as: {{ person.other_names }}</p>{% endif %}
+        {% if person.is_elder %}<span class="phf-tag phf-tag-dark"><i class="bi bi-star-fill me-1"></i>Community Elder</span>{% endif %}
+      </div>
+      <div class="phf-detail-row"><span class="phf-detail-label">Clan</span><span class="phf-detail-value">{% if person.clan %}<a href="{{ person.clan.get_absolute_url }}">{{ person.clan.name }}</a>{% else %}—{% endif %}</span></div>
+      {% if person.family %}<div class="phf-detail-row"><span class="phf-detail-label">Family</span><span class="phf-detail-value"><a href="{{ person.family.get_absolute_url }}">{{ person.family.name }}</a></span></div>{% endif %}
+      <div class="phf-detail-row"><span class="phf-detail-label">Payam</span><span class="phf-detail-value">{{ person.get_payam_display|default:"—" }}</span></div>
+      <div class="phf-detail-row"><span class="phf-detail-label">Born</span><span class="phf-detail-value">{{ person.birth_year|default:"—" }}{% if person.birth_place %}, {{ person.birth_place }}{% endif %}</span></div>
+      {% if person.is_deceased %}<div class="phf-detail-row"><span class="phf-detail-label">Passed</span><span class="phf-detail-value">{{ person.death_year|default:"—" }}{% if person.death_place %}, {{ person.death_place }}{% endif %}</span></div>{% endif %}
+      {% if person.occupation %}<div class="phf-detail-row"><span class="phf-detail-label">Occupation</span><span class="phf-detail-value">{{ person.occupation }}</span></div>{% endif %}
+      {% if person.current_residence %}<div class="phf-detail-row"><span class="phf-detail-label">Residence</span><span class="phf-detail-value">{{ person.current_residence }}</span></div>{% endif %}
+    </div>
+    <a href="{{ person.get_absolute_url }}tree/" class="phf-btn phf-btn-outline w-100"><i class="bi bi-diagram-3"></i> View Family Tree</a>
+  </div>
+  <div class="col-lg-8">
+    {% if person.biography %}<div class="phf-detail-block mb-4"><div class="phf-detail-block-header"><i class="bi bi-book text-success me-2"></i><h6 class="phf-detail-block-title">Biography</h6></div><div style="padding:24px;font-size:.93rem;line-height:1.85;color:var(--text-mid)">{{ person.biography }}</div></div>{% endif %}
+    <!-- Family Tree Section -->
+    <h5 class="text-display mb-3" style="color:var(--g700)">Family Connections</h5>
+    {% if person.father or person.mother %}
+    <div class="phf-tree-section mb-3"><p class="phf-tree-section-title">Parents</p><div class="d-flex flex-wrap gap-2">{% if person.father %}<a href="{{ person.father.get_absolute_url }}" class="phf-tree-person-pill"><div class="phf-tree-mini-avatar">{{ person.father.initials }}</div><div><div class="phf-tree-pill-name">{{ person.father.full_name }}</div><div class="phf-tree-pill-sub">Father</div></div></a>{% endif %}{% if person.mother %}<a href="{{ person.mother.get_absolute_url }}" class="phf-tree-person-pill"><div class="phf-tree-mini-avatar">{{ person.mother.initials }}</div><div><div class="phf-tree-pill-name">{{ person.mother.full_name }}</div><div class="phf-tree-pill-sub">Mother</div></div></a>{% endif %}</div></div>
+    {% endif %}
+    {% if person.spouses %}<div class="phf-tree-section mb-3"><p class="phf-tree-section-title">Spouse(s)</p><div class="d-flex flex-wrap gap-2">{% for sp in person.spouses %}<a href="{{ sp.get_absolute_url }}" class="phf-tree-person-pill"><div class="phf-tree-mini-avatar">{{ sp.initials }}</div><div><div class="phf-tree-pill-name">{{ sp.full_name }}</div><div class="phf-tree-pill-sub">Spouse</div></div></a>{% endfor %}</div></div>{% endif %}
+    {% if person.children.exists %}<div class="phf-tree-section mb-3"><p class="phf-tree-section-title">Children</p><div class="d-flex flex-wrap gap-2">{% for child in person.children %}<a href="{{ child.get_absolute_url }}" class="phf-tree-person-pill"><div class="phf-tree-mini-avatar">{{ child.initials }}</div><div><div class="phf-tree-pill-name">{{ child.full_name }}</div><div class="phf-tree-pill-sub">Child</div></div></a>{% endfor %}</div></div>{% endif %}
+    {% if person.siblings.exists %}<div class="phf-tree-section"><p class="phf-tree-section-title">Siblings</p><div class="d-flex flex-wrap gap-2">{% for sib in person.siblings %}<a href="{{ sib.get_absolute_url }}" class="phf-tree-person-pill"><div class="phf-tree-mini-avatar">{{ sib.initials }}</div><div><div class="phf-tree-pill-name">{{ sib.full_name }}</div><div class="phf-tree-pill-sub">Sibling</div></div></a>{% endfor %}</div></div>{% endif %}
+  </div>
+</div></div></section>{% endblock %}

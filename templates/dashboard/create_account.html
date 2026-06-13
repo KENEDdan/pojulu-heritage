@@ -1,0 +1,81 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Create Admin Account{% endblock %}
+{% block page_title %}Create Administrator Account{% endblock %}
+
+{% block content %}
+<div style="max-width:720px">
+  <div class="dash-form-card">
+    <div class="dash-form-title">New Administrator Account</div>
+    <p class="dash-form-sub">Create a login account for a new administrator. Their access will be automatically limited to the section you assign them.</p>
+
+    <form method="post">
+      {% csrf_token %}
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label class="dash-label">First Name *</label>
+          {{ form.first_name }}
+        </div>
+        <div class="col-md-6">
+          <label class="dash-label">Last Name *</label>
+          {{ form.last_name }}
+        </div>
+        <div class="col-md-6">
+          <label class="dash-label">Email Address *</label>
+          {{ form.email }}
+        </div>
+        <div class="col-md-6">
+          <label class="dash-label">Phone (optional)</label>
+          {{ form.phone }}
+        </div>
+      </div>
+
+      <hr style="border-color:var(--border);margin:20px 0">
+
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label class="dash-label">Username (for login) *</label>
+          {{ form.username }}
+        </div>
+        <div class="col-md-6">
+          <label class="dash-label">Password *</label>
+          {{ form.password }}
+        </div>
+      </div>
+
+      <hr style="border-color:var(--border);margin:20px 0">
+
+      <div class="mb-3">
+        <label class="dash-label">Administrator Role *</label>
+        {{ form.role }}
+        <div style="margin-top:10px;padding:14px;background:var(--g0);border-radius:6px;font-size:.8rem;color:var(--mid);line-height:1.6">
+          <strong>Role access summary:</strong><br>
+          Clan Administrator — manages clans only &nbsp;|&nbsp;
+          Genealogy Administrator — persons and families &nbsp;|&nbsp;
+          Memorial Administrator — memorial records &nbsp;|&nbsp;
+          Cultural Administrator — cultural archive and elder interviews &nbsp;|&nbsp;
+          Achievement Administrator — achievements only &nbsp;|&nbsp;
+          Full Content Administrator — all sections above
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <label class="dash-label">Notes (optional)</label>
+        {{ form.notes }}
+      </div>
+
+      {% if form.errors %}
+      <div class="alert alert-danger py-2 mb-3" style="font-size:.84rem">
+        {% for field, errors in form.errors.items %}
+          {% for error in errors %}<div>{{ field|title }}: {{ error }}</div>{% endfor %}
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <div class="d-flex gap-3">
+        <button type="submit" class="dash-btn dash-btn-primary"><i class="bi bi-person-check-fill me-1"></i> Create Account</button>
+        <a href="{% url 'dashboard:accounts' %}" class="dash-btn dash-btn-outline">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

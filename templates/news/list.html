@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}News & Events{% endblock %}
+{% block content %}
+<div class="phf-page-header">
+  <div class="container-xl">
+    <div class="phf-breadcrumb"><a href="{% url 'core:home' %}">Home</a><span class="phf-breadcrumb-sep">›</span>News & Events</div>
+    <h1>News, Events & <em>Updates</em></h1>
+    <p>Current happenings, upcoming events, and important announcements from the Pojulu Heritage Foundation.</p>
+  </div>
+</div>
+<section class="phf-section">
+  <div class="container-xl">
+    <form method="get" class="phf-search-bar">
+      <input type="text" name="q" class="form-control" placeholder="Search news and events…" value="{{ query }}">
+      <select name="type" class="form-select phf-auto-submit" style="max-width:180px">
+        <option value="">All Types</option>
+        {% for val,label in type_choices %}<option value="{{ val }}" {% if selected_type == val %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+      <button type="submit" class="phf-btn phf-btn-primary">Search</button>
+      {% if query or selected_type %}<a href="{% url 'news:list' %}" class="phf-btn phf-btn-outline">Clear</a>{% endif %}
+    </form>
+
+    {% if posts %}
+    <div class="row g-4">
+      {% for post in posts %}
+      <div class="col-md-6 col-lg-4">
+        <a href="{{ post.get_absolute_url }}" class="text-decoration-none">
+          <div class="phf-news-card">
+            <div class="phf-news-card-img">
+              {% if post.cover_image %}<img src="{{ post.cover_image.url }}" alt="{{ post.title }}">
+              {% elif post.has_video %}<div class="phf-news-video-thumb-sm"><i class="bi bi-play-circle-fill"></i></div>
+              {% else %}<div class="phf-news-placeholder-card"><i class="bi bi-newspaper"></i></div>{% endif %}
+              <span class="phf-news-badge phf-news-badge-{{ post.post_type }}">{{ post.get_post_type_display }}</span>
+            </div>
+            <div class="phf-news-card-body">
+              {% if post.event_date %}<p class="phf-event-location mb-1"><i class="bi bi-calendar3 me-1"></i>{{ post.event_date|date:"d M Y" }}</p>{% endif %}
+              <h5 class="phf-news-card-title">{{ post.title }}</h5>
+              <p class="phf-news-card-excerpt">{{ post.excerpt|truncatewords:20 }}</p>
+              <div class="d-flex align-items-center justify-content-between mt-2">
+                <span class="phf-news-meta-sm">{{ post.published_at|date:"d M Y" }}</span>
+                <span class="phf-news-readmore-sm">Read →</span>
+              </div>
+            </div>
+          </div>
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+    {% include "partials/pagination.html" %}
+    {% else %}
+    <div class="phf-empty"><span class="phf-empty-icon">📰</span><h5>No posts found</h5><p>Check back soon for news and events.</p></div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

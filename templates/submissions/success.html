@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Record Submitted{% endblock %}
+{% block content %}
+<section class="phf-section"><div class="container-xl">
+  <div class="phf-success-box">
+    <div class="phf-success-icon">✅</div>
+    <h2 class="phf-success-title">Thank You!</h2>
+    <p style="font-size:1.05rem;color:var(--text-mid);line-height:1.8;margin-bottom:12px">Your record has been submitted to the Pojulu Heritage Foundation archive.</p>
+    <p style="font-size:.9rem;color:var(--text-light);margin-bottom:36px">Our editorial team will review it within <strong>48 hours</strong>. If we need additional information, we will contact you at the email address you provided. Once approved, it will be published and searchable by the entire Pojulu community.</p>
+    <div class="phf-quote" style="text-align:left;margin-bottom:36px"><p>"Every record you submit is a name saved. A story preserved. A piece of our people's legacy that will outlast all of us."</p></div>
+    <div class="d-flex gap-3 justify-content-center flex-wrap">
+      <a href="{% url 'submissions:form' %}" class="phf-btn phf-btn-primary"><i class="bi bi-plus-lg"></i> Submit Another Record</a>
+      <a href="{% url 'core:home' %}" class="phf-btn phf-btn-outline"><i class="bi bi-house"></i> Return Home</a>
+    </div>
+  </div>
+</div></section>{% endblock %}

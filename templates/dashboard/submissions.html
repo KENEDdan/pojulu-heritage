@@ -1,0 +1,38 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Submission Review{% endblock %}
+{% block page_title %}📥 Submission Review{% endblock %}
+{% block content %}
+<div class="d-flex gap-2 mb-4 flex-wrap align-items-center">
+  <a href="{% url 'dashboard:submission_list' %}" class="dash-btn {% if not status_filter %}dash-btn-primary{% else %}dash-btn-outline{% endif %} dash-btn-sm">All</a>
+  <a href="?status=pending"   class="dash-btn {% if status_filter == 'pending' %}dash-btn-primary{% else %}dash-btn-outline{% endif %} dash-btn-sm">Pending {% if pending_count %}<span style="background:#F57F17;color:white;border-radius:100px;padding:1px 7px;font-size:.65rem;margin-left:4px">{{ pending_count }}</span>{% endif %}</a>
+  <a href="?status=approved"  class="dash-btn {% if status_filter == 'approved' %}dash-btn-primary{% else %}dash-btn-outline{% endif %} dash-btn-sm">Approved</a>
+  <a href="?status=rejected"  class="dash-btn {% if status_filter == 'rejected' %}dash-btn-primary{% else %}dash-btn-outline{% endif %} dash-btn-sm">Rejected</a>
+  <a href="?status=needs_info" class="dash-btn {% if status_filter == 'needs_info' %}dash-btn-primary{% else %}dash-btn-outline{% endif %} dash-btn-sm">Needs Info</a>
+</div>
+<div class="dash-table-card">
+  <div class="dash-table-header"><span class="dash-table-title">Submissions</span></div>
+  <div style="overflow-x:auto">
+    <table class="dash-table">
+      <thead><tr><th>Subject</th><th>Type</th><th>Submitted By</th><th>Date</th><th>Status</th><th>Action</th></tr></thead>
+      <tbody>
+        {% for sub in submissions %}
+        <tr>
+          <td class="td-name">{{ sub.subject_name|default:"—" }}</td>
+          <td><span class="dash-badge dash-badge-grey">{{ sub.get_submission_type_display }}</span></td>
+          <td>{{ sub.submitter_name }}<br><span style="font-size:.72rem;color:var(--light)">{{ sub.submitter_email }}</span></td>
+          <td style="font-size:.78rem;color:var(--light)">{{ sub.created_at|date:"d M Y" }}</td>
+          <td>
+            <span class="dash-badge dash-badge-{% if sub.status == 'approved' %}green{% elif sub.status == 'rejected' %}red{% elif sub.status == 'pending' %}yellow{% else %}grey{% endif %}">
+              {{ sub.get_status_display }}
+            </span>
+          </td>
+          <td><a href="{% url 'dashboard:submission_review' sub.pk %}" class="dash-btn dash-btn-outline dash-btn-sm">Review</a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" style="text-align:center;padding:48px;color:var(--light)">No submissions found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

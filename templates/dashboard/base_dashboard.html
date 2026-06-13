@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}Dashboard{% endblock %} | PHF Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Cormorant+Garamond:wght@600;700&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<style>
+:root {
+  --g9: #1B5E20; --g7: #2E7D32; --g5: #43A047; --g4: #66BB6A;
+  --g1: #E8F5E9; --g0: #F4FBF4;
+  --white: #fff; --text: #1A2E1A; --mid: #3A5A3A; --light: #6B8F6B;
+  --border: #C8E6C9; --sidebar-w: 260px;
+  --font: 'DM Sans', sans-serif; --font-d: 'Cormorant Garamond', serif;
+  --shadow: 0 2px 16px rgba(27,94,32,.10);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font); background: #F0F4F1; color: var(--text); display: flex; min-height: 100vh; }
+
+/* ── SIDEBAR ── */
+.dash-sidebar {
+  width: var(--sidebar-w); flex-shrink: 0;
+  background: var(--g9); min-height: 100vh;
+  display: flex; flex-direction: column;
+  position: fixed; top: 0; left: 0; bottom: 0; z-index: 100;
+  transition: transform .3s ease;
+}
+.dash-logo {
+  padding: 28px 24px 20px; border-bottom: 1px solid rgba(255,255,255,.1);
+}
+.dash-logo-title {
+  font-family: var(--font-d); font-size: 1.15rem; font-weight: 700;
+  color: white; line-height: 1.2;
+}
+.dash-logo-sub { font-size: .65rem; color: var(--g4); letter-spacing: .12em; text-transform: uppercase; margin-top: 3px; }
+.dash-nav { flex: 1; padding: 16px 12px; overflow-y: auto; }
+.dash-nav-section { font-size: .64rem; color: rgba(255,255,255,.35); letter-spacing: .14em; text-transform: uppercase; padding: 14px 12px 6px; }
+.dash-nav-link {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; border-radius: 6px; margin-bottom: 2px;
+  color: rgba(255,255,255,.7); font-size: .85rem; font-weight: 500;
+  text-decoration: none; transition: all .18s;
+}
+.dash-nav-link i { font-size: 1rem; width: 20px; text-align: center; }
+.dash-nav-link:hover { background: rgba(255,255,255,.1); color: white; }
+.dash-nav-link.active { background: rgba(255,255,255,.15); color: white; font-weight: 600; }
+.dash-nav-link .badge {
+  margin-left: auto; background: var(--g5); color: white;
+  font-size: .65rem; padding: 2px 7px; border-radius: 100px; font-weight: 700;
+}
+.dash-user {
+  padding: 16px 20px; border-top: 1px solid rgba(255,255,255,.1);
+  display: flex; align-items: center; gap: 12px;
+}
+.dash-user-avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--g7); color: white;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-d); font-size: .95rem; font-weight: 700; flex-shrink: 0;
+}
+.dash-user-name { font-size: .82rem; font-weight: 600; color: white; line-height: 1.2; }
+.dash-user-role { font-size: .68rem; color: var(--g4); }
+.dash-logout {
+  margin-left: auto; color: rgba(255,255,255,.4); font-size: 1rem;
+  background: none; border: none; cursor: pointer; padding: 4px;
+  transition: color .2s;
+}
+.dash-logout:hover { color: white; }
+
+/* ── MAIN ── */
+.dash-main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.dash-topbar {
+  background: var(--white); border-bottom: 1px solid var(--border);
+  padding: 0 32px; height: 64px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 50;
+  box-shadow: var(--shadow);
+}
+.dash-topbar-title {
+  font-family: var(--font-d); font-size: 1.4rem; font-weight: 700; color: var(--text);
+}
+.dash-topbar-actions { display: flex; align-items: center; gap: 10px; }
+.dash-content { padding: 32px; flex: 1; }
+
+/* ── STAT CARDS ── */
+.dash-stat-card {
+  background: var(--white); border-radius: 10px;
+  padding: 24px; box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  transition: transform .2s, box-shadow .2s;
+}
+.dash-stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(27,94,32,.15); }
+.dash-stat-icon {
+  width: 48px; height: 48px; border-radius: 10px;
+  background: var(--g1); display: flex; align-items: center;
+  justify-content: center; font-size: 1.4rem; margin-bottom: 16px;
+}
+.dash-stat-num {
+  font-family: var(--font-d); font-size: 2.2rem; font-weight: 700;
+  color: var(--g7); line-height: 1;
+}
+.dash-stat-label { font-size: .78rem; color: var(--mid); margin-top: 4px; font-weight: 500; }
+.dash-stat-link {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: .75rem; font-weight: 700; color: var(--g7);
+  margin-top: 12px; text-decoration: none; letter-spacing: .04em;
+}
+.dash-stat-link:hover { color: var(--g5); }
+.dash-stat-link::after { content: '→'; }
+
+/* ── TABLE ── */
+.dash-table-card {
+  background: var(--white); border-radius: 10px;
+  box-shadow: var(--shadow); border: 1px solid var(--border);
+  overflow: hidden;
+}
+.dash-table-header {
+  padding: 18px 24px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.dash-table-title { font-weight: 700; color: var(--text); font-size: .95rem; }
+.dash-table { width: 100%; border-collapse: collapse; }
+.dash-table thead th {
+  background: var(--g0); padding: 11px 20px;
+  font-size: .72rem; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--mid); border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.dash-table tbody tr { border-bottom: 1px solid var(--g0); transition: background .15s; }
+.dash-table tbody tr:hover { background: var(--g0); }
+.dash-table tbody td { padding: 13px 20px; font-size: .85rem; color: var(--mid); vertical-align: middle; }
+.dash-table .td-name { font-weight: 600; color: var(--text); }
+
+/* ── BUTTONS ── */
+.dash-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 9px 20px; border-radius: 6px; font-size: .82rem; font-weight: 600;
+  letter-spacing: .04em; cursor: pointer; border: none; transition: all .18s;
+  font-family: var(--font); text-decoration: none;
+}
+.dash-btn-primary { background: var(--g7); color: white; }
+.dash-btn-primary:hover { background: var(--g9); color: white; }
+.dash-btn-outline { background: transparent; color: var(--g7); border: 1.5px solid var(--g7); }
+.dash-btn-outline:hover { background: var(--g7); color: white; }
+.dash-btn-danger { background: #c62828; color: white; }
+.dash-btn-danger:hover { background: #b71c1c; color: white; }
+.dash-btn-sm { padding: 6px 14px; font-size: .75rem; }
+.dash-btn-icon { padding: 7px; width: 32px; height: 32px; justify-content: center; }
+
+/* ── BADGES ── */
+.dash-badge {
+  display: inline-block; font-size: .68rem; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase;
+  padding: 3px 10px; border-radius: 100px;
+}
+.dash-badge-green { background: var(--g1); color: var(--g7); }
+.dash-badge-yellow { background: #FFF9C4; color: #F57F17; }
+.dash-badge-red    { background: #FFEBEE; color: #C62828; }
+.dash-badge-grey   { background: #F5F5F5; color: #616161; }
+
+/* ── FORMS ── */
+.dash-form-card {
+  background: var(--white); border-radius: 10px;
+  padding: 36px; box-shadow: var(--shadow); border: 1px solid var(--border);
+}
+.dash-form-title { font-family: var(--font-d); font-size: 1.5rem; font-weight: 700; color: var(--g7); margin-bottom: 4px; }
+.dash-form-sub   { font-size: .84rem; color: var(--light); margin-bottom: 28px; }
+.dash-label      { font-size: .74rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--mid); margin-bottom: 5px; display: block; }
+.form-control:focus, .form-select:focus {
+  border-color: var(--g5); box-shadow: 0 0 0 3px rgba(67,160,71,.15);
+}
+
+/* ── HAMBURGER (mobile) ── */
+.dash-hamburger {
+  display: none; background: none; border: none; cursor: pointer;
+  color: var(--g9); font-size: 1.3rem; padding: 4px;
+}
+@media (max-width: 768px) {
+  .dash-sidebar { transform: translateX(-100%); }
+  .dash-sidebar.open { transform: translateX(0); }
+  .dash-main { margin-left: 0; }
+  .dash-hamburger { display: block; }
+  .dash-content { padding: 20px 16px; }
+  .dash-topbar { padding: 0 16px; }
+}
+.dash-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,.4);
+  z-index: 99;
+}
+.dash-overlay.open { display: block; }
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="dash-sidebar" id="dashSidebar">
+  <div class="dash-logo">
+    <div class="dash-logo-title">Pojulu Heritage<br>Foundation</div>
+    <div class="dash-logo-sub">Admin Dashboard</div>
+  </div>
+
+  <nav class="dash-nav">
+    <div class="dash-nav-section">Overview</div>
+    <a href="{% url 'dashboard:home' %}" class="dash-nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
+      <i class="bi bi-grid-3x3-gap-fill"></i> Dashboard Home
+    </a>
+
+    <div class="dash-nav-section">Archive</div>
+    <a href="{% url 'dashboard:clan_dashboard' %}" class="dash-nav-link {% if request.resolver_match.url_name == 'clan_dashboard' %}active{% endif %}">
+      <i class="bi bi-tree-fill"></i> Clans
+    </a>
+    <a href="{% url 'dashboard:genealogy_dashboard' %}" class="dash-nav-link {% if request.resolver_match.url_name == 'genealogy_dashboard' %}active{% endif %}">
+      <i class="bi bi-diagram-3-fill"></i> Genealogy & Families
+    </a>
+    <a href="{% url 'dashboard:memorial_dashboard' %}" class="dash-nav-link {% if request.resolver_match.url_name == 'memorial_dashboard' %}active{% endif %}">
+      <i class="bi bi-flower1"></i> Memorial Records
+    </a>
+    <a href="{% url 'dashboard:achievement_dashboard' %}" class="dash-nav-link {% if request.resolver_match.url_name == 'achievement_dashboard' %}active{% endif %}">
+      <i class="bi bi-trophy-fill"></i> Achievements
+    </a>
+    <a href="{% url 'dashboard:cultural_dashboard' %}" class="dash-nav-link {% if request.resolver_match.url_name == 'cultural_dashboard' %}active{% endif %}">
+      <i class="bi bi-music-note-beamed"></i> Cultural Archive
+    </a>
+    <a href="{% url 'dashboard:elder_dashboard' %}" class="dash-nav-link {% if request.resolver_match.url_name == 'elder_dashboard' %}active{% endif %}">
+      <i class="bi bi-mic-fill"></i> Elder Interviews
+    </a>
+
+    <div class="dash-nav-section">Submissions</div>
+    <a href="{% url 'dashboard:submission_list' %}" class="dash-nav-link {% if 'submission' in request.resolver_match.url_name %}active{% endif %}">
+      <i class="bi bi-inbox-fill"></i> All Submissions
+    </a>
+
+    {% if request.user.is_superuser %}
+    <div class="dash-nav-section">Administration</div>
+    <a href="{% url 'dashboard:accounts' %}" class="dash-nav-link {% if 'account' in request.resolver_match.url_name %}active{% endif %}">
+      <i class="bi bi-people-fill"></i> Manage Admins
+    </a>
+    <a href="{% url 'dashboard:create_account' %}" class="dash-nav-link {% if request.resolver_match.url_name == 'create_account' %}active{% endif %}">
+      <i class="bi bi-person-plus-fill"></i> Create Admin
+    </a>
+    <a href="{% url 'dashboard:content_dashboard' %}" class="dash-nav-link {% if request.resolver_match.url_name == 'content_dashboard' %}active{% endif %}">
+      <i class="bi bi-grid-fill"></i> Full Content Admin
+    </a>
+    {% endif %}
+
+    <div class="dash-nav-section">Site</div>
+    <a href="{% url 'core:home' %}" class="dash-nav-link" target="_blank">
+      <i class="bi bi-box-arrow-up-right"></i> View Live Site
+    </a>
+  </nav>
+
+  <div class="dash-user">
+    <div class="dash-user-avatar">{{ request.user.first_name.0|default:request.user.username.0|upper }}</div>
+    <div>
+      <div class="dash-user-name">{{ request.user.get_full_name|default:request.user.username }}</div>
+      <div class="dash-user-role">{% if request.user.is_superuser %}Super Administrator{% else %}{{ request.user.admin_profile.get_role_display }}{% endif %}</div>
+    </div>
+    <form method="post" action="{% url 'dashboard:logout' %}" class="ms-auto">
+      {% csrf_token %}
+      <button type="submit" class="dash-logout" title="Log out"><i class="bi bi-box-arrow-right"></i></button>
+    </form>
+  </div>
+</aside>
+
+<div class="dash-overlay" id="dashOverlay" onclick="closeSidebar()"></div>
+
+<!-- Main -->
+<div class="dash-main">
+  <div class="dash-topbar">
+    <div class="d-flex align-items-center gap-3">
+      <button class="dash-hamburger" onclick="toggleSidebar()"><i class="bi bi-list"></i></button>
+      <span class="dash-topbar-title">{% block page_title %}Dashboard{% endblock %}</span>
+    </div>
+    <div class="dash-topbar-actions">
+      <a href="{% url 'core:home' %}" class="dash-btn dash-btn-outline dash-btn-sm" target="_blank">
+        <i class="bi bi-box-arrow-up-right"></i> Live Site
+      </a>
+    </div>
+  </div>
+
+  <div class="dash-content">
+    {% if messages %}
+      {% for msg in messages %}
+      <div class="alert alert-{{ msg.tags }} alert-dismissible fade show mb-4" role="alert">
+        {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+      {% endfor %}
+    {% endif %}
+    {% block content %}{% endblock %}
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function toggleSidebar() {
+  document.getElementById('dashSidebar').classList.toggle('open');
+  document.getElementById('dashOverlay').classList.toggle('open');
+}
+function closeSidebar() {
+  document.getElementById('dashSidebar').classList.remove('open');
+  document.getElementById('dashOverlay').classList.remove('open');
+}
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

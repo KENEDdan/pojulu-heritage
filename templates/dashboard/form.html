@@ -1,0 +1,156 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block page_title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div style="max-width:920px">
+  <div class="dash-form-card">
+    <div class="dash-form-title">{{ title }}</div>
+    {% if subtitle %}<p class="dash-form-sub">{{ subtitle }}</p>{% endif %}
+
+    {% if form.non_field_errors %}
+    <div class="alert alert-danger py-2 mb-4" style="font-size:.84rem;border-radius:6px">
+      {% for error in form.non_field_errors %}⚠️ {{ error }}<br>{% endfor %}
+    </div>
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data" novalidate>
+      {% csrf_token %}
+
+      <div class="row g-3">
+        {% for field in form %}
+        {% if not field.is_hidden %}
+
+          {% if field.html_name in full_fields %}
+          <div class="col-12">
+            <label class="dash-label" for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} <span style="color:#c62828">*</span>{% endif %}</label>
+            {{ field }}
+            {% if field.help_text %}<div class="form-text" style="font-size:.74rem;color:var(--light)">{{ field.help_text }}</div>{% endif %}
+            {% if field.errors %}<div style="color:#c62828;font-size:.76rem;margin-top:3px">{% for e in field.errors %}{{ e }}{% endfor %}</div>{% endif %}
+          </div>
+
+          {% elif field.field.widget.allow_multiple_selected %}
+          <div class="col-12">
+            <label class="dash-label">{{ field.label }}</label>
+            <div style="background:var(--g0);border:1px solid var(--border);border-radius:6px;padding:16px;max-height:200px;overflow-y:auto">
+              {{ field }}
+            </div>
+            {% if field.help_text %}<div class="form-text" style="font-size:.74rem;color:var(--light)">{{ field.help_text }}</div>{% endif %}
+          </div>
+
+          {% elif field.field.widget.input_type == 'checkbox' %}
+          <div class="col-12">
+            <div class="form-check mt-1 p-3" style="background:var(--g0);border-radius:6px;border:1px solid var(--border)">
+              {{ field }}
+              <label class="form-check-label ms-2" for="{{ field.id_for_label }}" style="font-size:.88rem;font-weight:500;color:var(--text)">{{ field.label }}</label>
+              {% if field.help_text %}<div class="form-text ms-4">{{ field.help_text }}</div>{% endif %}
+            </div>
+          </div>
+
+          {% elif field.field.widget.input_type == 'file' %}
+          <div class="col-12">
+            <label class="dash-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% if field.value %}<div class="form-text">Current: {{ field.value }}</div>{% endif %}
+          </div>
+
+          {% else %}
+          <div class="col-md-6">
+            <label class="dash-label" for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} <span style="color:#c62828">*</span>{% endif %}</label>
+            {{ field }}
+            {% if field.help_text %}<div class="form-text" style="font-size:.74rem;color:var(--light)">{{ field.help_text }}</div>{% endif %}
+            {% if field.errors %}<div style="color:#c62828;font-size:.76rem;margin-top:3px">{% for e in field.errors %}{{ e }}{% endfor %}</div>{% endif %}
+          </div>
+          {% endif %}
+
+        {% else %}{{ field }}{% endif %}
+        {% endfor %}
+      </div>
+
+      <div class="d-flex gap-3 mt-4 pt-3 align-items-center flex-wrap" style="border-top:1px solid var(--border)">
+        <button type="submit" class="dash-btn dash-btn-primary">
+          <i class="bi bi-save me-1"></i> {{ submit_label|default:"Save Record" }}
+        </button>
+        <a href="{{ cancel_url }}" class="dash-btn dash-btn-outline">
+          <i class="bi bi-arrow-left me-1"></i> Cancel
+        </a>
+        {% if obj and delete_url %}
+        <div class="ms-auto">
+          <button type="button" class="dash-btn dash-btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+            <i class="bi bi-trash me-1"></i> Delete
+          </button>
+        </div>
+        {% endif %}
+      </div>
+    </form>
+
+    {% if obj and delete_url %}
+    <!-- Delete confirmation modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius:10px;border:1px solid var(--border)">
+          <div class="modal-body text-center" style="padding:36px 32px 24px">
+            <div style="width:60px;height:60px;border-radius:50%;background:#FFEBEE;display:flex;align-items:center;justify-content:center;margin:0 auto 18px">
+              <i class="bi bi-exclamation-triangle-fill" style="font-size:1.6rem;color:#C62828"></i>
+            </div>
+            <h5 style="font-family:var(--font-d);font-weight:700;color:var(--text);margin-bottom:8px">Delete this record?</h5>
+            <p style="font-size:.88rem;color:var(--mid);margin:0">
+              This action is permanent and cannot be undone. All associated data will be removed from the archive.
+            </p>
+          </div>
+          <div class="modal-footer" style="border-top:1px solid var(--border);padding:16px 24px;justify-content:center;gap:10px">
+            <button type="button" class="dash-btn dash-btn-outline" data-bs-dismiss="modal">Cancel</button>
+            <form method="post" action="{{ delete_url }}" style="margin:0">
+              {% csrf_token %}
+              <button type="submit" class="dash-btn dash-btn-danger"><i class="bi bi-trash me-1"></i> Yes, Delete Permanently</button>
+            {% if media_formset %}
+      <hr style="border-color:var(--border);margin:32px 0 24px">
+      <div class="dash-form-title" style="font-size:1.15rem">{{ media_title }}</div>
+      {% if media_help %}<p class="dash-form-sub" style="margin-bottom:18px">{{ media_help }}</p>{% endif %}
+
+      {{ media_formset.management_form }}
+
+      <div class="d-flex flex-column gap-3" id="media-formset">
+        {% for mform in media_formset %}
+        <div class="media-form-row" style="background:var(--g0);border:1px solid var(--border);border-radius:8px;padding:18px">
+          {% if mform.instance.pk %}
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <span style="font-size:.78rem;font-weight:700;color:var(--mid)">
+              {% if mform.instance.file %}<i class="bi bi-file-earmark-check-fill text-success me-1"></i>{{ mform.instance.title|default:"Untitled" }}{% else %}New item{% endif %}
+            </span>
+            {% if mform.DELETE %}
+            <label style="font-size:.74rem;color:#c62828;display:flex;align-items:center;gap:5px;cursor:pointer">
+              {{ mform.DELETE }} Remove this item
+            </label>
+            {% endif %}
+          </div>
+          {% endif %}
+          {% for hidden in mform.hidden_fields %}{{ hidden }}{% endfor %}
+          <div class="row g-2">
+            {% for f in mform.visible_fields %}
+              {% if f.name != 'DELETE' %}
+              <div class="col-md-{% if f.name == 'caption' %}12{% elif f.name == 'file' %}4{% else %}4{% endif %}">
+                <label class="dash-label" style="font-size:.68rem">{{ f.label }}</label>
+                {{ f }}
+              </div>
+              {% endif %}
+            {% endfor %}
+          </div>
+          {% if mform.instance.file %}
+          <div class="mt-2">
+            <a href="{{ mform.instance.file.url }}" target="_blank" style="font-size:.76rem;color:var(--g7)"><i class="bi bi-eye me-1"></i>View current file</a>
+          </div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

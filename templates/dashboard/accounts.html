@@ -1,0 +1,56 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Manage Admins{% endblock %}
+{% block page_title %}Manage Administrator Accounts{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-end mb-4">
+  <a href="{% url 'dashboard:create_account' %}" class="dash-btn dash-btn-primary">
+    <i class="bi bi-person-plus-fill me-1"></i> Create New Admin
+  </a>
+</div>
+<div class="dash-table-card">
+  <div class="dash-table-header">
+    <span class="dash-table-title">All Administrator Accounts</span>
+    <span style="font-size:.82rem;color:var(--light)">{{ admins.count }} account{{ admins.count|pluralize }}</span>
+  </div>
+  <div style="overflow-x:auto">
+    <table class="dash-table">
+      <thead>
+        <tr><th>Name</th><th>Username</th><th>Role</th><th>Status</th><th>Created By</th><th>Date</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for profile in admins %}
+        <tr>
+          <td class="td-name">{{ profile.user.get_full_name|default:profile.user.username }}</td>
+          <td style="font-size:.82rem;color:var(--light)">{{ profile.user.username }}</td>
+          <td><span class="dash-badge dash-badge-green">{{ profile.get_role_display }}</span></td>
+          <td>
+            {% if profile.is_active %}
+            <span class="dash-badge dash-badge-green">Active</span>
+            {% else %}
+            <span class="dash-badge dash-badge-red">Inactive</span>
+            {% endif %}
+          </td>
+          <td style="font-size:.82rem">{{ profile.assigned_by.get_full_name|default:profile.assigned_by.username|default:"—" }}</td>
+          <td style="font-size:.78rem;color:var(--light)">{{ profile.created_at|date:"d M Y" }}</td>
+          <td>
+            <div class="d-flex gap-1">
+              <a href="{% url 'dashboard:edit_account' profile.pk %}" class="dash-btn dash-btn-outline dash-btn-sm">Edit</a>
+              {% if profile.is_active %}
+              <form method="post" action="{% url 'dashboard:deactivate_account' profile.pk %}"
+                    onsubmit="return confirm('Deactivate {{ profile.user.get_full_name }}? They will lose dashboard access.')">
+                {% csrf_token %}
+                <button type="submit" class="dash-btn dash-btn-danger dash-btn-sm">Deactivate</button>
+              </form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" style="text-align:center;padding:48px;color:var(--light)">No admin accounts yet. <a href="{% url 'dashboard:create_account' %}">Create the first one.</a></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

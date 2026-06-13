@@ -1,0 +1,36 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Elder Interviews{% endblock %}
+{% block page_title %}🎙️ Elder Interviews Management{% endblock %}
+{% block content %}
+<div class="row g-4 mb-4">
+  <div class="col-6 col-lg-3"><div class="dash-stat-card"><div class="dash-stat-icon">🎙️</div><div class="dash-stat-num">{{ total }}</div><div class="dash-stat-label">Total Interviews</div></div></div>
+  <div class="col-6 col-lg-3"><div class="dash-stat-card"><div class="dash-stat-icon">✅</div><div class="dash-stat-num">{{ published }}</div><div class="dash-stat-label">Published</div><a href="/admin/elders/elderinterview/" class="dash-stat-link" target="_blank">Manage</a></div></div>
+  <div class="col-6 col-lg-3"><div class="dash-stat-card" style="{% if unpublished > 0 %}border-color:#FFB300{% endif %}"><div class="dash-stat-icon">📝</div><div class="dash-stat-num" style="{% if unpublished > 0 %}color:#F57F17{% endif %}">{{ unpublished }}</div><div class="dash-stat-label">Unpublished / In Progress</div></div></div>
+  <div class="col-6 col-lg-3"><div class="dash-stat-card"><div class="dash-stat-icon">🎧</div><div class="dash-stat-num">{{ with_audio }}</div><div class="dash-stat-label">With Audio Recording</div></div></div>
+</div>
+<div class="d-flex gap-2 mb-4">
+  <a href="{% url 'dashboard:elder_add' %}" class="dash-btn dash-btn-primary"><i class="bi bi-mic me-1"></i> Add Elder Interview</a>
+</div>
+<div class="dash-table-card">
+  <div class="dash-table-header"><span class="dash-table-title">All Elder Interviews</span><a href="/admin/elders/elderinterview/" class="dash-btn dash-btn-outline dash-btn-sm" target="_blank">View All in Admin</a></div>
+  <div style="overflow-x:auto">
+    <table class="dash-table">
+      <thead><tr><th>Elder Name</th><th>Clan</th><th>Date</th><th>Media</th><th>Status</th><th>Action</th></tr></thead>
+      <tbody>
+        {% for iv in interviews %}
+        <tr>
+          <td class="td-name">{{ iv.elder_name }}</td>
+          <td>{{ iv.clan.name|default:"—" }}</td>
+          <td>{{ iv.interview_date|date:"d M Y"|default:"—" }}</td>
+          <td>{% if iv.has_audio %}<span class="dash-badge dash-badge-green">Audio</span>{% endif %} {% if iv.has_video %}<span class="dash-badge dash-badge-green">Video</span>{% endif %}</td>
+          <td>{% if iv.is_published %}<span class="dash-badge dash-badge-green">Published</span>{% else %}<span class="dash-badge dash-badge-yellow">Draft</span>{% endif %}</td>
+          <td><a href="{% url 'dashboard:elder_edit' iv.pk %}" class="dash-btn dash-btn-outline dash-btn-sm">Edit</a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--light)">No interviews recorded yet. <a href="/admin/elders/elderinterview/add/" target="_blank">Add the first one.</a></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

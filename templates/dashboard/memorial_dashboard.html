@@ -1,0 +1,35 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Memorial Management{% endblock %}
+{% block page_title %}🕊️ Memorial Records{% endblock %}
+{% block content %}
+<div class="row g-4 mb-4">
+  <div class="col-6 col-lg-4"><div class="dash-stat-card"><div class="dash-stat-icon">🕊️</div><div class="dash-stat-num">{{ total }}</div><div class="dash-stat-label">Total Memorial Records</div><a href="/admin/memorial/memorialrecord/" class="dash-stat-link" target="_blank">Manage All</a></div></div>
+  <div class="col-6 col-lg-4"><div class="dash-stat-card"><div class="dash-stat-icon">⭐</div><div class="dash-stat-num">{{ featured }}</div><div class="dash-stat-label">Featured on Homepage</div></div></div>
+  <div class="col-6 col-lg-4"><div class="dash-stat-card"><div class="dash-stat-icon">📝</div><div class="dash-stat-num">{{ total|add:0 }}</div><div class="dash-stat-label">Total Tributes Written</div></div></div>
+</div>
+<div class="d-flex gap-2 mb-4">
+  <a href="{% url 'dashboard:person_add' %}" class="dash-btn dash-btn-primary"><i class="bi bi-person-plus me-1"></i> Add Deceased Person</a>
+  <a href="{% url 'dashboard:memorial_add' %}" class="dash-btn dash-btn-outline"><i class="bi bi-flower1 me-1"></i> Add Memorial Record</a>
+</div>
+<div class="dash-table-card">
+  <div class="dash-table-header"><span class="dash-table-title">Memorial Records</span><a href="/admin/memorial/memorialrecord/" class="dash-btn dash-btn-outline dash-btn-sm" target="_blank">View All in Admin</a></div>
+  <div style="overflow-x:auto">
+    <table class="dash-table">
+      <thead><tr><th>Name</th><th>Clan</th><th>Years</th><th>Featured</th><th>Action</th></tr></thead>
+      <tbody>
+        {% for mem in memorials %}
+        <tr>
+          <td class="td-name">{{ mem.person.full_name }}</td>
+          <td>{{ mem.person.clan.name|default:"—" }}</td>
+          <td>{{ mem.person.lifespan|default:"—" }}</td>
+          <td>{% if mem.is_featured %}<span class="dash-badge dash-badge-green">Featured</span>{% else %}—{% endif %}</td>
+          <td><a href="{% url 'dashboard:memorial_edit' mem.pk %}" class="dash-btn dash-btn-outline dash-btn-sm">Edit</a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" style="text-align:center;padding:40px;color:var(--light)">No memorial records yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}{{ achievement.person_name }}{% endblock %}
+{% block content %}
+<div class="phf-page-header"><div class="container-xl"><div class="phf-breadcrumb"><a href="{% url 'core:home' %}">Home</a><span class="phf-breadcrumb-sep">›</span><a href="{% url 'achievements:list' %}">Achievements</a><span class="phf-breadcrumb-sep">›</span>{{ achievement.person_name }}</div><h1><em>{{ achievement.person_name }}</em></h1><p>{{ achievement.category_label }} · {{ achievement.year }}</p></div></div>
+<section class="phf-section"><div class="container-xl" style="max-width:860px">
+<div class="d-flex gap-4 align-items-start mb-5 flex-wrap">
+  <div class="phf-achievement-icon" style="width:80px;height:80px;font-size:2.4rem;flex-shrink:0">{{ achievement.icon }}</div>
+  <div><span class="phf-tag mb-2 d-inline-block">{{ achievement.category_label }}</span><h2 class="text-display mb-1">{{ achievement.person_name }}</h2>{% if achievement.clan %}<a href="{{ achievement.clan.get_absolute_url }}" class="phf-tag">{{ achievement.clan.name }} Clan</a>{% endif %}</div>
+</div>
+<div class="phf-detail-block mb-4"><div class="phf-detail-block-header"><h6 class="phf-detail-block-title">Achievement</h6></div><div style="padding:16px 24px"><h5 style="color:var(--g700);font-family:var(--font-display);margin-bottom:16px">{{ achievement.title }}</h5><p style="font-size:.93rem;line-height:1.85;color:var(--text-mid)">{{ achievement.description }}</p></div></div>
+{% if achievement.year or achievement.source %}<div class="phf-detail-block">{% if achievement.year %}<div class="phf-detail-row"><span class="phf-detail-label">Year</span><span class="phf-detail-value">{{ achievement.year }}</span></div>{% endif %}{% if achievement.source %}<div class="phf-detail-row"><span class="phf-detail-label">Source</span><span class="phf-detail-value">{{ achievement.source }}</span></div>{% endif %}</div>{% endif %}
+<div class="mt-4"><a href="{% url 'achievements:list' %}" class="phf-btn phf-btn-outline"><i class="bi bi-arrow-left"></i> Back</a></div>
+</div></section>{% endblock %}

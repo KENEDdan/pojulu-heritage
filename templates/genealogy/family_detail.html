@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}{{ family.name }}{% endblock %}
+{% block content %}
+<div class="phf-page-header"><div class="container-xl"><div class="phf-breadcrumb"><a href="{% url 'core:home' %}">Home</a><span class="phf-breadcrumb-sep">›</span><a href="{% url 'genealogy:list' %}">Families</a><span class="phf-breadcrumb-sep">›</span>{{ family.name }}</div><h1>{{ family.name }}</h1><p>{% if family.clan %}{{ family.clan.name }} Clan · {% endif %}{{ family.get_payam_display }}</p></div></div>
+<section class="phf-section"><div class="container-xl">
+<div class="row g-5">
+  <div class="col-lg-4"><div class="phf-detail-block"><div class="phf-detail-block-header"><i class="bi bi-info-circle text-success me-2"></i><h6 class="phf-detail-block-title">Family Details</h6></div>{% if family.clan %}<div class="phf-detail-row"><span class="phf-detail-label">Clan</span><span class="phf-detail-value"><a href="{{ family.clan.get_absolute_url }}">{{ family.clan.name }}</a></span></div>{% endif %}<div class="phf-detail-row"><span class="phf-detail-label">Payam</span><span class="phf-detail-value">{{ family.get_payam_display }}</span></div>{% if family.origin_village %}<div class="phf-detail-row"><span class="phf-detail-label">Origin</span><span class="phf-detail-value">{{ family.origin_village }}</span></div>{% endif %}<div class="phf-detail-row"><span class="phf-detail-label">Members</span><span class="phf-detail-value">{{ members.count }} recorded</span></div></div>{% if family.description %}<div class="phf-detail-block"><div class="phf-detail-block-header"><h6 class="phf-detail-block-title">About This Family</h6></div><div style="padding:16px 24px;font-size:.88rem;color:var(--text-mid);line-height:1.7">{{ family.description }}</div></div>{% endif %}<a href="{% url 'submissions:form' %}" class="phf-btn phf-btn-primary w-100 mt-2"><i class="bi bi-plus-lg"></i> Add Member</a></div>
+  <div class="col-lg-8">
+    <h4 class="text-display mb-4" style="color:var(--g700)">Family Members</h4>
+    {% if members %}
+    <div class="phf-table-wrap"><table class="table phf-table"><thead><tr><th>Name</th><th>Birth Year</th><th>Status</th></tr></thead><tbody>{% for p in members %}<tr onclick="window.location='{{ p.get_absolute_url }}'"><td class="td-primary">{{ p.full_name }}</td><td>{{ p.birth_year|default:"—" }}</td><td>{% if p.is_deceased %}<span class="phf-tag" style="background:#fce4ec;color:#c62828">Deceased</span>{% else %}<span class="phf-tag">Living</span>{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+    {% else %}<div class="phf-empty"><span class="phf-empty-icon">👥</span><h5>No members yet</h5><p>
+</div></div></section>{% endblock %}

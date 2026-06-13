@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}{{ marriage.husband_display }} & {{ marriage.wife_display }}{% endblock %}
+{% block content %}
+<div class="phf-page-header"><div class="container-xl"><div class="phf-breadcrumb"><a href="{% url 'core:home' %}">Home</a><span class="phf-breadcrumb-sep">›</span><a href="{% url 'marriages:list' %}">Marriages</a><span class="phf-breadcrumb-sep">›</span>{{ marriage.husband_display }}</div><h1>{{ marriage.husband_display }} <em>&amp;</em> {{ marriage.wife_display }}</h1></div></div>
+<section class="phf-section"><div class="container-xl" style="max-width:760px">
+<div class="row g-4 mb-4">
+  <div class="col-md-6"><div class="phf-detail-block"><div class="phf-detail-block-header"><i class="bi bi-person text-success me-2"></i><h6 class="phf-detail-block-title">Husband</h6></div><div class="phf-detail-row"><span class="phf-detail-label">Name</span><span class="phf-detail-value">{% if marriage.husband %}<a href="{{ marriage.husband.get_absolute_url }}">{{ marriage.husband_display }}</a>{% else %}{{ marriage.husband_display }}{% endif %}</span></div><div class="phf-detail-row"><span class="phf-detail-label">Clan</span><span class="phf-detail-value">{{ marriage.husband_clan_display }}</span></div></div></div>
+  <div class="col-md-6"><div class="phf-detail-block"><div class="phf-detail-block-header"><i class="bi bi-person text-success me-2"></i><h6 class="phf-detail-block-title">Wife</h6></div><div class="phf-detail-row"><span class="phf-detail-label">Name</span><span class="phf-detail-value">{% if marriage.wife %}<a href="{{ marriage.wife.get_absolute_url }}">{{ marriage.wife_display }}</a>{% else %}{{ marriage.wife_display }}{% endif %}</span></div><div class="phf-detail-row"><span class="phf-detail-label">Clan</span><span class="phf-detail-value">{{ marriage.wife_clan_display }}</span></div></div></div>
+</div>
+<div class="phf-detail-block mb-4">
+  {% if marriage.year %}<div class="phf-detail-row"><span class="phf-detail-label">Year</span><span class="phf-detail-value">{{ marriage.year }}</span></div>{% endif %}
+  {% if marriage.place %}<div class="phf-detail-row"><span class="phf-detail-label">Place</span><span class="phf-detail-value">{{ marriage.place }}</span></div>{% endif %}
+  {% if marriage.payam %}<div class="phf-detail-row"><span class="phf-detail-label">Payam</span><span class="phf-detail-value">{{ marriage.payam }}</span></div>{% endif %}
+  {% if marriage.children_list %}<div class="phf-detail-row"><span class="phf-detail-label">Children</span><span class="phf-detail-value">{{ marriage.children_list|join:", " }}</span></div>{% endif %}
+  {% if marriage.notes %}<div class="phf-detail-row"><span class="phf-detail-label">Notes</span><span class="phf-detail-value">{{ marriage.notes }}</span></div>{% endif %}
+</div>
+<a href="{% url 'marriages:list' %}" class="phf-btn phf-btn-outline"><i class="bi bi-arrow-left"></i> Back</a>
+</div></section>{% endblock %}
