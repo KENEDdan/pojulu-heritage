@@ -110,3 +110,8 @@ ADMIN_INDEX_TITLE = 'Heritage Archive Administration'
 
 # Pagination
 RECORDS_PER_PAGE = 12
+
+CSRF_TRUSTED_ORIGINS = config(
+    'CSRF_TRUSTED_ORIGINS',
+    default='http://localhost,http://127.0.0.1'
+).split(',')
