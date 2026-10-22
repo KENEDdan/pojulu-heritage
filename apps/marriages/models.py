@@ -1,4 +1,5 @@
 from django.db import models
+from simple_history.models import HistoricalRecords
 from django.urls import reverse
 
 
@@ -46,6 +47,7 @@ class Marriage(models.Model):
     created_at        = models.DateTimeField(auto_now_add=True)
 
     objects = MarriageQuerySet.as_manager()
+    history = HistoricalRecords()
 
     class Meta:
         ordering = ['-year']

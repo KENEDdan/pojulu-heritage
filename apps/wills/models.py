@@ -1,4 +1,5 @@
 from django.db import models
+from simple_history.models import HistoricalRecords
 from django.contrib.auth.models import User
 from apps.genealogy.models import Person
 from .crypto import encrypt_with_passphrase, decrypt_with_passphrase, generate_salt
@@ -17,6 +18,10 @@ class FamilyAccount(models.Model):
     must_change_password = models.BooleanField(default=True,
                                                  help_text='Forces a password change on first login, since the superadmin sets the initial password.')
     created_at           = models.DateTimeField(auto_now_add=True)
+
+    # Audit trail for the account itself. Will (the encrypted content) is
+    # deliberately NOT tracked.
+    history = HistoricalRecords()
 
     class Meta:
         ordering = ['-created_at']

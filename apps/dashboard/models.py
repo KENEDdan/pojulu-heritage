@@ -1,4 +1,5 @@
 from django.db import models
+from simple_history.models import HistoricalRecords
 from django.contrib.auth.models import User, Permission
 from django.contrib.contenttypes.models import ContentType
 
@@ -61,6 +62,8 @@ class AdminProfile(models.Model):
     notes       = models.TextField(blank=True)
     is_active   = models.BooleanField(default=True)
     created_at  = models.DateTimeField(auto_now_add=True)
+
+    history = HistoricalRecords()
 
     class Meta:
         ordering = ['-created_at']

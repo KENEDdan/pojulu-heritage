@@ -274,3 +274,62 @@ public template at baseline.
   tags with blocks overridden on news, clan, person and interview pages
   (title/description/image). Person meta only uses name, lifespan and clan, never contact
   details or biography.
+
+---
+
+## Phase 6 — Data integrity, audit trail, soft delete
+
+- **django-simple-history** on Person, Family, Clan, ClanChief, ClanBoma,
+  ClanEvent, MemorialRecord, Achievement, Marriage, CulturalRecord,
+  ElderInterview, NewsPost, AdminProfile, plus FamilyAccount (D15: the Will
+  model, which holds encrypted content, is deliberately *not* tracked).
+  `HistoryRequestMiddleware` records the acting user. History stores file
+  *names*, not copies (`SIMPLE_HISTORY_FILEFIELD_TO_CHARFIELD`).
+  - D16: `ClanBoma` already has a data field called `history` (the boma's
+    history text). Its audit manager is named `change_history` instead. A
+    first attempt at the migration would have **dropped that column**; this
+    was caught before any migration was applied.
+  - Existing records have no "created" history entry. Optionally run
+    `py manage.py populate_history --auto` once to seed a baseline.
+- **Soft delete** (`apps/core/softdelete.py`) for Person, Family, Clan,
+  MemorialRecord, ElderInterview and NewsPost: `is_deleted`, `deleted_at`,
+  `deleted_by`. The default manager `objects` hides deleted rows (so do related
+  managers and form dropdowns), and `all_objects` sees everything. Slug
+  generation and uniqueness checks use `all_objects`, so a trashed record never
+  causes an IntegrityError. Instead a friendly "this is in the Trash, restore
+  it" error appears (Clan name, Memorial-per-person).
+  - Dashboard delete views for those six models now move records to the Trash
+    (superadmin + POST, logged). The modal says "Move to Trash".
+  - Superadmin-only **Trash** page (`/dashboard/trash/`): filter by type,
+    Restore (POST), Delete permanently (POST + confirmation modal).
+    Permanently deleting a Person who has a family (will) account is
+    **blocked**, because the cascade would destroy their will.
+  - Permanent deletes remove the stored files after the transaction commits
+    (`apps/core/signals.py`). Soft deletes never touch files.
+  - Editing a record that points at something now in the Trash (e.g. a child
+    whose father was trashed) still works: dropdowns keep the current value.
+- Superadmin **Activity Log** (`/dashboard/activity/`): every tracked
+  change across all models, newest first, filterable by user and record type,
+  paginated. It shows who, when, the action (Created / Updated / Moved to Trash /
+  Restored / Deleted permanently) and which fields changed. It covers the latest
+  1,000 changes per filter.
+- **Genealogy integrity**:
+  - `Person.clean()` gives field-level form errors for: death year before birth
+    year (free-text years like "approx. 1940s" are parsed), death date before
+    birth date, being one's own father/mother, the same person as both
+    parents, and any **father/mother loop** (a parent who is already the
+    person's descendant, which also covers "parent and child of the same
+    person"). The ancestor walk is bounded (200 generations), visits each person
+    once, and includes trashed records.
+  - DB `CHECK` constraints as a backstop: not own father, not own mother,
+    parents distinct, `death_date >= birth_date`. Migration genealogy 0007
+    first clears self-parent and same-person-both-parents links (unambiguous
+    garbage). If any death date precedes a birth date, **the migration stops and
+    lists the person IDs to fix** rather than guessing.
+- **Family tree**: ancestors/descendants were already batched per generation
+  with visited sets. Aunts/uncles, cousins and nieces/nephews are now one query
+  per tier instead of one per relative, and every tier excludes people already
+  shown. A test creates a real A↔B loop in the database and the tree still
+  renders within a bounded number of queries.
+- A shared pagination partial (keeps all filters, URL-encoded) is used by the
+  Trash and Activity Log and by every public list.

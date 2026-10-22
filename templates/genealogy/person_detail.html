@@ -2,8 +2,8 @@
 {% block title %}{{ person.full_name }}{% endblock %}
 {% block og_title %}{{ person.full_name }}{% endblock %}
 {% block twitter_title %}{{ person.full_name }}{% endblock %}
-{% block og_description %}{{ person.full_name }}{% if person.lifespan %} ({{ person.lifespan }}){% endif %}{% if person.clan and person.clan.is_verified %}, {{ person.clan.name }} Clan{% endif %} — Pojulu Heritage archive.{% endblock %}
-{% block meta_description %}{{ person.full_name }}{% if person.lifespan %} ({{ person.lifespan }}){% endif %}{% if person.clan and person.clan.is_verified %}, {{ person.clan.name }} Clan{% endif %} — Pojulu Heritage archive.{% endblock %}
+{% block og_description %}{{ person.full_name }}{% if person.lifespan %} ({{ person.lifespan }}){% endif %}{% if person.clan and person.clan.is_public %}, {{ person.clan.name }} Clan{% endif %} — Pojulu Heritage archive.{% endblock %}
+{% block meta_description %}{{ person.full_name }}{% if person.lifespan %} ({{ person.lifespan }}){% endif %}{% if person.clan and person.clan.is_public %}, {{ person.clan.name }} Clan{% endif %} — Pojulu Heritage archive.{% endblock %}
 {% block og_type %}profile{% endblock %}
 {% block og_image %}{% if person.photo %}{% absolute_uri person.photo.url as img %}<meta property="og:image" content="{{ img }}"><meta name="twitter:image" content="{{ img }}"><meta name="twitter:card" content="summary_large_image">{% else %}<meta name="twitter:card" content="summary">{% endif %}{% endblock %}
 {% block content %}
@@ -22,8 +22,8 @@
         {% if person.other_names %}<p style="font-size:.82rem;color:var(--text-light)"><span data-en="Also known as:" data-ar="معروف أيضاً باسم:">Also known as:</span> {{ person.other_names }}</p>{% endif %}
         {% if person.is_elder %}<span class="phf-tag phf-tag-dark"><i class="bi bi-star-fill me-1"></i><span data-en="Community Elder" data-ar="من شيوخ المجتمع">Community Elder</span></span>{% endif %}
       </div>
-      <div class="phf-detail-row"><span class="phf-detail-label" data-en="Clan" data-ar="القبيلة">Clan</span><span class="phf-detail-value">{% if person.clan and person.clan.is_verified %}<a href="{{ person.clan.get_absolute_url }}">{{ person.clan.name }}</a>{% else %}—{% endif %}</span></div>
-      {% if person.family and person.family.is_verified %}<div class="phf-detail-row"><span class="phf-detail-label" data-en="Family" data-ar="العائلة">Family</span><span class="phf-detail-value"><a href="{{ person.family.get_absolute_url }}">{{ person.family.name }}</a></span></div>{% endif %}
+      <div class="phf-detail-row"><span class="phf-detail-label" data-en="Clan" data-ar="القبيلة">Clan</span><span class="phf-detail-value">{% if person.clan and person.clan.is_public %}<a href="{{ person.clan.get_absolute_url }}">{{ person.clan.name }}</a>{% else %}—{% endif %}</span></div>
+      {% if person.family and person.family.is_public %}<div class="phf-detail-row"><span class="phf-detail-label" data-en="Family" data-ar="العائلة">Family</span><span class="phf-detail-value"><a href="{{ person.family.get_absolute_url }}">{{ person.family.name }}</a></span></div>{% endif %}
       <div class="phf-detail-row"><span class="phf-detail-label" data-en="Payam" data-ar="بايام">Payam</span><span class="phf-detail-value">{{ person.get_payam_display|default:"—" }}</span></div>
       <div class="phf-detail-row"><span class="phf-detail-label" data-en="Born" data-ar="تاريخ الميلاد">Born</span><span class="phf-detail-value">{{ person.birth_year|default:"—" }}{% if person.birth_place %}, {{ person.birth_place }}{% endif %}</span></div>
       {% if person.is_deceased %}<div class="phf-detail-row"><span class="phf-detail-label" data-en="Passed" data-ar="تاريخ الوفاة">Passed</span><span class="phf-detail-value">{{ person.death_year|default:"—" }}{% if person.death_place %}, {{ person.death_place }}{% endif %}</span></div>{% endif %}

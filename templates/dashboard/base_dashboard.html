@@ -250,6 +250,12 @@ body { font-family: var(--font); background: #F0F4F1; color: var(--text); displa
     <a href="{% url 'dashboard:family_account_list' %}" class="dash-nav-link {% if 'family_account' in request.resolver_match.url_name or request.resolver_match.url_name == 'will_reveal' %}active{% endif %}">
       <i class="bi bi-shield-lock-fill"></i> Family (Will) Accounts
     </a>
+    <a href="{% url 'dashboard:activity_log' %}" class="dash-nav-link {% if request.resolver_match.url_name == 'activity_log' %}active{% endif %}">
+      <i class="bi bi-clock-history"></i> Activity Log
+    </a>
+    <a href="{% url 'dashboard:trash' %}" class="dash-nav-link {% if 'trash' in request.resolver_match.url_name %}active{% endif %}">
+      <i class="bi bi-trash3"></i> Trash
+    </a>
     {% endif %}
 
     <div class="dash-nav-section">Site</div>

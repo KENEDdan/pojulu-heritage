@@ -138,16 +138,16 @@
             <div style="width:60px;height:60px;border-radius:50%;background:#FFEBEE;display:flex;align-items:center;justify-content:center;margin:0 auto 18px">
               <i class="bi bi-exclamation-triangle-fill" style="font-size:1.6rem;color:#C62828"></i>
             </div>
-            <h5 style="font-family:var(--font-d);font-weight:700;color:var(--text);margin-bottom:8px">Delete this record?</h5>
+            <h5 style="font-family:var(--font-d);font-weight:700;color:var(--text);margin-bottom:8px">{{ delete_heading|default:"Delete this record?" }}</h5>
             <p style="font-size:.88rem;color:var(--mid);margin:0">
-              This action is permanent and cannot be undone. All associated data will be removed from the archive.
+              {{ delete_message|default:"This action is permanent and cannot be undone. All associated data will be removed from the archive." }}
             </p>
           </div>
           <div class="modal-footer" style="border-top:1px solid var(--border);padding:16px 24px;justify-content:center;gap:10px">
             <button type="button" class="dash-btn dash-btn-outline" data-bs-dismiss="modal">Cancel</button>
             <form method="post" action="{{ delete_url }}" style="margin:0">
               {% csrf_token %}
-              <button type="submit" class="dash-btn dash-btn-danger"><i class="bi bi-trash me-1"></i> Yes, Delete Permanently</button>
+              <button type="submit" class="dash-btn dash-btn-danger"><i class="bi bi-trash me-1"></i> {{ delete_button|default:"Yes, Delete Permanently" }}</button>
             </form>
           </div>
         </div>

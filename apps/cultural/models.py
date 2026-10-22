@@ -1,4 +1,5 @@
 from django.db import models
+from simple_history.models import HistoricalRecords
 from apps.core.embeds import validate_video_url
 from django.urls import reverse
 from apps.core.uploads import SafeFileField, SafeImageField, UploadTo
@@ -60,6 +61,7 @@ class CulturalRecord(models.Model):
     updated_at    = models.DateTimeField(auto_now=True)
 
     objects = CulturalQuerySet.as_manager()
+    history = HistoricalRecords()
 
     class Meta:
         ordering = ['record_type', 'title']

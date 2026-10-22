@@ -1,4 +1,7 @@
+from django.core.exceptions import ValidationError
 from django.db import models
+from simple_history.models import HistoricalRecords
+from apps.core.softdelete import SoftDeleteModel, soft_delete_managers
 from apps.core.embeds import validate_video_url
 from django.urls import reverse
 from django.utils.text import slugify
@@ -12,7 +15,7 @@ class ClanQuerySet(models.QuerySet):
         return self.filter(is_verified=True)
 
 
-class Clan(models.Model):
+class Clan(SoftDeleteModel):
     name                 = models.CharField(max_length=200, unique=True)
     slug                 = models.SlugField(max_length=220, unique=True, blank=True)
     payam                = models.CharField(max_length=50, choices=PAYAM_CHOICES)
@@ -48,7 +51,8 @@ class Clan(models.Model):
     created_at           = models.DateTimeField(auto_now_add=True)
     updated_at           = models.DateTimeField(auto_now=True)
 
-    objects = ClanQuerySet.as_manager()
+    objects, all_objects = soft_delete_managers(ClanQuerySet)
+    history = HistoricalRecords()
 
     class Meta:
         ordering = ['name']
@@ -59,6 +63,16 @@ class Clan(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self): return f'{self.name} Clan'
+
+    def clean(self):
+        super().clean()
+        # The default manager hides the Trash, so Django's own unique check
+        # would miss a deleted clan with the same name and the save would fail.
+        if self.name and Clan.all_objects.filter(name__iexact=self.name, is_deleted=True).exclude(pk=self.pk).exists():
+            raise ValidationError({'name': 'A clan with this name is in the Trash. Restore it instead of creating a new one.'})
+
+    @property
+    def is_public(self): return self.is_verified and not self.is_deleted
     def get_absolute_url(self): return reverse('clans:detail', kwargs={'slug': self.slug})
 
     @property
@@ -82,6 +96,8 @@ class ClanChief(models.Model):
                                 validators=[validate_image])
     order      = models.PositiveSmallIntegerField(default=0)
 
+    history = HistoricalRecords()
+
     class Meta:
         ordering = ['order', 'start_year']
         verbose_name = 'Chief / Elder'
@@ -101,6 +117,8 @@ class ClanEvent(models.Model):
     year         = models.CharField(max_length=20, blank=True)
     description  = models.TextField()
     significance = models.CharField(max_length=300, blank=True)
+
+    history = HistoricalRecords()
 
     class Meta:
         ordering = ['year']
@@ -124,6 +142,9 @@ class ClanBoma(models.Model):
     notable_persons   = models.TextField(blank=True, help_text='Notable people from this boma')
     notes             = models.TextField(blank=True)
     order             = models.PositiveSmallIntegerField(default=0)
+
+    # `history` is already a data field on bomas, so the audit trail uses another name.
+    change_history = HistoricalRecords()
 
     class Meta:
         ordering = ['order', 'name']

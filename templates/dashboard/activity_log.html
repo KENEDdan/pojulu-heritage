@@ -1,0 +1,39 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Activity Log{% endblock %}
+{% block page_title %}🕑 Activity Log{% endblock %}
+{% block content %}
+<form method="get" class="d-flex gap-2 mb-4 flex-wrap">
+  <select name="model" class="form-select" style="max-width:220px">
+    <option value="">All record types</option>
+    {% for key, label in models %}<option value="{{ key }}" {% if key == model_key %}selected{% endif %}>{{ label }}</option>{% endfor %}
+  </select>
+  <select name="user" class="form-select" style="max-width:220px">
+    <option value="">All users</option>
+    {% for u in users %}<option value="{{ u.pk }}" {% if u.pk|stringformat:"s" == user_id %}selected{% endif %}>{{ u.get_full_name|default:u.username }}</option>{% endfor %}
+  </select>
+  <button class="dash-btn dash-btn-outline" type="submit"><i class="bi bi-funnel me-1"></i>Filter</button>
+</form>
+
+<div class="dash-table-card">
+  <div class="dash-table-header"><span class="dash-table-title">Recent changes</span></div>
+  <div style="overflow-x:auto">
+    <table class="dash-table">
+      <thead><tr><th>When</th><th>Who</th><th>Action</th><th>Record</th><th>Fields changed</th></tr></thead>
+      <tbody>
+        {% for e in page_obj %}
+        <tr>
+          <td style="white-space:nowrap">{{ e.record.history_date|date:"d M Y H:i" }}</td>
+          <td>{% if e.record.history_user %}{{ e.record.history_user.get_full_name|default:e.record.history_user.username }}{% else %}<span style="color:var(--light)">system</span>{% endif %}</td>
+          <td><span class="dash-badge {% if e.action == 'Created' or e.action == 'Restored from Trash' %}dash-badge-green{% elif e.action == 'Updated' %}dash-badge-grey{% else %}dash-badge-yellow{% endif %}">{{ e.action }}</span></td>
+          <td class="td-name"><span style="color:var(--light);font-size:.75rem">{{ e.model }}</span><br>{{ e.record.instance|truncatechars:60 }}</td>
+          <td style="font-size:.78rem">{{ e.changed|join:", "|default:"—" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" style="text-align:center;padding:40px;color:var(--light)">No activity recorded yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% include "partials/pagination.html" %}
+{% endblock %}

@@ -1,4 +1,6 @@
 from django.db import models
+from simple_history.models import HistoricalRecords
+from apps.core.softdelete import SoftDeleteModel, soft_delete_managers
 from apps.core.embeds import validate_video_url
 from django.urls import reverse
 from apps.core.storage import get_private_storage
@@ -11,7 +13,7 @@ class InterviewQuerySet(models.QuerySet):
         return self.filter(is_published=True)
 
 
-class ElderInterview(models.Model):
+class ElderInterview(SoftDeleteModel):
     elder_name      = models.CharField(max_length=200)
     elder_person    = models.ForeignKey('genealogy.Person', null=True, blank=True,
                                          on_delete=models.SET_NULL,
@@ -51,7 +53,8 @@ class ElderInterview(models.Model):
     created_at      = models.DateTimeField(auto_now_add=True)
     updated_at      = models.DateTimeField(auto_now=True)
 
-    objects = InterviewQuerySet.as_manager()
+    objects, all_objects = soft_delete_managers(InterviewQuerySet)
+    history = HistoricalRecords()
 
     class Meta:
         ordering = ['-interview_date', 'elder_name']

@@ -192,24 +192,28 @@ def family_tree(request, slug):
     # Kept at one level regardless of the N-generation depth control above —
     # a full N-generation collateral expansion (great-aunts, their
     # descendants, ...) grows combinatorially and isn't shown here.
+    # One query per relationship tier (not per relative), and every tier
+    # excludes people already shown, so even corrupt data that loops back on
+    # itself can't repeat or recurse.
     relatives = person.public_relatives()
+    public = Person.objects.public()
     parents = [p for p in [relatives['father'], relatives['mother']] if p]
-    aunts_uncles = []
-    for parent in parents:
-        for sib in parent.siblings.public():
-            aunts_uncles.append(sib)
+    parent_ids = {p.pk for p in parents}
+    grandparent_ids = {x for p in parents for x in (p.father_id, p.mother_id) if x}
 
+    def children_of(ids, exclude):
+        if not ids:
+            return []
+        return list(public.filter(Q(father_id__in=ids) | Q(mother_id__in=ids))
+                    .exclude(pk__in=exclude).distinct())
+
+    shown = {person.pk} | parent_ids
+    aunts_uncles = children_of(grandparent_ids, shown)
     siblings = relatives['siblings']
-
-    cousins = []
-    for au in aunts_uncles:
-        for child in au.children.public():
-            cousins.append(child)
-
-    nieces_nephews = []
-    for sib in siblings:
-        for child in sib.children.public():
-            nieces_nephews.append(child)
+    shown |= {p.pk for p in aunts_uncles} | {p.pk for p in siblings}
+    cousins = children_of({a.pk for a in aunts_uncles}, shown)
+    shown |= {c.pk for c in cousins}
+    nieces_nephews = children_of({s.pk for s in siblings}, shown)
 
     return render(request, 'genealogy/tree.html', {
         'person': person,

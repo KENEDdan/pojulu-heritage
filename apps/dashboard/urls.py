@@ -74,6 +74,12 @@ urlpatterns = [
     path('submissions/',                  views.submission_list,   name='submission_list'),
     path('submissions/<int:pk>/review/',  views.submission_review, name='submission_review'),
 
+    # Trash & audit trail (superadmin)
+    path('trash/',                                       views.trash,         name='trash'),
+    path('trash/<slug:kind>/<int:pk>/restore/',          views.trash_restore, name='trash_restore'),
+    path('trash/<slug:kind>/<int:pk>/purge/',            views.trash_purge,   name='trash_purge'),
+    path('activity/',                                    views.activity_log,  name='activity_log'),
+
     # Account management
     path('accounts/',                        views.manage_accounts,   name='accounts'),
     path('accounts/create/',                 views.create_account,    name='create_account'),

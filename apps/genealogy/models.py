@@ -1,4 +1,9 @@
+import re
+
+from django.core.exceptions import ValidationError
 from django.db import models
+from simple_history.models import HistoricalRecords
+from apps.core.softdelete import SoftDeleteModel, soft_delete_managers
 from apps.core.embeds import validate_video_url
 from django.urls import reverse
 from django.utils.text import slugify
@@ -8,6 +13,12 @@ from apps.core.uploads import SafeFileField, SafeImageField, UploadTo
 from apps.core.validators import validate_document_or_image, validate_image, validate_media, validate_pdf
 
 GENDER_CHOICES = [('M', 'Male'), ('F', 'Female'), ('U', 'Unknown')]
+
+
+def _year(value):
+    """First 4-digit year in a free-text year field ('approx. 1940s' -> 1940)."""
+    m = re.search(r'(\d{4})', value or '')
+    return int(m.group(1)) if m else None
 
 
 class FamilyQuerySet(models.QuerySet):
@@ -22,7 +33,7 @@ class PersonQuerySet(models.QuerySet):
         return self.filter(is_verified=True).exclude(is_private=True, is_deceased=False)
 
 
-class Family(models.Model):
+class Family(SoftDeleteModel):
     name           = models.CharField(max_length=200)
     slug           = models.SlugField(max_length=220, unique=True, blank=True)
     clan           = models.ForeignKey('clans.Clan', on_delete=models.SET_NULL, null=True, blank=True, related_name='family_set')
@@ -33,7 +44,8 @@ class Family(models.Model):
     created_at     = models.DateTimeField(auto_now_add=True)
     updated_at     = models.DateTimeField(auto_now=True)
 
-    objects = FamilyQuerySet.as_manager()
+    objects, all_objects = soft_delete_managers(FamilyQuerySet)
+    history = HistoricalRecords()
 
     class Meta:
         ordering = ['name']
@@ -41,7 +53,7 @@ class Family(models.Model):
     def save(self, *args, **kwargs):
         if not self.slug:
             base = slugify(self.name); slug = base; n = 1
-            while Family.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+            while Family.all_objects.filter(slug=slug).exclude(pk=self.pk).exists():
                 slug = f'{base}-{n}'; n += 1
             self.slug = slug
         super().save(*args, **kwargs)
@@ -50,13 +62,16 @@ class Family(models.Model):
     def get_absolute_url(self): return reverse('genealogy:family_detail', kwargs={'slug': self.slug})
 
     @property
+    def is_public(self): return self.is_verified and not self.is_deleted
+
+    @property
     def member_count(self): return self.person_set.public().count()
 
     @property
     def head(self): return self.person_set.public().filter(father__isnull=True).first()
 
 
-class Person(models.Model):
+class Person(SoftDeleteModel):
     # ── IDENTITY ──
     first_name   = models.CharField(max_length=100)
     middle_name  = models.CharField(max_length=100, blank=True)
@@ -121,16 +136,76 @@ class Person(models.Model):
     updated_at   = models.DateTimeField(auto_now=True)
     submitted_by = models.CharField(max_length=200, blank=True)
 
-    objects = PersonQuerySet.as_manager()
+    objects, all_objects = soft_delete_managers(PersonQuerySet)
+    history = HistoricalRecords()
 
     class Meta:
         ordering = ['last_name', 'first_name']
+        constraints = [
+            models.CheckConstraint(check=~models.Q(father=models.F('id')), name='person_not_own_father',
+                                   violation_error_message='A person cannot be their own father.'),
+            models.CheckConstraint(check=~models.Q(mother=models.F('id')), name='person_not_own_mother',
+                                   violation_error_message='A person cannot be their own mother.'),
+            models.CheckConstraint(
+                check=models.Q(father__isnull=True) | models.Q(mother__isnull=True) | ~models.Q(father=models.F('mother')),
+                name='person_parents_distinct',
+                violation_error_message='Father and mother must be different people.'),
+            models.CheckConstraint(
+                check=models.Q(birth_date__isnull=True) | models.Q(death_date__isnull=True)
+                | models.Q(death_date__gte=models.F('birth_date')),
+                name='person_death_after_birth',
+                violation_error_message='Date of death cannot be before date of birth.'),
+        ]
+
+    # Longest ancestor chain we will ever walk when checking for loops.
+    MAX_ANCESTRY_DEPTH = 200
+
+    def clean(self):
+        super().clean()
+        errors = {}
+        birth, death = _year(self.birth_year), _year(self.death_year)
+        if birth and death and death < birth:
+            errors['death_year'] = 'Year of death cannot be before year of birth.'
+        if self.birth_date and self.death_date and self.death_date < self.birth_date:
+            errors['death_date'] = 'Date of death cannot be before date of birth.'
+        for field, label in (('father', 'father'), ('mother', 'mother')):
+            parent_id = getattr(self, f'{field}_id')
+            if not parent_id:
+                continue
+            if self.pk and parent_id == self.pk:
+                errors[field] = f'A person cannot be their own {label}.'
+            elif self.pk and self._is_ancestor_of(parent_id):
+                parent = Person.all_objects.filter(pk=parent_id).first()
+                errors[field] = (
+                    f'{parent} is already recorded as a descendant of this person, so they cannot also be '
+                    f'their {label} — that would create a loop in the family tree.')
+        if self.father_id and self.father_id == self.mother_id and 'mother' not in errors:
+            errors['mother'] = 'Father and mother must be different people.'
+        if errors:
+            raise ValidationError(errors)
+
+    def _is_ancestor_of(self, person_id):
+        """True if self appears among the ancestors of `person_id` (walking
+        father/mother links, including records in the Trash). Bounded and
+        cycle-safe: each person is visited at most once."""
+        frontier, seen = {person_id}, set()
+        for _ in range(self.MAX_ANCESTRY_DEPTH):
+            if self.pk in frontier:
+                return True
+            seen |= frontier
+            parents = set()
+            for f, m in Person.all_objects.filter(pk__in=frontier).values_list('father_id', 'mother_id'):
+                parents.update(x for x in (f, m) if x)
+            frontier = parents - seen
+            if not frontier:
+                return False
+        return False
 
     def save(self, *args, **kwargs):
         if not self.slug:
             base = slugify(f'{self.first_name} {self.last_name}')
             slug, n = base, 1
-            while Person.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+            while Person.all_objects.filter(slug=slug).exclude(pk=self.pk).exists():
                 slug = f'{base}-{n}'; n += 1
             self.slug = slug
         super().save(*args, **kwargs)

@@ -24,6 +24,23 @@ FIL = lambda: forms.FileInput(attrs={'class':'form-control'})
 DAT = lambda: forms.DateInput(attrs={'class':'form-control','type':'date'})
 NUM = lambda ph='': forms.NumberInput(attrs={'class':'form-control','placeholder':ph})
 
+class KeepCurrentChoicesMixin:
+    """Dropdowns list only live records (the default manager hides the
+    Trash). If an existing record still points at something that has since
+    been moved to the Trash, keep that one choice so the form can be saved."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for name, field in self.fields.items():
+            qs = getattr(field, 'queryset', None)
+            model = getattr(qs, 'model', None)
+            if model is None or not hasattr(model, 'all_objects') or not self.instance.pk:
+                continue
+            current = getattr(self.instance, f'{name}_id', None)
+            if current and not qs.filter(pk=current).exists():
+                field.queryset = model.all_objects.filter(pk__in=list(qs.values_list('pk', flat=True)) + [current])
+
+
 # ── Full-width field names (used in template) ──
 CLAN_FULL     = ['tagline','description','origin_story','migration_history','territorial_notes','cultural_practices','traditional_beliefs','historical_events','sub_clans','allied_clans']
 PERSON_FULL   = ['biography','contributions','education','other_names']
@@ -154,7 +171,7 @@ class ClanForm(forms.ModelForm):
         }
 
 
-class ClanChiefForm(forms.ModelForm):
+class ClanChiefForm(KeepCurrentChoicesMixin, forms.ModelForm):
     class Meta:
         model  = ClanChief
         fields = ['clan','name','title','start_year','end_year','order','notes']
@@ -169,7 +186,7 @@ class ClanChiefForm(forms.ModelForm):
         }
 
 
-class ClanEventForm(forms.ModelForm):
+class ClanEventForm(KeepCurrentChoicesMixin, forms.ModelForm):
     class Meta:
         model  = ClanEvent
         fields = ['clan','title','year','description','significance']
@@ -190,7 +207,7 @@ class ClanEventForm(forms.ModelForm):
 PERSON_FULL   = ['biography', 'contributions', 'hobbies', 'skills_talents',
                  'other_names', 'address']
 
-class PersonForm(forms.ModelForm):
+class PersonForm(KeepCurrentChoicesMixin, forms.ModelForm):
     class Meta:
         model  = Person
         fields = [
@@ -255,8 +272,14 @@ class PersonForm(forms.ModelForm):
             'submitted_by':      FC('Name of person who submitted this record'),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance.pk:
+            for f in ('father', 'mother'):
+                self.fields[f].queryset = self.fields[f].queryset.exclude(pk=self.instance.pk)
 
-class FamilyForm(forms.ModelForm):
+
+class FamilyForm(KeepCurrentChoicesMixin, forms.ModelForm):
     class Meta:
         model  = Family
         fields = ['name','clan','payam','origin_village','description','is_verified']
@@ -274,7 +297,7 @@ class FamilyForm(forms.ModelForm):
 # MEMORIAL FORM
 # ═══════════════════════════════════════════════
 
-class MemorialRecordForm(forms.ModelForm):
+class MemorialRecordForm(KeepCurrentChoicesMixin, forms.ModelForm):
     class Meta:
         model  = MemorialRecord
         fields = ['person','tribute','survived_by','burial_place','epitaph','is_featured','submitted_by']
@@ -293,7 +316,7 @@ class MemorialRecordForm(forms.ModelForm):
 # ACHIEVEMENT FORM
 # ═══════════════════════════════════════════════
 
-class AchievementForm(forms.ModelForm):
+class AchievementForm(KeepCurrentChoicesMixin, forms.ModelForm):
     class Meta:
         model  = Achievement
         fields = ['person_name','person','clan','category','title','description',
@@ -316,7 +339,7 @@ class AchievementForm(forms.ModelForm):
 # MARRIAGE FORM
 # ═══════════════════════════════════════════════
 
-class MarriageForm(forms.ModelForm):
+class MarriageForm(KeepCurrentChoicesMixin, forms.ModelForm):
     class Meta:
         model  = Marriage
         fields = ['husband','husband_name','husband_clan','husband_community',
@@ -344,7 +367,7 @@ class MarriageForm(forms.ModelForm):
 # CULTURAL RECORD FORM
 # ═══════════════════════════════════════════════
 
-class CulturalRecordForm(forms.ModelForm):
+class CulturalRecordForm(KeepCurrentChoicesMixin, forms.ModelForm):
     class Meta:
         model  = CulturalRecord
         fields = ['title','record_type','clan','language','content','translation',
@@ -372,7 +395,7 @@ class CulturalRecordForm(forms.ModelForm):
 # ELDER INTERVIEW FORM
 # ═══════════════════════════════════════════════
 
-class ElderInterviewForm(forms.ModelForm):
+class ElderInterviewForm(KeepCurrentChoicesMixin, forms.ModelForm):
     class Meta:
         model  = ElderInterview
         fields = ['elder_name','elder_person','clan','payam','approximate_age',

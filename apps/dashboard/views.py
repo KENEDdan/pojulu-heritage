@@ -3,10 +3,13 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
+from django.conf import settings
 from django.views.decorators.http import require_POST
 import logging
 from django.urls import reverse
 from django.db.models import Q
+from django.http import Http404
+from django.core.paginator import Paginator
 from django.utils import timezone
 from .forms import ClanMediaFormSet, PersonMediaFormSet, NewsMediaFormSet
 
@@ -22,7 +25,7 @@ from .forms import (
     CLAN_FULL, PERSON_FULL, FAMILY_FULL, MEMORIAL_FULL,
     ACHIEVE_FULL, MARRIAGE_FULL, CULTURAL_FULL, ELDER_FULL, NEWS_FULL,
 )
-from apps.clans.models import Clan, ClanChief, ClanEvent
+from apps.clans.models import Clan, ClanChief, ClanEvent, ClanBoma
 from apps.genealogy.models import Person, Family
 from apps.memorial.models import MemorialRecord
 from apps.achievements.models import Achievement
@@ -105,10 +108,22 @@ def require_role(allowed_roles):
     return decorator
 
 
+def paginate(request, object_list, per_page=None):
+    per_page = per_page or settings.RECORDS_PER_PAGE
+    return Paginator(object_list, per_page).get_page(request.GET.get('page'))
+
+
 def _render_form(request, form, title, cancel_url, full_fields=None,
                  obj=None, delete_url=None, subtitle='', page_title=None, submit_label='Save Record',
-                 media_formset=None, media_title='', media_help=''):
+                 media_formset=None, media_title='', media_help='', soft_delete=False):
+    trash_wording = {
+        'delete_heading': 'Move this record to the Trash?',
+        'delete_message': 'It will disappear from the public site and the dashboards. '
+                          'A Super Administrator can restore it from the Trash.',
+        'delete_button':  'Move to Trash',
+    } if soft_delete else {}
     return render(request, 'dashboard/form.html', {
+        **trash_wording,
         'form':         form,
         'title':        title,
         'subtitle':     subtitle,
@@ -309,7 +324,7 @@ def clan_edit(request, pk):
         subtitle='Update clan history, chiefs, cultural information, and publication status.',
         cancel_url=reverse('dashboard:clan_dashboard'),
         full_fields=CLAN_FULL, obj=clan,
-        delete_url=reverse('dashboard:clan_delete', args=[pk]),
+        delete_url=reverse('dashboard:clan_delete', args=[pk]), soft_delete=True,
         media_formset=media_formset, media_title='Photos, Documents & Media for this Clan',
         media_help='Upload photos, PDFs, audio, or video for any section above — tag each item to the relevant section (history, geography, boma, culture, leadership, etc.).',
         page_title=f'Edit {clan.name} Clan')
@@ -319,10 +334,10 @@ def clan_edit(request, pk):
 @require_POST
 def clan_delete(request, pk):
     clan = get_object_or_404(Clan, pk=pk)
-    if request.method == 'POST':
-        name = clan.name
-        clan.delete()
-        messages.success(request, f'🗑️ {name} Clan deleted.')
+    label = clan.name
+    clan.soft_delete(request.user)
+    security_log.warning('Moved to Trash: %s pk=%s "%s" by=%s', 'Clan', pk, label, request.user.username)
+    messages.success(request, f'🗑️ "{label}" moved to the Trash. A Super Administrator can restore it from Trash.')
     return redirect('dashboard:clan_dashboard')
 
 
@@ -445,7 +460,7 @@ def person_edit(request, pk):
         subtitle='Update this person\'s biographical and genealogical information.',
         cancel_url=reverse('dashboard:genealogy_dashboard'),
         full_fields=PERSON_FULL, obj=person,
-        delete_url=reverse('dashboard:person_delete', args=[pk]),
+        delete_url=reverse('dashboard:person_delete', args=[pk]), soft_delete=True,
         media_formset=media_formset, media_title='Photos, Documents & Media for this Person',
         media_help='Upload profile photos, certificates, PDFs, audio, or video related to this person.',
         page_title=f'Edit {person.full_name}')
@@ -455,10 +470,10 @@ def person_edit(request, pk):
 @require_POST
 def person_delete(request, pk):
     person = get_object_or_404(Person, pk=pk)
-    if request.method == 'POST':
-        name = person.full_name
-        person.delete()
-        messages.success(request, f'🗑️ {name} deleted.')
+    label = person.full_name
+    person.soft_delete(request.user)
+    security_log.warning('Moved to Trash: %s pk=%s "%s" by=%s', 'Person', pk, label, request.user.username)
+    messages.success(request, f'🗑️ "{label}" moved to the Trash. A Super Administrator can restore it from Trash.')
     return redirect('dashboard:genealogy_dashboard')
 
 
@@ -491,7 +506,7 @@ def family_edit(request, pk):
         title=f'Edit: {family.name}',
         cancel_url=reverse('dashboard:genealogy_dashboard'),
         full_fields=FAMILY_FULL, obj=family,
-        delete_url=reverse('dashboard:family_delete', args=[pk]),
+        delete_url=reverse('dashboard:family_delete', args=[pk]), soft_delete=True,
         page_title=f'Edit {family.name}')
 
 
@@ -499,10 +514,10 @@ def family_edit(request, pk):
 @require_POST
 def family_delete(request, pk):
     family = get_object_or_404(Family, pk=pk)
-    if request.method == 'POST':
-        name = family.name
-        family.delete()
-        messages.success(request, f'🗑️ {name} deleted.')
+    label = family.name
+    family.soft_delete(request.user)
+    security_log.warning('Moved to Trash: %s pk=%s "%s" by=%s', 'Family', pk, label, request.user.username)
+    messages.success(request, f'🗑️ "{label}" moved to the Trash. A Super Administrator can restore it from Trash.')
     return redirect('dashboard:genealogy_dashboard')
 
 
@@ -535,7 +550,7 @@ def memorial_edit(request, pk):
         title=f'Edit Memorial: {mem.person.full_name}',
         cancel_url=reverse('dashboard:memorial_dashboard'),
         full_fields=MEMORIAL_FULL, obj=mem,
-        delete_url=reverse('dashboard:memorial_delete', args=[pk]),
+        delete_url=reverse('dashboard:memorial_delete', args=[pk]), soft_delete=True,
         page_title=f'Edit Memorial: {mem.person.full_name}')
 
 
@@ -543,10 +558,10 @@ def memorial_edit(request, pk):
 @require_POST
 def memorial_delete(request, pk):
     mem = get_object_or_404(MemorialRecord, pk=pk)
-    if request.method == 'POST':
-        name = mem.person.full_name
-        mem.delete()
-        messages.success(request, f'🗑️ Memorial for {name} deleted.')
+    label = mem.person.full_name
+    mem.soft_delete(request.user)
+    security_log.warning('Moved to Trash: %s pk=%s "%s" by=%s', 'MemorialRecord', pk, label, request.user.username)
+    messages.success(request, f'🗑️ "{label}" moved to the Trash. A Super Administrator can restore it from Trash.')
     return redirect('dashboard:memorial_dashboard')
 
 
@@ -709,7 +724,7 @@ def elder_edit(request, pk):
         title=f'Edit Interview: {iv.elder_name}',
         cancel_url=reverse('dashboard:elder_dashboard'),
         full_fields=ELDER_FULL, obj=iv,
-        delete_url=reverse('dashboard:elder_delete', args=[pk]),
+        delete_url=reverse('dashboard:elder_delete', args=[pk]), soft_delete=True,
         page_title=f'Edit Interview: {iv.elder_name}')
 
 
@@ -717,10 +732,10 @@ def elder_edit(request, pk):
 @require_POST
 def elder_delete(request, pk):
     iv = get_object_or_404(ElderInterview, pk=pk)
-    if request.method == 'POST':
-        name = iv.elder_name
-        iv.delete()
-        messages.success(request, f'🗑️ Interview with {name} deleted.')
+    label = iv.elder_name
+    iv.soft_delete(request.user)
+    security_log.warning('Moved to Trash: %s pk=%s "%s" by=%s', 'ElderInterview', pk, label, request.user.username)
+    messages.success(request, f'🗑️ "{label}" moved to the Trash. A Super Administrator can restore it from Trash.')
     return redirect('dashboard:elder_dashboard')
 
 
@@ -774,7 +789,7 @@ def news_edit(request, pk):
         title=f'Edit: {post.title}',
         cancel_url=reverse('dashboard:news_dashboard'),
         full_fields=NEWS_FULL, obj=post,
-        delete_url=reverse('dashboard:news_delete', args=[pk]),
+        delete_url=reverse('dashboard:news_delete', args=[pk]), soft_delete=True,
         media_formset=media_formset, media_title='Gallery & Attachments',
         page_title='Edit News Post')
 
@@ -783,10 +798,10 @@ def news_edit(request, pk):
 @require_POST
 def news_delete(request, pk):
     post = get_object_or_404(NewsPost, pk=pk)
-    if request.method == 'POST':
-        title = post.title
-        post.delete()
-        messages.success(request, f'🗑️ "{title}" deleted.')
+    label = post.title
+    post.soft_delete(request.user)
+    security_log.warning('Moved to Trash: %s pk=%s "%s" by=%s', 'NewsPost', pk, label, request.user.username)
+    messages.success(request, f'🗑️ "{label}" moved to the Trash. A Super Administrator can restore it from Trash.')
     return redirect('dashboard:news_dashboard')
 
 
@@ -821,6 +836,135 @@ def submission_review(request, pk):
         'form':       form,
         'cancel_url': reverse('dashboard:submission_list'),
         'page_title': f'Review: {sub.subject_name}',
+    })
+
+
+# ── TRASH (soft-deleted records) ──────────────────
+
+TRASH_MODELS = {
+    'clan':      (Clan, 'Clan'),
+    'family':    (Family, 'Family'),
+    'person':    (Person, 'Person'),
+    'memorial':  (MemorialRecord, 'Memorial'),
+    'interview': (ElderInterview, 'Elder Interview'),
+    'news':      (NewsPost, 'News Post'),
+}
+
+
+def _trash_object(kind, pk):
+    if kind not in TRASH_MODELS:
+        raise Http404
+    model = TRASH_MODELS[kind][0]
+    return get_object_or_404(model.all_objects, pk=pk, is_deleted=True)
+
+
+@require_superadmin
+def trash(request):
+    kind = request.GET.get('type', '')
+    rows = []
+    for key, (model, label) in TRASH_MODELS.items():
+        if kind and key != kind:
+            continue
+        for obj in model.all_objects.filter(is_deleted=True).select_related('deleted_by').order_by('-deleted_at')[:200]:
+            rows.append({'kind': key, 'label': label, 'obj': obj})
+    rows.sort(key=lambda r: r['obj'].deleted_at or timezone.now(), reverse=True)
+    return render(request, 'dashboard/trash.html', {
+        'page_obj': paginate(request, rows),
+        'kinds': [(k, label) for k, (_, label) in TRASH_MODELS.items()],
+        'kind': kind,
+        'page_title': 'Trash',
+    })
+
+
+@require_superadmin
+@require_POST
+def trash_restore(request, kind, pk):
+    obj = _trash_object(kind, pk)
+    obj.restore()
+    security_log.warning('Restored from Trash: %s pk=%s by=%s', kind, pk, request.user.username)
+    messages.success(request, f'♻️ "{obj}" restored.')
+    return redirect('dashboard:trash')
+
+
+@require_superadmin
+@require_POST
+def trash_purge(request, kind, pk):
+    obj = _trash_object(kind, pk)
+    if kind == 'person' and hasattr(obj, 'family_account'):
+        messages.error(request, f'"{obj}" has a family (will) account. Deleting them permanently would also destroy '
+                                f'their will, so this is blocked. Deactivate the family account first and keep the record in Trash.')
+        return redirect('dashboard:trash')
+    label = str(obj)
+    obj.delete()
+    security_log.warning('Permanently deleted: %s pk=%s "%s" by=%s', kind, pk, label, request.user.username)
+    messages.success(request, f'"{label}" was permanently deleted.')
+    return redirect('dashboard:trash')
+
+
+# ── ACTIVITY LOG (django-simple-history) ──────────
+
+AUDITED_MODELS = {
+    'clan':        (Clan, 'history'),
+    'clanchief':   (ClanChief, 'history'),
+    'clanevent':   (ClanEvent, 'history'),
+    'clanboma':    (ClanBoma, 'change_history'),
+    'family':      (Family, 'history'),
+    'person':      (Person, 'history'),
+    'memorial':    (MemorialRecord, 'history'),
+    'achievement': (Achievement, 'history'),
+    'marriage':    (Marriage, 'history'),
+    'cultural':    (CulturalRecord, 'history'),
+    'interview':   (ElderInterview, 'history'),
+    'news':        (NewsPost, 'history'),
+    'adminprofile': (AdminProfile, 'history'),
+    'familyaccount': (FamilyAccount, 'history'),
+}
+ACTIVITY_LOG_LIMIT = 1000
+IGNORED_DIFF_FIELDS = {'updated_at', 'deleted_at', 'deleted_by'}
+
+
+def _describe(record):
+    if record.history_type == '+':
+        return 'Created', []
+    if record.history_type == '-':
+        return 'Deleted permanently', []
+    prev = record.prev_record
+    if prev is None:
+        return 'Updated', []
+    changed = [c.field for c in record.diff_against(prev).changes if c.field not in IGNORED_DIFF_FIELDS]
+    # is_deleted is not user-editable, so diff_against() skips it; compare directly.
+    was, now = getattr(prev, 'is_deleted', None), getattr(record, 'is_deleted', None)
+    if was is not None and was != now:
+        return ('Moved to Trash' if now else 'Restored from Trash'), changed
+    return 'Updated', changed
+
+
+@require_superadmin
+def activity_log(request):
+    model_key = request.GET.get('model', '')
+    user_id = request.GET.get('user', '')
+    records = []
+    for key, (model, manager) in AUDITED_MODELS.items():
+        if model_key and key != model_key:
+            continue
+        qs = getattr(model, manager).select_related('history_user').order_by('-history_date')
+        if user_id.isdigit():
+            qs = qs.filter(history_user_id=int(user_id))
+        records += [(key, r) for r in qs[:ACTIVITY_LOG_LIMIT]]
+    records.sort(key=lambda kr: kr[1].history_date, reverse=True)
+    page_obj = paginate(request, records[:ACTIVITY_LOG_LIMIT])
+    page_obj.object_list = [
+        {'model': model._meta.verbose_name.title(), 'record': r, 'action': action, 'changed': changed}
+        for key, r in page_obj.object_list
+        for model in [AUDITED_MODELS[key][0]]
+        for action, changed in [_describe(r)]
+    ]
+    return render(request, 'dashboard/activity_log.html', {
+        'page_obj': page_obj,
+        'models': [(k, m._meta.verbose_name.title()) for k, (m, _) in AUDITED_MODELS.items()],
+        'users': User.objects.filter(Q(is_superuser=True) | Q(admin_profile__isnull=False)).order_by('username'),
+        'model_key': model_key, 'user_id': user_id,
+        'page_title': 'Activity Log',
     })
 
 

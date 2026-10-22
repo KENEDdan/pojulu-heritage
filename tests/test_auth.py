@@ -46,6 +46,8 @@ ACCESS = {
     'create_account':        (set(), None),
     'family_account_list':   (set(), None),
     'family_account_search': (set(), None),
+    'trash':                 (set(), None),
+    'activity_log':          (set(), None),
 }
 
 DELETES = {
@@ -65,7 +67,8 @@ def _dashboard_routes():
 
 
 def _fill(route_pattern):
-    return str(route_pattern).replace('<int:pk>', '1').replace('<int:person_id>', '1')
+    return (str(route_pattern).replace('<int:pk>', '1').replace('<int:person_id>', '1')
+            .replace('<slug:kind>', 'person'))
 
 
 @pytest.mark.django_db

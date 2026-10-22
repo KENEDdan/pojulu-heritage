@@ -20,3 +20,11 @@ def absolute_uri(context, url):
         return url
     request = context.get('request')
     return request.build_absolute_uri(url) if request else url
+
+
+@register.simple_tag(takes_context=True)
+def page_url(context, page):
+    """Current query string with `page` replaced — keeps every active filter."""
+    params = context['request'].GET.copy()
+    params['page'] = page
+    return '?' + params.urlencode()

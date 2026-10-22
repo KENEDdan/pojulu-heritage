@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'axes',
     'storages',
     'csp',
+    'simple_history',
     'apps.core',
     'apps.clans',
     'apps.genealogy',
@@ -77,6 +78,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'apps.dashboard.middleware.ActiveAccountMiddleware',
+    'simple_history.middleware.HistoryRequestMiddleware',
     'django_ratelimit.middleware.RatelimitMiddleware',
     # Must be last: turns axes lockouts into the lockout response.
     'axes.middleware.AxesMiddleware',
@@ -347,6 +349,10 @@ if config('CSP_ENFORCE', default=False, cast=bool):
     CONTENT_SECURITY_POLICY = {'DIRECTIVES': _CSP_DIRECTIVES}
 else:
     CONTENT_SECURITY_POLICY_REPORT_ONLY = {'DIRECTIVES': _CSP_DIRECTIVES}
+
+# ── AUDIT TRAIL (django-simple-history) ──────────────────────────────────────
+# History rows keep file *names* only, never a second copy of the file.
+SIMPLE_HISTORY_FILEFIELD_TO_CHARFIELD = True
 
 # ── MISC ──────────────────────────────────────────────────────────────────────
 

@@ -1,4 +1,6 @@
 from django.db import models
+from simple_history.models import HistoricalRecords
+from apps.core.softdelete import SoftDeleteModel, soft_delete_managers
 from apps.core.embeds import validate_video_url
 from django.contrib.auth.models import User
 from django.urls import reverse
@@ -30,7 +32,7 @@ class NewsQuerySet(models.QuerySet):
         return self.filter(is_published=True)
 
 
-class NewsPost(models.Model):
+class NewsPost(SoftDeleteModel):
     title          = models.CharField(max_length=400)
     slug           = models.SlugField(max_length=440, unique=True, blank=True)
     post_type      = models.CharField(max_length=20, choices=POST_TYPE_CHOICES, default='news')
@@ -58,7 +60,8 @@ class NewsPost(models.Model):
     created_at     = models.DateTimeField(auto_now_add=True)
     updated_at     = models.DateTimeField(auto_now=True)
 
-    objects = NewsQuerySet.as_manager()
+    objects, all_objects = soft_delete_managers(NewsQuerySet)
+    history = HistoricalRecords()
 
     class Meta:
         ordering = ['-published_at', '-created_at']
@@ -69,7 +72,7 @@ class NewsPost(models.Model):
         if not self.slug:
             base = slugify(self.title)
             slug, n = base, 1
-            while NewsPost.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+            while NewsPost.all_objects.filter(slug=slug).exclude(pk=self.pk).exists():
                 slug = f'{base}-{n}'; n += 1
             self.slug = slug
         if self.is_published and not self.published_at:
