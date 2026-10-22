@@ -95,3 +95,47 @@ public template at baseline.
 - D9: ClanBoma, PersonEducation, PersonCareer, Announcement and SiteStats are
   still admin-only. Use `ENABLE_DJANGO_ADMIN=True` with a secret
   `ADMIN_URL_PREFIX` temporarily when they need editing (see "Deferred").
+
+---
+
+## Phase 2 — Authentication hardening
+
+- **django-axes 8.3**: `AxesStandaloneBackend` first in
+  `AUTHENTICATION_BACKENDS`, `AxesMiddleware` last. 5 failures per
+  **username + IP** combination → locked for 1 hour (`AXES_COOLOFF_TIME = 1`),
+  counter reset on success, custom `templates/lockout.html` (HTTP 429) in the
+  PHF login design. Covers both `/dashboard/login/` and `/family/login/` (both
+  call `authenticate(request, ...)`). The old hand-rolled cache counters were
+  removed. `password`/`passphrase` are masked in axes logs.
+- **Client IP behind Railway** (`apps/core/net.py`): uses the N-th
+  X-Forwarded-For entry from the *right* (`TRUSTED_PROXY_COUNT`, default 1 in
+  production). The old code took the left-most entry, which the client
+  controls, so an attacker could rotate it to dodge the lockout. Values are
+  validated as IP addresses. If Railway's proxy topology ever changes, adjust
+  `TRUSTED_PROXY_COUNT`.
+- **Argon2** primary hasher; PBKDF2/PBKDF2-SHA1/scrypt kept so existing hashes
+  still verify (they're upgraded to Argon2 on next login).
+- Password validators: min length **12** + similarity/common/numeric.
+  `CreateAdminForm` now runs them (it didn't before), including similarity
+  to the new user's name/username/email. Existing short passwords keep working
+  until changed.
+- Sessions: 1 hour sliding idle timeout, HttpOnly, SameSite=Lax (session + CSRF).
+- Dashboard and family logout are **POST-only** (405 on GET).
+- `ActiveAccountMiddleware` ends the session of a deactivated AdminProfile or
+  FamilyAccount on their very next request (any URL), not just at login.
+- Role audit results:
+  - Delete endpoints and account (de)activation: superadmin-only **and**
+    POST-only (`@require_POST`).
+  - Submissions list/review: restricted to `content_admin` + superadmin
+    (D10 — previously any staff role).
+  - D11: A family-account user visiting `/dashboard/login/` got an infinite
+    redirect loop (login → home → login…). Non-staff users now get the login
+    page / 403, and `get_role_redirect` sends profile-less users to the public site.
+  - Wrong-role access → redirect to own dashboard with a message (logged);
+    non-staff authenticated users → 403.
+- D12: `dashboard/login.html` never displayed the view's `error`, so failed
+  logins showed no message. Fixed; the message is identical for unknown
+  users, wrong passwords and accounts without dashboard access.
+- Security events (role changes, account create/deactivate/reactivate,
+  permission denials, refused logins) go to the `phf.security` logger
+  (wired to console output in Phase 8).

@@ -1,23 +1,11 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
-from django.core.cache import cache
 from django.core.exceptions import PermissionDenied
-from django.conf import settings
+from django.views.decorators.http import require_POST
 
 from .models import FamilyAccount, Will
 from .forms import SetWillForm, UpdateWillForm, PassphrasePromptForm, ChangeLoginPasswordForm
-
-
-def _client_ip(request):
-    forwarded = request.META.get('HTTP_X_FORWARDED_FOR')
-    if forwarded:
-        return forwarded.split(',')[0].strip()
-    return request.META.get('REMOTE_ADDR', 'unknown')
-
-
-def _login_attempts_key(request, username):
-    return f'family_login_attempts:{_client_ip(request)}:{username.lower()}'
 
 
 def require_family_account(view_func):
@@ -46,21 +34,16 @@ def family_login(request):
     if request.method == 'POST':
         username = request.POST.get('username', '').strip()
         password = request.POST.get('password', '')
-        key = _login_attempts_key(request, username)
-        attempts = cache.get(key, 0)
-        if attempts >= settings.LOGIN_ATTEMPT_LIMIT:
-            error = 'Too many failed login attempts. Please try again in a few minutes.'
-        else:
-            user = authenticate(request, username=username, password=password)
-            if user and hasattr(user, 'family_account') and user.family_account.is_active:
-                cache.delete(key)
-                login(request, user)
-                return redirect('wills:dashboard')
-            cache.set(key, attempts + 1, settings.LOGIN_LOCKOUT_SECONDS)
-            error = 'Invalid username or password.'
+        # Lockout after repeated failures is enforced by django-axes.
+        user = authenticate(request, username=username, password=password)
+        if user and hasattr(user, 'family_account') and user.family_account.is_active:
+            login(request, user)
+            return redirect('wills:dashboard')
+        error = 'Invalid username or password.'
     return render(request, 'wills/login.html', {'error': error})
 
 
+@require_POST
 def family_logout(request):
     logout(request)
     return redirect('wills:login')

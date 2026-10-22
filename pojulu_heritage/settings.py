@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'crispy_bootstrap5',
     'django_filters',
     'mptt',
+    'axes',
     'apps.core',
     'apps.clans',
     'apps.genealogy',
@@ -71,6 +72,9 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'apps.dashboard.middleware.ActiveAccountMiddleware',
+    # Must be last: turns axes lockouts into the lockout response.
+    'axes.middleware.AxesMiddleware',
 ]
 
 ROOT_URLCONF = 'pojulu_heritage.urls'
@@ -117,19 +121,50 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # ── AUTH ──────────────────────────────────────────────────────────────────────
 
+AUTHENTICATION_BACKENDS = [
+    # Must be first: rejects locked-out username+IP pairs before checking passwords.
+    'axes.backends.AxesStandaloneBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
+
+# Argon2 for new hashes; existing PBKDF2 hashes keep working and are upgraded
+# to Argon2 transparently on the user's next successful login.
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.Argon2PasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2PasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
+    'django.contrib.auth.hashers.ScryptPasswordHasher',
+]
+
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator', 'OPTIONS': {'min_length': 12}},
     {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
 LOGIN_URL = 'dashboard:login'
 
-# Login brute-force protection (used in apps.dashboard.views.dashboard_login
-# and apps.wills.views.family_login)
-LOGIN_ATTEMPT_LIMIT = config('LOGIN_ATTEMPT_LIMIT', default=5, cast=int)
-LOGIN_LOCKOUT_SECONDS = config('LOGIN_LOCKOUT_SECONDS', default=900, cast=int)
+# Sessions: 1 hour idle timeout (the expiry slides on every request).
+SESSION_COOKIE_AGE = 3600
+SESSION_SAVE_EVERY_REQUEST = True
+SESSION_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SAMESITE = 'Lax'
+
+# Number of reverse proxies in front of the app that append to
+# X-Forwarded-For (Railway's edge = 1). 0 ignores X-Forwarded-For entirely.
+# See apps/core/net.py.
+TRUSTED_PROXY_COUNT = config('TRUSTED_PROXY_COUNT', default=0 if DEBUG else 1, cast=int)
+
+# ── django-axes: brute-force lockout for /dashboard/login/ and /family/login/
+AXES_ENABLED = config('AXES_ENABLED', default=True, cast=bool)
+AXES_FAILURE_LIMIT = 5
+AXES_COOLOFF_TIME = 1  # hours
+AXES_LOCKOUT_PARAMETERS = [['username', 'ip_address']]
+AXES_RESET_ON_SUCCESS = True
+AXES_LOCKOUT_TEMPLATE = 'lockout.html'
+AXES_CLIENT_IP_CALLABLE = 'apps.core.net.client_ip'
+AXES_SENSITIVE_PARAMETERS = ['password', 'passphrase']
 
 # Note: wills are encrypted with a passphrase each owner chooses themself
 # (see apps.wills.crypto) — deliberately no server-held key here. There is

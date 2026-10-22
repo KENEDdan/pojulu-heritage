@@ -62,6 +62,19 @@ class CreateAdminForm(forms.Form):
             raise forms.ValidationError('An account with this email already exists.')
         return e
 
+    def clean(self):
+        cleaned = super().clean()
+        pw = cleaned.get('password')
+        if pw:
+            from django.contrib.auth.password_validation import validate_password
+            candidate = User(username=cleaned.get('username', ''), email=cleaned.get('email', ''),
+                             first_name=cleaned.get('first_name', ''), last_name=cleaned.get('last_name', ''))
+            try:
+                validate_password(pw, user=candidate)
+            except forms.ValidationError as e:
+                self.add_error('password', e)
+        return cleaned
+
 
 class FamilyAccountCredentialsForm(forms.Form):
     """Superadmin: username/password/email for a new private family (will) account."""

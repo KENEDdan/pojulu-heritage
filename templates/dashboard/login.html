@@ -28,6 +28,7 @@ body { background: #1B5E20; font-family: 'DM Sans', sans-serif; min-height: 100v
   <div class="login-logo">Pojulu Heritage Foundation</div>
   <div class="login-sub">Administrator Access</div>
 
+  {% if error %}<div class="alert alert-danger py-2 mb-3" style="font-size:.84rem">{{ error }}</div>{% endif %}
   {% if messages %}
     {% for msg in messages %}
     <div class="alert alert-danger py-2 mb-3" style="font-size:.84rem">{{ msg }}</div>
@@ -42,7 +43,7 @@ body { background: #1B5E20; font-family: 'DM Sans', sans-serif; min-height: 100v
     </div>
     <div class="mb-4">
       <label class="form-label">Password</label>
-      <input type="password" name="password" class="form-control" placeholder="Enter your password" required>
+      <input type="password" name="password" autocomplete="current-password" class="form-control" placeholder="Enter your password" required>
     </div>
     <button type="submit" class="login-btn"><i class="bi bi-shield-lock me-2"></i>Sign In to Dashboard</button>
   </form>

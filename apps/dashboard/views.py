@@ -2,9 +2,9 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.contrib import messages
-from django.core.cache import cache
 from django.core.exceptions import PermissionDenied
-from django.conf import settings
+from django.views.decorators.http import require_POST
+import logging
 from django.urls import reverse
 from django.db.models import Q
 from django.utils import timezone
@@ -33,8 +33,19 @@ from apps.news.models import NewsPost
 from apps.submissions.models import Submission
 from apps.wills.models import FamilyAccount, Will
 
+security_log = logging.getLogger('phf.security')
+
 
 # ── DECORATORS ────────────────────────────────────────
+
+def is_dashboard_user(user):
+    if not user.is_authenticated or not user.is_active:
+        return False
+    if user.is_superuser:
+        return True
+    profile = getattr(user, 'admin_profile', None)
+    return bool(profile and profile.is_active)
+
 
 def get_role_redirect(user):
     if user.is_superuser:
@@ -49,26 +60,9 @@ def get_role_redirect(user):
             'elder_admin':       'dashboard:elder_dashboard',
             'achievement_admin': 'dashboard:achievement_dashboard',
             'content_admin':     'dashboard:content_dashboard',
-        }.get(role, 'dashboard:home'))
+        }.get(role, 'dashboard:login'))
     except AdminProfile.DoesNotExist:
-        return reverse('dashboard:home')
-
-
-def require_dashboard(view_func):
-    def wrapper(request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return redirect('dashboard:login')
-        if not request.user.is_superuser:
-            try:
-                p = request.user.admin_profile
-                if not p.is_active:
-                    logout(request)
-                    return redirect('dashboard:login')
-            except AdminProfile.DoesNotExist:
-                raise PermissionDenied
-        return view_func(request, *args, **kwargs)
-    wrapper.__name__ = view_func.__name__
-    return wrapper
+        return reverse('core:home')
 
 
 def require_superadmin(view_func):
@@ -76,6 +70,9 @@ def require_superadmin(view_func):
         if not request.user.is_authenticated:
             return redirect('dashboard:login')
         if not request.user.is_superuser:
+            security_log.warning('Permission denied (superadmin only): user=%s path=%s', request.user.username, request.path)
+            if not is_dashboard_user(request.user):
+                raise PermissionDenied
             messages.error(request, 'Only the Super Administrator can access this area.')
             return redirect(get_role_redirect(request.user))
         return view_func(request, *args, **kwargs)
@@ -96,8 +93,11 @@ def require_role(allowed_roles):
                     logout(request)
                     return redirect('dashboard:login')
                 if p.role not in allowed_roles:
+                    security_log.warning('Permission denied (role %s): user=%s path=%s', p.role, request.user.username, request.path)
+                    messages.error(request, 'Your role does not have access to that section.')
                     return redirect(get_role_redirect(request.user))
             except AdminProfile.DoesNotExist:
+                security_log.warning('Permission denied (no staff profile): user=%s path=%s', request.user.username, request.path)
                 raise PermissionDenied
             return view_func(request, *args, **kwargs)
         wrapper.__name__ = view_func.__name__
@@ -126,43 +126,26 @@ def _render_form(request, form, title, cancel_url, full_fields=None,
 
 # ── AUTH ──────────────────────────────────────────────
 
-def _client_ip(request):
-    forwarded = request.META.get('HTTP_X_FORWARDED_FOR')
-    if forwarded:
-        return forwarded.split(',')[0].strip()
-    return request.META.get('REMOTE_ADDR', 'unknown')
-
-
-def _login_attempts_key(request, username):
-    return f'login_attempts:{_client_ip(request)}:{username.lower()}'
-
-
 def dashboard_login(request):
-    if request.user.is_authenticated:
+    if is_dashboard_user(request.user):
         return redirect(get_role_redirect(request.user))
     error = None
     if request.method == 'POST':
         username = request.POST.get('username', '').strip()
         password = request.POST.get('password', '')
-        key = _login_attempts_key(request, username)
-        attempts = cache.get(key, 0)
-        if attempts >= settings.LOGIN_ATTEMPT_LIMIT:
-            error = 'Too many failed login attempts. Please try again in a few minutes.'
-        else:
-            user = authenticate(request, username=username, password=password)
-            if user:
-                if user.is_superuser or (hasattr(user, 'admin_profile') and user.admin_profile.is_active):
-                    cache.delete(key)
-                    login(request, user)
-                    return redirect(get_role_redirect(user))
-                else:
-                    error = 'Your account has been deactivated or you do not have staff access.'
-            else:
-                cache.set(key, attempts + 1, settings.LOGIN_LOCKOUT_SECONDS)
-                error = 'Invalid username or password.'
+        user = authenticate(request, username=username, password=password)
+        if user is not None and is_dashboard_user(user):
+            login(request, user)
+            security_log.info('Dashboard login: user=%s', user.username)
+            return redirect(get_role_redirect(user))
+        if user is not None:
+            security_log.warning('Dashboard login refused (no active staff access): user=%s', user.username)
+        # Same message either way, so the form doesn't reveal which accounts exist.
+        error = 'Invalid username or password, or this account has no dashboard access.'
     return render(request, 'dashboard/login.html', {'error': error})
 
 
+@require_POST
 def dashboard_logout(request):
     logout(request)
     return redirect('dashboard:login')
@@ -333,6 +316,7 @@ def clan_edit(request, pk):
 
 
 @require_superadmin
+@require_POST
 def clan_delete(request, pk):
     clan = get_object_or_404(Clan, pk=pk)
     if request.method == 'POST':
@@ -373,6 +357,7 @@ def chief_edit(request, pk):
 
 
 @require_superadmin
+@require_POST
 def chief_delete(request, pk):
     chief = get_object_or_404(ClanChief, pk=pk)
     if request.method == 'POST':
@@ -414,6 +399,7 @@ def event_edit(request, pk):
 
 
 @require_superadmin
+@require_POST
 def event_delete(request, pk):
     event = get_object_or_404(ClanEvent, pk=pk)
     if request.method == 'POST':
@@ -466,6 +452,7 @@ def person_edit(request, pk):
 
 
 @require_superadmin
+@require_POST
 def person_delete(request, pk):
     person = get_object_or_404(Person, pk=pk)
     if request.method == 'POST':
@@ -509,6 +496,7 @@ def family_edit(request, pk):
 
 
 @require_superadmin
+@require_POST
 def family_delete(request, pk):
     family = get_object_or_404(Family, pk=pk)
     if request.method == 'POST':
@@ -552,6 +540,7 @@ def memorial_edit(request, pk):
 
 
 @require_superadmin
+@require_POST
 def memorial_delete(request, pk):
     mem = get_object_or_404(MemorialRecord, pk=pk)
     if request.method == 'POST':
@@ -595,6 +584,7 @@ def achievement_edit(request, pk):
 
 
 @require_superadmin
+@require_POST
 def achievement_delete(request, pk):
     ach = get_object_or_404(Achievement, pk=pk)
     if request.method == 'POST':
@@ -637,6 +627,7 @@ def marriage_edit(request, pk):
 
 
 @require_superadmin
+@require_POST
 def marriage_delete(request, pk):
     m = get_object_or_404(Marriage, pk=pk)
     if request.method == 'POST':
@@ -679,6 +670,7 @@ def cultural_edit(request, pk):
 
 
 @require_superadmin
+@require_POST
 def cultural_delete(request, pk):
     rec = get_object_or_404(CulturalRecord, pk=pk)
     if request.method == 'POST':
@@ -722,6 +714,7 @@ def elder_edit(request, pk):
 
 
 @require_superadmin
+@require_POST
 def elder_delete(request, pk):
     iv = get_object_or_404(ElderInterview, pk=pk)
     if request.method == 'POST':
@@ -787,6 +780,7 @@ def news_edit(request, pk):
 
 
 @require_superadmin
+@require_POST
 def news_delete(request, pk):
     post = get_object_or_404(NewsPost, pk=pk)
     if request.method == 'POST':
@@ -798,7 +792,7 @@ def news_delete(request, pk):
 
 # ── SUBMISSION REVIEW ─────────────────────────────────
 
-@require_dashboard
+@require_role(['content_admin'])
 def submission_list(request):
     subs = Submission.objects.order_by('-created_at')
     status_filter = request.GET.get('status', '')
@@ -812,7 +806,7 @@ def submission_list(request):
     })
 
 
-@require_dashboard
+@require_role(['content_admin'])
 def submission_review(request, pk):
     sub = get_object_or_404(Submission, pk=pk)
     form = SubmissionReviewForm(request.POST or None, instance=sub)
@@ -854,6 +848,7 @@ def create_account(request):
             assigned_by=request.user,
         )
         profile.assign_permissions()
+        security_log.warning('Staff account created: target=%s role=%s by=%s', user.username, profile.role, request.user.username)
         messages.success(request, f'✅ Account created for {user.get_full_name() or user.username}.')
         return redirect('dashboard:accounts')
     return _render_form(request, form,
@@ -876,8 +871,11 @@ def edit_account(request, pk):
         profile.user.last_name  = form.cleaned_data['last_name']
         profile.user.email      = form.cleaned_data['email']
         profile.user.save()
+        old_role = AdminProfile.objects.get(pk=profile.pk).role
         form.save()
         profile.assign_permissions()
+        security_log.warning('Staff account updated: target=%s role=%s->%s active=%s by=%s',
+                             profile.user.username, old_role, profile.role, profile.is_active, request.user.username)
         messages.success(request, '✅ Account updated.')
         return redirect('dashboard:accounts')
     return _render_form(request, form,
@@ -889,21 +887,25 @@ def edit_account(request, pk):
 
 
 @require_superadmin
+@require_POST
 def deactivate_account(request, pk):
     profile = get_object_or_404(AdminProfile, pk=pk)
     if request.method == 'POST':
         profile.is_active = False; profile.save()
         profile.user.is_active = False; profile.user.save()
+        security_log.warning('Staff account deactivated: target=%s by=%s', profile.user.username, request.user.username)
         messages.success(request, f'{profile.user.get_full_name()} deactivated.')
     return redirect('dashboard:accounts')
 
 
 @require_superadmin
+@require_POST
 def reactivate_account(request, pk):
     profile = get_object_or_404(AdminProfile, pk=pk)
     if request.method == 'POST':
         profile.is_active = True; profile.save()
         profile.user.is_active = True; profile.user.save()
+        security_log.warning('Staff account reactivated: target=%s by=%s', profile.user.username, request.user.username)
         messages.success(request, f'{profile.user.get_full_name()} reactivated.')
     return redirect('dashboard:accounts')
 
@@ -977,6 +979,7 @@ def family_account_create_new_person(request):
 
 
 @require_superadmin
+@require_POST
 def family_account_deactivate(request, pk):
     account = get_object_or_404(FamilyAccount, pk=pk)
     if request.method == 'POST':
@@ -987,6 +990,7 @@ def family_account_deactivate(request, pk):
 
 
 @require_superadmin
+@require_POST
 def family_account_reactivate(request, pk):
     account = get_object_or_404(FamilyAccount, pk=pk)
     if request.method == 'POST':

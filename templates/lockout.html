@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Account Temporarily Locked | Pojulu Heritage Foundation</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Cormorant+Garamond:wght@600;700&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<style>
+body { background: #1B5E20; font-family: 'DM Sans', sans-serif; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+.login-card { background: white; border-radius: 12px; padding: 48px 44px; max-width: 460px; width: 100%; box-shadow: 0 24px 80px rgba(0,0,0,.3); text-align: center; }
+.login-logo { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; font-weight: 700; color: #1B5E20; margin-bottom: 4px; }
+.login-sub { font-size: .75rem; color: #6B8F6B; letter-spacing: .1em; text-transform: uppercase; margin-bottom: 28px; }
+.lock-icon { width: 64px; height: 64px; border-radius: 50%; background: #FFF3E0; display: flex; align-items: center; justify-content: center; margin: 0 auto 18px; font-size: 1.7rem; color: #E65100; }
+p { font-size: .9rem; color: #3A5A3A; line-height: 1.6; }
+.back-link { display: block; margin-top: 24px; font-size: .82rem; color: #6B8F6B; text-decoration: none; }
+.back-link:hover { color: #2E7D32; }
+</style>
+</head>
+<body>
+<div class="login-card">
+  <div class="lock-icon"><i class="bi bi-shield-lock-fill"></i></div>
+  <div class="login-logo">Pojulu Heritage Foundation</div>
+  <div class="login-sub">Sign-in temporarily locked</div>
+  <p>There have been {{ failure_limit }} unsuccessful sign-in attempts for this account from your network, so sign-in has been paused to protect the archive.</p>
+  <p>Please wait about an hour before trying again. If you have forgotten your password, contact the Super Administrator.</p>
+  <a href="/" class="back-link">← Return to public site</a>
+</div>
+</body>
+</html>
