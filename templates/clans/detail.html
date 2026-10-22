@@ -1,5 +1,9 @@
-{% extends "base.html" %}
+{% extends "base.html" %}{% load phf %}
 {% block title %}{{ clan.name }} Clan{% endblock %}
+{% block og_title %}{{ clan.name }} Clan{% endblock %}
+{% block twitter_title %}{{ clan.name }} Clan{% endblock %}
+{% block og_description %}{{ clan.tagline|default:clan.description|striptags|truncatechars:200 }}{% endblock %}
+{% block meta_description %}{{ clan.tagline|default:clan.description|striptags|truncatechars:200 }}{% endblock %}
 {% block content %}
 <div class="phf-page-header">
   <div class="container-xl">

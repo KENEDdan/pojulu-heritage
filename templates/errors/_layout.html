@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>{% block title %}{% endblock %} | Pojulu Heritage Foundation</title>
+<link rel="stylesheet" href="/static/css/errors.css">
+</head>
+<body>
+<main class="card">
+  <div class="code">{% block code %}{% endblock %}</div>
+  <div class="brand">Pojulu Heritage Foundation</div>
+  <div class="sub">Preserving Our Roots</div>
+  <h1>{% block heading %}{% endblock %}</h1>
+  <p>{% block message %}{% endblock %}</p>
+  <a class="btn" href="/">Return to the archive</a>
+</main>
+</body>
+</html>

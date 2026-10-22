@@ -1,4 +1,5 @@
 from django.db import models
+from apps.core.embeds import validate_video_url
 from django.urls import reverse
 from apps.core.uploads import SafeFileField, SafeImageField, UploadTo
 from apps.core.validators import validate_audio, validate_image
@@ -47,7 +48,7 @@ class CulturalRecord(models.Model):
                                       help_text="Who traditionally performs or recites this")
     audio_file    = SafeFileField(upload_to=UploadTo('cultural/audio'), blank=True, null=True,
                                   validators=[validate_audio])
-    video_url     = models.URLField(blank=True, help_text="YouTube/Vimeo link to a recording")
+    video_url     = models.URLField(blank=True, validators=[validate_video_url], help_text="YouTube/Vimeo link to a recording")
     image         = SafeImageField(upload_to=UploadTo('cultural/images'), blank=True, null=True,
                                    validators=[validate_image])
     language      = models.CharField(max_length=100, default='Pojulu')

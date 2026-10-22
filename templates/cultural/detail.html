@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "base.html" %}{% load phf %}
 {% block title %}{{ record.title }}{% endblock %}
 {% block content %}
 <div class="phf-page-header"><div class="container-xl"><div class="phf-breadcrumb"><a href="{% url 'core:home' %}" data-en="Home" data-ar="الرئيسية">Home</a><span class="phf-breadcrumb-sep">›</span><a href="{% url 'cultural:list' %}" data-en="Cultural Archive" data-ar="التراث الثقافي">Cultural Archive</a><span class="phf-breadcrumb-sep">›</span>{{ record.title }}</div><h1><em>{{ record.title }}</em></h1><p>{{ record.get_record_type_display }} {% if record.clan %}· {{ record.clan.name }} <span data-en="Clan" data-ar="قبيلة">Clan</span>{% endif %}</p></div></div>
@@ -9,11 +9,11 @@
     <audio controls class="flex-fill"><source src="{{ record.audio_file.url }}"><span data-en="Your browser does not support audio playback." data-ar="متصفحك لا يدعم تشغيل الصوت.">Your browser does not support audio playback.</span></audio>
   </div>
   {% endif %}
-  {% if record.has_video %}
+  {% with embed=record.video_url|embed_url %}{% if embed %}
   <div class="ratio ratio-16x9 mb-4" style="border-radius:var(--radius-lg);overflow:hidden">
-    <iframe src="{{ record.video_url }}" allowfullscreen title="{{ record.title }}"></iframe>
+    <iframe src="{{ embed }}" title="{{ record.title }}" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen" referrerpolicy="strict-origin-when-cross-origin" loading="lazy" allowfullscreen></iframe>
   </div>
-  {% endif %}
+  {% endif %}{% endwith %}
   {% if record.image %}<img src="{{ record.image.url }}" alt="{{ record.title }}" class="img-fluid rounded mb-4">{% endif %}
   <div class="phf-detail-block mb-4">
     <div class="phf-detail-block-header"><span style="font-size:1.4rem;margin-right:10px">{{ record.icon }}</span><h6 class="phf-detail-block-title">{{ record.get_record_type_display }}</h6></div>

@@ -1,4 +1,5 @@
 from django.db import models
+from apps.core.embeds import validate_video_url
 from django.urls import reverse
 from apps.core.storage import get_private_storage
 from apps.core.uploads import SafeFileField, SafeImageField, UploadTo
@@ -38,7 +39,7 @@ class ElderInterview(models.Model):
     video_file      = SafeFileField(upload_to=UploadTo('interviews/video'), blank=True, null=True,
                                     storage=get_private_storage,
                                     validators=[validate_video])
-    video_url       = models.URLField(blank=True, help_text="External video link")
+    video_url       = models.URLField(blank=True, validators=[validate_video_url], help_text="External video link")
     photo_of_elder  = SafeImageField(upload_to=UploadTo('interviews/photos'), blank=True, null=True,
                                      validators=[validate_image])
 

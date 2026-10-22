@@ -1,3 +1,4 @@
+from apps.core.utils import search_term
 from django.views.generic import ListView, DetailView
 from django.db.models import Q
 from .models import MemorialRecord
@@ -10,7 +11,7 @@ class MemorialListView(ListView):
 
     def get_queryset(self):
         qs = MemorialRecord.objects.public().select_related('person','person__clan').order_by('-person__death_year','-created_at')
-        q = self.request.GET.get('q','')
+        q = search_term(self.request)
         clan = self.request.GET.get('clan','')
         if q:
             qs = qs.filter(Q(person__first_name__icontains=q)|Q(person__last_name__icontains=q)|Q(tribute__icontains=q))
@@ -20,7 +21,7 @@ class MemorialListView(ListView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx['query'] = self.request.GET.get('q','')
+        ctx['query'] = search_term(self.request)
         ctx['selected_clan'] = self.request.GET.get('clan','')
         from apps.clans.models import Clan
         ctx['clans'] = Clan.objects.public().values('name','slug')

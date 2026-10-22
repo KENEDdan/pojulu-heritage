@@ -1,4 +1,5 @@
 from django.db import models
+from apps.core.embeds import validate_video_url
 from django.urls import reverse
 from django.utils.text import slugify
 from apps.core.models import PAYAM_CHOICES
@@ -160,7 +161,7 @@ class ClanMedia(models.Model):
     title      = models.CharField(max_length=300)
     file       = SafeFileField(upload_to=UploadTo('clans/media'), blank=True, null=True,
                                validators=[validate_media])
-    video_url  = models.URLField(blank=True, help_text='YouTube/Vimeo link')
+    video_url  = models.URLField(blank=True, validators=[validate_video_url], help_text='YouTube/Vimeo link')
     caption    = models.TextField(blank=True)
     date_taken = models.CharField(max_length=100, blank=True, help_text='Date or approximate year')
     order      = models.PositiveSmallIntegerField(default=0)

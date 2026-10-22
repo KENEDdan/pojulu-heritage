@@ -1,5 +1,11 @@
-{% extends "base.html" %}
+{% extends "base.html" %}{% load phf %}
 {% block title %}{{ person.full_name }}{% endblock %}
+{% block og_title %}{{ person.full_name }}{% endblock %}
+{% block twitter_title %}{{ person.full_name }}{% endblock %}
+{% block og_description %}{{ person.full_name }}{% if person.lifespan %} ({{ person.lifespan }}){% endif %}{% if person.clan and person.clan.is_verified %}, {{ person.clan.name }} Clan{% endif %} — Pojulu Heritage archive.{% endblock %}
+{% block meta_description %}{{ person.full_name }}{% if person.lifespan %} ({{ person.lifespan }}){% endif %}{% if person.clan and person.clan.is_verified %}, {{ person.clan.name }} Clan{% endif %} — Pojulu Heritage archive.{% endblock %}
+{% block og_type %}profile{% endblock %}
+{% block og_image %}{% if person.photo %}{% absolute_uri person.photo.url as img %}<meta property="og:image" content="{{ img }}"><meta name="twitter:image" content="{{ img }}"><meta name="twitter:card" content="summary_large_image">{% else %}<meta name="twitter:card" content="summary">{% endif %}{% endblock %}
 {% block content %}
 
 <a href="{% url 'genealogy:tree' person.slug %}" class="phf-btn phf-btn-outline">

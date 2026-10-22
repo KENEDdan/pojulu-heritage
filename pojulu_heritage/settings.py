@@ -44,12 +44,14 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.humanize',
+    'django.contrib.sitemaps',
     'crispy_forms',
     'crispy_bootstrap5',
     'django_filters',
     'mptt',
     'axes',
     'storages',
+    'csp',
     'apps.core',
     'apps.clans',
     'apps.genealogy',
@@ -66,6 +68,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'csp.middleware.CSPMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -74,6 +77,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'apps.dashboard.middleware.ActiveAccountMiddleware',
+    'django_ratelimit.middleware.RatelimitMiddleware',
     # Must be last: turns axes lockouts into the lockout response.
     'axes.middleware.AxesMiddleware',
 ]
@@ -284,6 +288,65 @@ if not DEBUG:
     SECURE_HSTS_SECONDS = config('SECURE_HSTS_SECONDS', default=31536000, cast=int)
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = config('SECURE_HSTS_PRELOAD', default=True, cast=bool)
+
+# ── CACHE ─────────────────────────────────────────────────────────────────────
+# Redis when REDIS_URL is set (shared by all gunicorn workers); otherwise a
+# per-process in-memory cache. Without Redis, rate limits and cached blocks
+# are counted per worker process.
+REDIS_URL = config('REDIS_URL', default='')
+if REDIS_URL:
+    CACHES = {'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': REDIS_URL,
+        'KEY_PREFIX': 'phf',
+        'OPTIONS': {'CLIENT_CLASS': 'django_redis.client.DefaultClient', 'IGNORE_EXCEPTIONS': True},
+    }}
+    DJANGO_REDIS_LOG_IGNORED_EXCEPTIONS = True
+else:
+    CACHES = {'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache', 'LOCATION': 'phf'}}
+
+# ── RATE LIMITING (django-ratelimit, per client IP) ───────────────────────────
+RATELIMIT_ENABLE = config('RATELIMIT_ENABLE', default=True, cast=bool)
+RATELIMIT_VIEW = 'apps.core.views.ratelimited'
+
+# ── CONTENT SECURITY POLICY (django-csp 4.x) ──────────────────────────────────
+# Report-only until the inline scripts/styles/handlers listed in
+# docs/HARDENING.md are moved to static files; then set CSP_ENFORCE=True.
+from csp.constants import NONE, SELF  # noqa: E402
+
+def _csp_media_sources():
+    from urllib.parse import urlsplit
+    sources = []
+    if MEDIA_PUBLIC_BASE_URL:
+        u = urlsplit(MEDIA_PUBLIC_BASE_URL)
+        sources.append(f'{u.scheme}://{u.netloc}')
+    if USE_S3_MEDIA and AWS_S3_ENDPOINT_URL:
+        host = urlsplit(AWS_S3_ENDPOINT_URL).netloc
+        sources += [f'https://{host}', f'https://*.{host}']
+    return sources
+
+_CSP_DIRECTIVES = {
+    'default-src': [SELF],
+    'script-src': [SELF, 'https://cdn.jsdelivr.net'],
+    'style-src': [SELF, 'https://cdn.jsdelivr.net', 'https://fonts.googleapis.com'],
+    'font-src': [SELF, 'https://fonts.gstatic.com', 'https://cdn.jsdelivr.net'],
+    'img-src': [SELF, 'data:', *_csp_media_sources()],
+    'media-src': [SELF, *_csp_media_sources()],
+    'frame-src': ['https://www.youtube-nocookie.com', 'https://player.vimeo.com'],
+    'connect-src': [SELF],
+    'object-src': [NONE],
+    'base-uri': [SELF],
+    'form-action': [SELF],
+    'frame-ancestors': [NONE],
+}
+# (Not named CSP_*: django-csp 4 treats CSP_-prefixed settings as the old format.)
+_csp_report_uri = config('CSP_REPORT_URI', default='')
+if _csp_report_uri:
+    _CSP_DIRECTIVES['report-uri'] = [_csp_report_uri]
+if config('CSP_ENFORCE', default=False, cast=bool):
+    CONTENT_SECURITY_POLICY = {'DIRECTIVES': _CSP_DIRECTIVES}
+else:
+    CONTENT_SECURITY_POLICY_REPORT_ONLY = {'DIRECTIVES': _CSP_DIRECTIVES}
 
 # ── MISC ──────────────────────────────────────────────────────────────────────
 

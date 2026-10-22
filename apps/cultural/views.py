@@ -1,3 +1,4 @@
+from apps.core.utils import search_term
 from django.views.generic import ListView, DetailView
 from django.db.models import Q
 from .models import CulturalRecord, RECORD_TYPE_CHOICES
@@ -10,7 +11,7 @@ class CulturalListView(ListView):
 
     def get_queryset(self):
         qs = CulturalRecord.objects.public().select_related('clan')
-        q = self.request.GET.get('q','')
+        q = search_term(self.request)
         rtype = self.request.GET.get('type','')
         if q:
             qs = qs.filter(Q(title__icontains=q)|Q(content__icontains=q))
@@ -20,7 +21,7 @@ class CulturalListView(ListView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx['query'] = self.request.GET.get('q','')
+        ctx['query'] = search_term(self.request)
         ctx['selected_type'] = self.request.GET.get('type','')
         ctx['type_choices'] = RECORD_TYPE_CHOICES
         return ctx

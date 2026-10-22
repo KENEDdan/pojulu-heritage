@@ -5,11 +5,13 @@
 <section class="phf-section"><div class="container-xl">
   <form method="get" action="{% url 'core:search' %}" class="phf-search-bar mb-5">
     <select name="kind" class="form-select" style="max-width:160px"><option value="all" data-en="All" data-ar="الكل" {% if kind == 'all' %}selected{% endif %}>All</option><option value="clans" data-en="Clans" data-ar="القبائل" {% if kind == 'clans' %}selected{% endif %}>Clans</option><option value="persons" data-en="Persons" data-ar="الأشخاص" {% if kind == 'persons' %}selected{% endif %}>Persons</option><option value="families" data-en="Families" data-ar="العائلات" {% if kind == 'families' %}selected{% endif %}>Families</option><option value="memorial" data-en="Memorial" data-ar="تذكار" {% if kind == 'memorial' %}selected{% endif %}>Memorial</option><option value="achievements" data-en="Achievements" data-ar="الإنجازات" {% if kind == 'achievements' %}selected{% endif %}>Achievements</option></select>
-    <input type="text" name="q" class="form-control" value="{{ query }}" placeholder="Search the archive…" data-placeholder-en="Search the archive…" data-placeholder-ar="ابحث في الأرشيف…">
+    <input type="search" name="q" maxlength="100" minlength="2" class="form-control" value="{{ query }}" placeholder="Search the archive…" data-placeholder-en="Search the archive…" data-placeholder-ar="ابحث في الأرشيف…">
     <button type="submit" class="phf-btn phf-btn-primary"><i class="bi bi-search"></i> <span data-en="Search" data-ar="بحث">Search</span></button>
   </form>
 
-  {% if query %}
+  {% if query_too_short %}
+    <div class="alert alert-warning" data-en="Please enter at least 2 characters to search.">Please enter at least 2 characters to search.</div>
+  {% elif query %}
     {% if total_results == 0 %}
     <div class="phf-empty"><span class="phf-empty-icon">🔍</span><h5><span data-en="No results found for" data-ar="لا توجد نتائج لـ">No results found for</span> &ldquo;{{ query }}&rdquo;</h5><p><span data-en="Try different or shorter keywords.">Try different or shorter keywords.</span></p></div>
     {% else %}

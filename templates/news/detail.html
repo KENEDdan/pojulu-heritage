@@ -1,5 +1,11 @@
-{% extends "base.html" %}
+{% extends "base.html" %}{% load phf %}
 {% block title %}{{ post.title }}{% endblock %}
+{% block og_title %}{{ post.title }}{% endblock %}
+{% block twitter_title %}{{ post.title }}{% endblock %}
+{% block og_description %}{{ post.excerpt|striptags|truncatechars:200 }}{% endblock %}
+{% block meta_description %}{{ post.excerpt|striptags|truncatechars:200 }}{% endblock %}
+{% block og_type %}article{% endblock %}
+{% block og_image %}{% if post.cover_image %}{% absolute_uri post.cover_image.url as img %}<meta property="og:image" content="{{ img }}"><meta name="twitter:image" content="{{ img }}"><meta name="twitter:card" content="summary_large_image">{% else %}<meta name="twitter:card" content="summary">{% endif %}{% endblock %}
 {% block content %}
 <div class="phf-page-header">
   <div class="container-xl">
@@ -23,9 +29,9 @@
         <!-- Cover image or video -->
         {% if post.cover_image %}
         <img src="{{ post.cover_image.url }}" alt="{{ post.title }}" class="img-fluid rounded mb-4" style="width:100%;max-height:480px;object-fit:cover">
-        {% elif post.has_video %}
+        {% elif post.video_url|embed_url %}
         <div class="ratio ratio-16x9 mb-4" style="border-radius:var(--radius-lg);overflow:hidden">
-          <iframe src="{{ post.video_url }}" allowfullscreen title="{{ post.title }}"></iframe>
+          <iframe src="{{ post.video_url|embed_url }}" title="{{ post.title }}" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen" referrerpolicy="strict-origin-when-cross-origin" loading="lazy" allowfullscreen></iframe>
         </div>
         {% endif %}
 

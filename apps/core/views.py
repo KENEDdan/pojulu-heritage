@@ -1,4 +1,8 @@
 from django.shortcuts import render
+from django.http import HttpResponse
+from django.utils.decorators import method_decorator
+from django.views.decorators.http import require_GET
+from django_ratelimit.decorators import ratelimit
 from django.views.generic import TemplateView
 from django.db.models import Q
 from apps.clans.models import Clan
@@ -10,8 +14,12 @@ from apps.cultural.models import CulturalRecord
 from apps.elders.models import ElderInterview
 from apps.core.models import SiteStats, Announcement
 from apps.news.models import NewsPost
+from apps.core.utils import MAX_QUERY_LENGTH, MIN_QUERY_LENGTH, search_term
+
+IP_KEY = 'apps.core.net.ratelimit_ip_key'
 
 
+@method_decorator(ratelimit(key=IP_KEY, rate='120/m', method='GET', block=True), name='get')
 class HomeView(TemplateView):
     template_name = 'core/home.html'
 
@@ -50,16 +58,21 @@ class AboutView(TemplateView):
     template_name = 'core/about.html'
 
 
+@method_decorator(ratelimit(key=IP_KEY, rate='30/m', method='GET', block=True), name='get')
 class SearchView(TemplateView):
     template_name = 'core/search_results.html'
 
     def get_context_data(self, **kwargs):
         ctx  = super().get_context_data(**kwargs)
-        q    = self.request.GET.get('q', '').strip()
+        q    = search_term(self.request)
         kind = self.request.GET.get('kind', 'all')
         ctx['query'] = q
         ctx['kind']  = kind
+        ctx['max_query_length'] = MAX_QUERY_LENGTH
         if not q: return ctx
+        if len(q) < MIN_QUERY_LENGTH:
+            ctx.update(query_too_short=True, results={}, total_results=0)
+            return ctx
         results = {}
         if kind in ('all', 'clans'):
             results['clans'] = Clan.objects.public().filter(
@@ -98,7 +111,29 @@ def healthz(request):
     return JsonResponse({'status': 'ok', 'database': 'ok'})
 
 
+@ratelimit(key=IP_KEY, rate='120/m', block=True)
 def private_media(request, name):
     """Authenticated gate for every file in private storage."""
     from apps.core.private_media import serve
     return serve(request, name)
+
+
+@require_GET
+def robots_txt(request):
+    lines = [
+        'User-agent: *',
+        'Disallow: /dashboard/',
+        'Disallow: /admin/',
+        'Disallow: /family/',
+        'Disallow: /private-media/',
+        'Disallow: /healthz',
+        'Disallow: /search/',
+        '',
+        f"Sitemap: {request.build_absolute_uri('/sitemap.xml')}",
+    ]
+    return HttpResponse('\n'.join(lines) + '\n', content_type='text/plain')
+
+
+def ratelimited(request, exception=None):
+    """RATELIMIT_VIEW: rendered when a client exceeds a rate limit."""
+    return render(request, '429.html', status=429)

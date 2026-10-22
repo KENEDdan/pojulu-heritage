@@ -2,8 +2,14 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.contrib.sitemaps.views import sitemap
+
+from apps.core.sitemaps import SITEMAPS
+from apps.core.views import robots_txt
 
 urlpatterns = [
+    path('robots.txt',    robots_txt, name='robots_txt'),
+    path('sitemap.xml',   sitemap, {'sitemaps': SITEMAPS}, name='sitemap'),
     path('',              include('apps.core.urls',         namespace='core')),
     path('clans/',        include('apps.clans.urls',        namespace='clans')),
     path('families/',     include('apps.genealogy.urls',    namespace='genealogy')),
@@ -12,7 +18,6 @@ urlpatterns = [
     path('marriages/',    include('apps.marriages.urls',    namespace='marriages')),
     path('culture/',      include('apps.cultural.urls',     namespace='cultural')),
     path('elders/',       include('apps.elders.urls',       namespace='elders')),
-    path('submit/',       include('apps.submissions.urls',  namespace='submissions')),
     path('dashboard/',    include('apps.dashboard.urls',    namespace='dashboard')),
     path('news/',         include('apps.news.urls',         namespace='news')),
     path('family/',       include('apps.wills.urls',        namespace='wills')),

@@ -1,3 +1,4 @@
+from apps.core.utils import search_term
 from django.views.generic import ListView, DetailView
 from django.db.models import Q
 from .models import Achievement, CATEGORY_CHOICES
@@ -10,7 +11,7 @@ class AchievementListView(ListView):
 
     def get_queryset(self):
         qs = Achievement.objects.public().select_related('clan')
-        q = self.request.GET.get('q','')
+        q = search_term(self.request)
         cat = self.request.GET.get('category','')
         if q:
             qs = qs.filter(Q(person_name__icontains=q)|Q(title__icontains=q)|Q(description__icontains=q))
@@ -20,7 +21,7 @@ class AchievementListView(ListView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx['query'] = self.request.GET.get('q','')
+        ctx['query'] = search_term(self.request)
         ctx['selected_category'] = self.request.GET.get('category','')
         ctx['category_choices'] = CATEGORY_CHOICES
         return ctx

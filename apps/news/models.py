@@ -1,4 +1,5 @@
 from django.db import models
+from apps.core.embeds import validate_video_url
 from django.contrib.auth.models import User
 from django.urls import reverse
 from django.utils.text import slugify
@@ -37,7 +38,7 @@ class NewsPost(models.Model):
     content        = models.TextField(help_text='Full article or event description')
     cover_image    = SafeImageField(upload_to=UploadTo('news/covers'), blank=True, null=True,
                                     validators=[validate_image])
-    video_url      = models.URLField(blank=True, help_text='YouTube or Vimeo URL — shown as video card')
+    video_url      = models.URLField(blank=True, validators=[validate_video_url], help_text='YouTube or Vimeo URL — shown as video card')
 
     # Event-specific fields
     event_date     = models.DateTimeField(null=True, blank=True, help_text='For events: start date and time')

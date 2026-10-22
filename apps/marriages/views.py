@@ -1,3 +1,4 @@
+from apps.core.utils import search_term
 from django.views.generic import ListView, DetailView
 from django.db.models import Q
 from .models import Marriage
@@ -10,7 +11,7 @@ class MarriageListView(ListView):
 
     def get_queryset(self):
         qs = Marriage.objects.public().select_related('husband_clan','wife_clan','husband','wife','husband__clan','wife__clan')
-        q = self.request.GET.get('q','')
+        q = search_term(self.request)
         clan = self.request.GET.get('clan','')
         if q:
             qs = qs.filter(Q(husband_name__icontains=q)|Q(wife_name__icontains=q)|Q(husband__first_name__icontains=q)|Q(wife__first_name__icontains=q))
@@ -20,7 +21,7 @@ class MarriageListView(ListView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx['query'] = self.request.GET.get('q','')
+        ctx['query'] = search_term(self.request)
         ctx['selected_clan'] = self.request.GET.get('clan','')
         from apps.clans.models import Clan
         ctx['clans'] = Clan.objects.public().values('name','slug')

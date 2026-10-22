@@ -1,6 +1,8 @@
+from apps.core.utils import search_term
 from django.views.generic import ListView, DetailView
 from django.shortcuts import render, get_object_or_404
 from django.db.models import Q
+from django_ratelimit.decorators import ratelimit
 from .models import Family, Person
 
 
@@ -12,7 +14,7 @@ class FamilyListView(ListView):
 
     def get_queryset(self):
         qs = Family.objects.public().select_related('clan')
-        q = self.request.GET.get('q', '')
+        q = search_term(self.request)
         clan = self.request.GET.get('clan', '')
         if q:
             qs = qs.filter(Q(name__icontains=q) | Q(description__icontains=q))
@@ -22,7 +24,7 @@ class FamilyListView(ListView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx['query'] = self.request.GET.get('q', '')
+        ctx['query'] = search_term(self.request)
         ctx['selected_clan'] = self.request.GET.get('clan', '')
         from apps.clans.models import Clan
         ctx['clans'] = Clan.objects.public().values('name', 'slug')
@@ -153,6 +155,7 @@ def _walk_descendants(person, max_generations):
     return generations, truncated
 
 
+@ratelimit(key='apps.core.net.ratelimit_ip_key', rate='30/m', method='GET', block=True)
 def family_tree(request, slug):
     person = get_object_or_404(Person.objects.public(), slug=slug)
 

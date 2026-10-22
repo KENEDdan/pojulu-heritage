@@ -221,3 +221,56 @@ public template at baseline.
   in private storage behind the gate.
 - Migrations: elders 0004, genealogy 0005 (new fields default False; existing
   people stay as they were), submissions 0004.
+
+---
+
+## Phase 5 — Public surface
+
+- **Submissions are no longer public.** `apps/submissions/{views,forms,urls}.py` and
+  `templates/submissions/` were deleted and `/submit/` now 404s. The model and the
+  dashboard review screens (content_admin) stay for historical submissions.
+- **Rate limits** (django-ratelimit, keyed on the proxy-aware client IP, HTTP 429 with a
+  PHF page): search 30/min, family tree 30/min, home page 120/min, private-media gate
+  120/min. Every list view's `q` is trimmed and capped at 100 characters. Search needs
+  at least 2 characters.
+  D14: the counters live in the default cache, which is **Redis when `REDIS_URL` is set**
+  and per-process LocMem otherwise. Without Redis each gunicorn worker counts on its own,
+  so the effective limit is multiplied by the worker count. Adding Railway's Redis plugin
+  is recommended.
+- **CSP (django-csp 4.0), report-only.** `default-src 'self'`; scripts from self and
+  jsdelivr; styles from self, jsdelivr and Google Fonts; fonts from self, gstatic and
+  jsdelivr; images/media from self, `data:` and the media bucket hosts; frames only
+  `www.youtube-nocookie.com` and `player.vimeo.com`; `object-src 'none'`;
+  `frame-ancestors 'none'`; `base-uri`/`form-action` self. `CSP_ENFORCE=True` switches
+  to enforcing, and `CSP_REPORT_URI` collects reports.
+
+  **Before enforcing**, these must move into static files (or get nonces):
+  - Inline `<script>` blocks: `clans/detail.html`, `dashboard/base_dashboard.html`.
+  - Inline event handlers (`onclick=` etc.): `base.html`, `achievements/list.html`,
+    `clans/detail.html`, `core/search_results.html`, `genealogy/family_detail.html`,
+    `marriages/list.html`, `dashboard/base_dashboard.html`, `dashboard/accounts.html`,
+    `dashboard/family_accounts.html`, `dashboard/will_reveal_confirm.html`.
+  - `<style>` blocks: `dashboard/base_dashboard.html`, `dashboard/login.html`,
+    `lockout.html`, `wills/base_family.html`, `wills/login.html`.
+  - About 260 `style="…"` attributes across 47 templates. Either move them to
+    `pojulu.css` or add `'unsafe-inline'` to `style-src` only, which is a much smaller
+    risk than inline scripts.
+  The error pages already use a static stylesheet.
+- **Video links**: `video_url` fields (CulturalRecord, ElderInterview, NewsPost,
+  PersonMedia, ClanMedia) only accept YouTube/Vimeo URLs (watch, youtu.be, shorts,
+  embed, vimeo.com/ID, player.vimeo.com). Templates never put the raw URL in an
+  iframe: `|embed_url` rebuilds `https://www.youtube-nocookie.com/embed/<id>` or
+  `https://player.vimeo.com/video/<id>` from a strictly validated ID. Old invalid
+  URLs simply aren't embedded. Migrations: clans 0005, cultural 0004, elders 0005,
+  genealogy 0006, news 0004.
+- `/robots.txt` disallows `/dashboard/`, `/admin/`, `/family/`, `/private-media/`,
+  `/healthz` and `/search/`, and points to `/sitemap.xml`. The real `ADMIN_URL_PREFIX` is
+  deliberately not listed. The sitemap covers static pages plus public clans, families,
+  people (private living people excluded), news and interviews.
+- **Error pages** 400/403/403_csrf/404/429/500 in PHF styling. They're standalone (no
+  `base.html`, no context-processor data, plain `/static/css/errors.css`), so they render
+  with zero DB queries even when the database is down.
+- **Social meta**: `base.html` has description, canonical, OpenGraph and Twitter Card
+  tags with blocks overridden on news, clan, person and interview pages
+  (title/description/image). Person meta only uses name, lifespan and clan, never contact
+  details or biography.

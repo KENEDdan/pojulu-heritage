@@ -1,0 +1,5 @@
+{% extends "errors/_layout.html" %}
+{% block title %}Too many requests{% endblock %}
+{% block code %}429{% endblock %}
+{% block heading %}Please slow down{% endblock %}
+{% block message %}You have made a lot of requests in a short time. Please wait a minute and try again.{% endblock %}

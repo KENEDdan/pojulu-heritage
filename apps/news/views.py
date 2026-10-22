@@ -1,3 +1,4 @@
+from apps.core.utils import search_term
 from django.shortcuts import render, get_object_or_404
 from django.views.generic import ListView, DetailView
 from django.db.models import Q, F
@@ -12,7 +13,7 @@ class NewsListView(ListView):
 
     def get_queryset(self):
         qs       = NewsPost.objects.public()
-        q        = self.request.GET.get('q', '')
+        q        = search_term(self.request)
         pt       = self.request.GET.get('type', '')
         if q:  qs = qs.filter(Q(title__icontains=q) | Q(excerpt__icontains=q))
         if pt: qs = qs.filter(post_type=pt)
@@ -20,7 +21,7 @@ class NewsListView(ListView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx['query']        = self.request.GET.get('q', '')
+        ctx['query']        = search_term(self.request)
         ctx['selected_type'] = self.request.GET.get('type', '')
         ctx['type_choices'] = [('news','News'),('event','Event'),('announcement','Announcement'),('story','Story'),('update','Update')]
         return ctx

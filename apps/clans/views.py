@@ -1,4 +1,5 @@
 # apps/clans/views.py
+from apps.core.utils import search_term
 from django.shortcuts import render, get_object_or_404
 from django.views.generic import ListView, DetailView
 from django.db.models import Q
@@ -12,7 +13,7 @@ class ClanListView(ListView):
 
     def get_queryset(self):
         qs = Clan.objects.public().prefetch_related('chiefs')
-        q = self.request.GET.get('q', '')
+        q = search_term(self.request)
         payam = self.request.GET.get('payam', '')
         if q:
             qs = qs.filter(Q(name__icontains=q) | Q(description__icontains=q))
@@ -22,7 +23,7 @@ class ClanListView(ListView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx['query'] = self.request.GET.get('q', '')
+        ctx['query'] = search_term(self.request)
         ctx['selected_payam'] = self.request.GET.get('payam', '')
         ctx['payam_choices'] = [('rokon','Rokon'),('tijor','Tijor'),('dolo','Dolo'),('juba','Juba County')]
         ctx['total_count'] = self.get_queryset().count()

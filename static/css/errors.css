@@ -1,0 +1,17 @@
+/* Standalone styles for error pages (400/403/404/429/500). Referenced by a
+   plain /static/ path so they render even if the static manifest or the
+   database is unavailable. */
+:root { --g9: #1B5E20; --g7: #2E7D32; --g1: #E8F5E9; --text: #1F2D1F; --mid: #4A644A; }
+* { box-sizing: border-box; }
+body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+       padding: 24px; background: var(--g9); font-family: 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif; color: var(--text); }
+.card { background: #fff; border-radius: 12px; padding: 44px 40px; max-width: 480px; width: 100%;
+        box-shadow: 0 24px 80px rgba(0,0,0,.3); text-align: center; }
+.code { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 4rem; font-weight: 700; color: var(--g7); line-height: 1; }
+.brand { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 1.15rem; font-weight: 700; color: var(--g9); margin-top: 6px; }
+.sub { font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; color: #6B8F6B; margin-bottom: 22px; }
+h1 { font-size: 1.25rem; margin: 0 0 10px; }
+p { font-size: .92rem; line-height: 1.6; color: var(--mid); margin: 0 0 22px; }
+a.btn { display: inline-block; background: var(--g7); color: #fff; text-decoration: none; border-radius: 6px;
+        padding: 11px 22px; font-weight: 700; font-size: .85rem; letter-spacing: .04em; }
+a.btn:hover { background: var(--g9); }

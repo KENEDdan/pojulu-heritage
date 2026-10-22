@@ -1,5 +1,11 @@
-{% extends "base.html" %}
+{% extends "base.html" %}{% load phf %}
 {% block title %}Interview: {{ interview.elder_name }}{% endblock %}
+{% block og_title %}Interview with {{ interview.elder_name }}{% endblock %}
+{% block twitter_title %}Interview with {{ interview.elder_name }}{% endblock %}
+{% block og_description %}{{ interview.summary|striptags|truncatechars:200 }}{% endblock %}
+{% block meta_description %}{{ interview.summary|striptags|truncatechars:200 }}{% endblock %}
+{% block og_type %}article{% endblock %}
+{% block og_image %}{% if interview.photo_of_elder %}{% absolute_uri interview.photo_of_elder.url as img %}<meta property="og:image" content="{{ img }}"><meta name="twitter:image" content="{{ img }}"><meta name="twitter:card" content="summary_large_image">{% else %}<meta name="twitter:card" content="summary">{% endif %}{% endblock %}
 {% block content %}
 <div class="phf-page-header"><div class="container-xl"><div class="phf-breadcrumb"><a href="{% url 'core:home' %}" data-en="Home" data-ar="الرئيسية">Home</a><span class="phf-breadcrumb-sep">›</span><a href="{% url 'elders:list' %}" data-en="Elder Interviews" data-ar="مقابلات الشيوخ">Elder Interviews</a><span class="phf-breadcrumb-sep">›</span>{{ interview.elder_name }}</div><h1><span data-en="Elder" data-ar="الشيخ">Elder</span> <em>{{ interview.elder_name }}</em></h1><p>{% if interview.clan %}{{ interview.clan.name }} <span data-en="Clan" data-ar="قبيلة">Clan</span> · {% endif %}{% if interview.interview_date %}<span data-en="Recorded " data-ar="سُجِّلت في ">Recorded </span>{{ interview.interview_date|date:"F Y" }}{% endif %}</p></div></div>
 <section class="phf-section"><div class="container-xl">
@@ -33,7 +39,7 @@
     {% if interview.has_video %}
     <div class="mb-4">
       {% if interview.video_file %}<video controls class="w-100 rounded" style="max-height:400px"><source src="{{ interview.video_file.url }}"><span data-en="Video not supported." data-ar="الفيديو غير مدعوم.">Video not supported.</span></video>
-      {% elif interview.video_url %}<div class="ratio ratio-16x9" style="border-radius:var(--radius-lg);overflow:hidden"><iframe src="{{ interview.video_url }}" allowfullscreen></iframe></div>{% endif %}
+      {% elif interview.video_url|embed_url %}<div class="ratio ratio-16x9" style="border-radius:var(--radius-lg);overflow:hidden"><iframe src="{{ interview.video_url|embed_url }}" title="Interview with {{ interview.elder_name }}" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen" referrerpolicy="strict-origin-when-cross-origin" loading="lazy" allowfullscreen></iframe></div>{% endif %}
     </div>
     {% endif %}
     <div class="phf-detail-block mb-4"><div class="phf-detail-block-header"><i class="bi bi-journal-text text-success me-2"></i><h6 class="phf-detail-block-title" data-en="Interview Summary" data-ar="ملخص المقابلة">Interview Summary</h6></div><div style="padding:24px;font-size:.93rem;line-height:1.85;color:var(--text-mid)">{{ interview.summary }}</div></div>
