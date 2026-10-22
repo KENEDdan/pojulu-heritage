@@ -1,13 +1,40 @@
-import os
+"""
+Pojulu Heritage Foundation settings.
+
+Every environment-specific value comes from environment variables (or a local
+.env file via python-decouple). Production behaviour is switched on by
+DEBUG=False plus the variables documented in .env.example and docs/HARDENING.md
+— never by editing this file.
+"""
 from pathlib import Path
-from decouple import config
+
 import dj_database_url
+from decouple import Csv, config
+from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = config('SECRET_KEY')
+# ── CORE ──────────────────────────────────────────────────────────────────────
+
 DEBUG = config('DEBUG', default=False, cast=bool)
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
+
+SECRET_KEY = config('SECRET_KEY', default='')
+if not SECRET_KEY:
+    if not DEBUG:
+        raise ImproperlyConfigured('SECRET_KEY must be set when DEBUG is False.')
+    SECRET_KEY = 'django-insecure-local-development-only-not-for-production'
+
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=Csv())
+CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='http://localhost,http://127.0.0.1', cast=Csv())
+
+# Railway injects RAILWAY_PUBLIC_DOMAIN (e.g. phf-production.up.railway.app);
+# trust it automatically so a fresh service works without extra variables.
+RAILWAY_PUBLIC_DOMAIN = config('RAILWAY_PUBLIC_DOMAIN', default='')
+if RAILWAY_PUBLIC_DOMAIN:
+    ALLOWED_HOSTS.append(RAILWAY_PUBLIC_DOMAIN)
+    CSRF_TRUSTED_ORIGINS.append(f'https://{RAILWAY_PUBLIC_DOMAIN}')
+# Railway's deploy health check calls the container with this Host header.
+ALLOWED_HOSTS.append('healthcheck.railway.app')
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -67,12 +94,28 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'pojulu_heritage.wsgi.application'
 
+# ── DATABASE ──────────────────────────────────────────────────────────────────
+# DATABASE_URL wins (Railway sets it). Otherwise fall back to the local
+# docker-compose Postgres on port 5435.
+
+_LOCAL_DB_URL = 'postgresql://{user}:{pw}@{host}:{port}/{name}'.format(
+    user=config('DB_USER', default='postgres'),
+    pw=config('DB_PASSWORD', default='postgres'),
+    host=config('DB_HOST', default='localhost'),
+    port=config('DB_PORT', default='5435'),
+    name=config('DB_NAME', default='pojulu_heritage'),
+)
 DATABASES = {
     'default': dj_database_url.config(
-        default=f"postgresql://{config('DB_USER', default='postgres')}:{config('DB_PASSWORD', default='postgres')}@{config('DB_HOST', default='localhost')}:{config('DB_PORT', default='5435')}/{config('DB_NAME', default='pojulu_heritage')}",
+        default=config('DATABASE_URL', default=_LOCAL_DB_URL),
         conn_max_age=600,
+        conn_health_checks=True,
     )
 }
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# ── AUTH ──────────────────────────────────────────────────────────────────────
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
@@ -81,56 +124,7 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'Africa/Juba'
-USE_I18N = True
-USE_TZ = True
-
-STATIC_URL = '/static/'
-STATICFILES_DIRS = [BASE_DIR / 'static']
-STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
-WHITENOISE_USE_FINDERS = True
-
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
-
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-CRISPY_ALLOWED_TEMPLATE_PACKS = 'bootstrap5'
-CRISPY_TEMPLATE_PACK = 'bootstrap5'
-
-# Email (configure for production)
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-DEFAULT_FROM_EMAIL = 'Pojulu Heritage Foundation <noreply@pojuluheritage.org>'
-
-# Admin
-ADMIN_SITE_HEADER = 'Pojulu Heritage Foundation'
-ADMIN_SITE_TITLE = 'PHF Admin'
-ADMIN_INDEX_TITLE = 'Heritage Archive Administration'
-
-# Pagination
-RECORDS_PER_PAGE = 12
-
-CSRF_TRUSTED_ORIGINS = config(
-    'CSRF_TRUSTED_ORIGINS',
-    default='http://localhost,http://127.0.0.1'
-).split(',')
-
-# Security headers
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-SECURE_CONTENT_TYPE_NOSNIFF = True
-X_FRAME_OPTIONS = 'DENY'
-SESSION_COOKIE_HTTPONLY = True
-CSRF_COOKIE_HTTPONLY = True
-
-if not DEBUG:
-    SECURE_SSL_REDIRECT = True
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
-    SECURE_HSTS_SECONDS = 31536000
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_HSTS_PRELOAD = True
+LOGIN_URL = 'dashboard:login'
 
 # Login brute-force protection (used in apps.dashboard.views.dashboard_login
 # and apps.wills.views.family_login)
@@ -140,3 +134,72 @@ LOGIN_LOCKOUT_SECONDS = config('LOGIN_LOCKOUT_SECONDS', default=900, cast=int)
 # Note: wills are encrypted with a passphrase each owner chooses themself
 # (see apps.wills.crypto) — deliberately no server-held key here. There is
 # nothing to configure and nothing the app can decrypt on anyone's behalf.
+
+# ── DJANGO ADMIN ──────────────────────────────────────────────────────────────
+# Staff use /dashboard/. The Django admin is only mounted when explicitly
+# enabled, and only superusers may use it (see pojulu_heritage/urls.py).
+
+ENABLE_DJANGO_ADMIN = config('ENABLE_DJANGO_ADMIN', default=False, cast=bool)
+ADMIN_URL_PREFIX = config('ADMIN_URL_PREFIX', default='admin/').strip('/') + '/'
+ADMIN_SITE_HEADER = 'Pojulu Heritage Foundation'
+ADMIN_SITE_TITLE = 'PHF Admin'
+ADMIN_INDEX_TITLE = 'Heritage Archive Administration'
+
+# ── I18N ──────────────────────────────────────────────────────────────────────
+
+LANGUAGE_CODE = 'en-us'
+TIME_ZONE = 'Africa/Juba'
+USE_I18N = True
+USE_TZ = True
+
+# ── STATIC & MEDIA ────────────────────────────────────────────────────────────
+
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [BASE_DIR / 'static']
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+# Dev serves straight from STATICFILES_DIRS so CSS edits show instantly;
+# production serves the hashed, compressed output of collectstatic.
+WHITENOISE_USE_FINDERS = DEBUG
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+STORAGES = {
+    'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
+    'staticfiles': {
+        'BACKEND': (
+            'django.contrib.staticfiles.storage.StaticFilesStorage' if DEBUG
+            else 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+        ),
+    },
+}
+
+# ── SECURITY ──────────────────────────────────────────────────────────────────
+
+# Railway terminates TLS at its edge and forwards X-Forwarded-Proto.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = 'same-origin'
+X_FRAME_OPTIONS = 'DENY'
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = True
+
+if not DEBUG:
+    SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=True, cast=bool)
+    # Railway's internal health check is plain HTTP.
+    SECURE_REDIRECT_EXEMPT = [r'^healthz/?$']
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = config('SECURE_HSTS_SECONDS', default=31536000, cast=int)
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = config('SECURE_HSTS_PRELOAD', default=True, cast=bool)
+
+# ── MISC ──────────────────────────────────────────────────────────────────────
+
+CRISPY_ALLOWED_TEMPLATE_PACKS = 'bootstrap5'
+CRISPY_TEMPLATE_PACK = 'bootstrap5'
+
+EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='Pojulu Heritage Foundation <noreply@pojuluheritage.org>')
+
+RECORDS_PER_PAGE = 25

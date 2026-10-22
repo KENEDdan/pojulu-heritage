@@ -7,9 +7,9 @@ services:
     environment:
       DB_HOST: db
       DB_PORT: "5432"
+      RUN_MIGRATIONS: "1"
     volumes:
       - media_data:/app/media
-      - staticfiles_data:/app/staticfiles
     ports:
       - "8005:8000"
     depends_on:
@@ -37,4 +37,3 @@ services:
 volumes:
   postgres_data:
   media_data:
-  staticfiles_data:

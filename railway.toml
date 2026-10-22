@@ -1,0 +1,13 @@
+# Railway reads this file in addition to the Dockerfile.
+# Migrations run once per deploy (before traffic switches), not on every
+# container start, so multiple replicas never race on migrate.
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+preDeployCommand = ["python manage.py migrate --noinput"]
+healthcheckPath = "/healthz"
+healthcheckTimeout = 60
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 5

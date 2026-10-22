@@ -53,3 +53,45 @@ DB passwords or tokens found in history (placeholders only). `.env` was never tr
 
 Contact fields (`phone`, `email_contact`, `address`) were not rendered in any
 public template at baseline.
+
+---
+
+## Phase 1 — Core settings
+
+- `SECRET_KEY` from env; `ImproperlyConfigured` if missing while `DEBUG=False`
+  (dev falls back to an obviously-insecure local key). `DEBUG` defaults to False.
+- `ALLOWED_HOSTS` / `CSRF_TRUSTED_ORIGINS` are comma-separated env vars
+  (wildcards such as `https://*.up.railway.app` work). Railway's injected
+  `RAILWAY_PUBLIC_DOMAIN` is trusted automatically; `healthcheck.railway.app`
+  is always allowed so the deploy health check works.
+- When `DEBUG=False`: SSL redirect (with `/healthz` exempt — Railway's probe is
+  plain HTTP), proxy SSL header, HSTS 1 year + subdomains (+ preload, env
+  switchable), secure session/CSRF cookies, nosniff, `Referrer-Policy:
+  same-origin`, `X-Frame-Options: DENY`.
+- Static: Django 4.2 `STORAGES`; `CompressedManifestStaticFilesStorage` only in
+  production, plain storage + WhiteNoise finders in dev.
+- Database: `dj_database_url` from `DATABASE_URL`, `conn_max_age=600`,
+  `conn_health_checks=True`; local fallback to the compose Postgres on 5435.
+- Django admin only mounted when `ENABLE_DJANGO_ADMIN=True`, at
+  `ADMIN_URL_PREFIX`; superuser-only. `createsuperuser` is unaffected (the app
+  stays installed; only the URL is conditional).
+- `/healthz` added early (needed by `railway.toml`).
+- Deploy files: `Procfile` (release=migrate, gunicorn gthread workers),
+  `railway.toml` (Dockerfile builder, `preDeployCommand` migrate, health check),
+  Dockerfile now bakes `collectstatic` into the image and honours `$PORT`;
+  the entrypoint only migrates when `RUN_MIGRATIONS=1` (set by docker-compose).
+
+**Bugs found and fixed while doing this phase**
+
+- D7: `templates/dashboard/form.html` rendered the media formset *inside the
+  delete-confirmation modal's form*. On Add pages media uploads never showed;
+  on Edit pages the formset management form was missing from the main POST, so
+  **every clan and person edit silently failed to save**. Moved into the main
+  form; file-field and formset errors are now displayed. Add views now validate
+  the media formset before saving instead of silently dropping it.
+- D8: News posts could only be edited in the Django admin, which is now off by
+  default. Added News & Events CRUD to the dashboard (content_admin +
+  superadmin; delete superadmin-only).
+- D9: ClanBoma, PersonEducation, PersonCareer, Announcement and SiteStats are
+  still admin-only. Use `ENABLE_DJANGO_ADMIN=True` with a secret
+  `ADMIN_URL_PREFIX` temporarily when they need editing (see "Deferred").

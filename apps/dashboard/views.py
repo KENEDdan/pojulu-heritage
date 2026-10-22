@@ -8,7 +8,7 @@ from django.conf import settings
 from django.urls import reverse
 from django.db.models import Q
 from django.utils import timezone
-from .forms import ClanMediaFormSet, PersonMediaFormSet
+from .forms import ClanMediaFormSet, PersonMediaFormSet, NewsMediaFormSet
 
 from .models import AdminProfile, ROLE_CHOICES
 from .forms import (
@@ -18,9 +18,9 @@ from .forms import (
     MemorialRecordForm, AchievementForm,
     MarriageForm, CulturalRecordForm,
     ElderInterviewForm, SubmissionReviewForm,
-    FamilyAccountCredentialsForm, ResetPasswordForm,
+    FamilyAccountCredentialsForm, ResetPasswordForm, NewsPostForm,
     CLAN_FULL, PERSON_FULL, FAMILY_FULL, MEMORIAL_FULL,
-    ACHIEVE_FULL, MARRIAGE_FULL, CULTURAL_FULL, ELDER_FULL,
+    ACHIEVE_FULL, MARRIAGE_FULL, CULTURAL_FULL, ELDER_FULL, NEWS_FULL,
 )
 from apps.clans.models import Clan, ClanChief, ClanEvent
 from apps.genealogy.models import Person, Family
@@ -29,6 +29,7 @@ from apps.achievements.models import Achievement
 from apps.marriages.models import Marriage
 from apps.cultural.models import CulturalRecord
 from apps.elders.models import ElderInterview
+from apps.news.models import NewsPost
 from apps.submissions.models import Submission
 from apps.wills.models import FamilyAccount, Will
 
@@ -293,14 +294,13 @@ def content_dashboard(request):
 @require_role(['clan_admin', 'content_admin'])
 def clan_add(request):
     form = ClanForm(request.POST or None)
-    if request.method == 'POST' and form.is_valid():
+    media_formset = ClanMediaFormSet(request.POST or None, request.FILES or None, instance=Clan())
+    if request.method == 'POST' and form.is_valid() and media_formset.is_valid():
         clan = form.save()
-        media_formset = ClanMediaFormSet(request.POST, request.FILES, instance=clan)
-        if media_formset.is_valid():
-            media_formset.save()
+        media_formset.instance = clan
+        media_formset.save()
         messages.success(request, f'✅ {clan.name} Clan created successfully.')
         return redirect('dashboard:clan_dashboard')
-    media_formset = ClanMediaFormSet(request.POST or None, request.FILES or None)
     return _render_form(request, form,
         title='Add New Clan',
         subtitle='Document a Pojulu clan — its history, origins, and cultural heritage.',
@@ -427,14 +427,13 @@ def event_delete(request, pk):
 @require_role(['genealogy_admin', 'memorial_admin', 'content_admin'])
 def person_add(request):
     form = PersonForm(request.POST or None, request.FILES or None)
-    if request.method == 'POST' and form.is_valid():
+    media_formset = PersonMediaFormSet(request.POST or None, request.FILES or None, instance=Person())
+    if request.method == 'POST' and form.is_valid() and media_formset.is_valid():
         person = form.save()
-        media_formset = PersonMediaFormSet(request.POST, request.FILES, instance=person)
-        if media_formset.is_valid():
-            media_formset.save()
+        media_formset.instance = person
+        media_formset.save()
         messages.success(request, f'✅ {person.full_name} added to the archive.')
         return redirect('dashboard:genealogy_dashboard')
-    media_formset = PersonMediaFormSet(request.POST or None, request.FILES or None)
     return _render_form(request, form,
         title='Add Person',
         subtitle='Add an individual to the Pojulu genealogy archive.',
@@ -730,6 +729,71 @@ def elder_delete(request, pk):
         iv.delete()
         messages.success(request, f'🗑️ Interview with {name} deleted.')
     return redirect('dashboard:elder_dashboard')
+
+
+# ── NEWS CRUD ─────────────────────────────────────
+# News was previously only editable through the Django admin, which is now
+# off by default in production.
+
+@require_role(['content_admin'])
+def news_dashboard(request):
+    return render(request, 'dashboard/news_dashboard.html', {
+        'posts':      NewsPost.objects.select_related('author').order_by('-created_at')[:50],
+        'total':      NewsPost.objects.count(),
+        'published':  NewsPost.objects.filter(is_published=True).count(),
+        'drafts':     NewsPost.objects.filter(is_published=False).count(),
+        'page_title': 'News & Events',
+    })
+
+
+@require_role(['content_admin'])
+def news_add(request):
+    form = NewsPostForm(request.POST or None, request.FILES or None)
+    media_formset = NewsMediaFormSet(request.POST or None, request.FILES or None, instance=NewsPost())
+    if request.method == 'POST' and form.is_valid() and media_formset.is_valid():
+        post = form.save(commit=False)
+        post.author = request.user
+        post.save()
+        media_formset.instance = post
+        media_formset.save()
+        messages.success(request, f'✅ "{post.title}" saved.')
+        return redirect('dashboard:news_dashboard')
+    return _render_form(request, form,
+        title='Add News Post or Event',
+        subtitle='Publish news, events, announcements and community stories.',
+        cancel_url=reverse('dashboard:news_dashboard'),
+        full_fields=NEWS_FULL,
+        media_formset=media_formset, media_title='Gallery & Attachments',
+        page_title='Add News Post', submit_label='Save Post')
+
+
+@require_role(['content_admin'])
+def news_edit(request, pk):
+    post = get_object_or_404(NewsPost, pk=pk)
+    form = NewsPostForm(request.POST or None, request.FILES or None, instance=post)
+    media_formset = NewsMediaFormSet(request.POST or None, request.FILES or None, instance=post)
+    if request.method == 'POST' and form.is_valid() and media_formset.is_valid():
+        form.save()
+        media_formset.save()
+        messages.success(request, f'✅ "{post.title}" updated.')
+        return redirect('dashboard:news_dashboard')
+    return _render_form(request, form,
+        title=f'Edit: {post.title}',
+        cancel_url=reverse('dashboard:news_dashboard'),
+        full_fields=NEWS_FULL, obj=post,
+        delete_url=reverse('dashboard:news_delete', args=[pk]),
+        media_formset=media_formset, media_title='Gallery & Attachments',
+        page_title='Edit News Post')
+
+
+@require_superadmin
+def news_delete(request, pk):
+    post = get_object_or_404(NewsPost, pk=pk)
+    if request.method == 'POST':
+        title = post.title
+        post.delete()
+        messages.success(request, f'🗑️ "{title}" deleted.')
+    return redirect('dashboard:news_dashboard')
 
 
 # ── SUBMISSION REVIEW ─────────────────────────────────

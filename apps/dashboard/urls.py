@@ -64,6 +64,12 @@ urlpatterns = [
     path('elder-interviews/<int:pk>/edit/',   views.elder_edit,   name='elder_edit'),
     path('elder-interviews/<int:pk>/delete/', views.elder_delete, name='elder_delete'),
 
+    # News CRUD
+    path('news/',                  views.news_dashboard, name='news_dashboard'),
+    path('news/add/',              views.news_add,       name='news_add'),
+    path('news/<int:pk>/edit/',    views.news_edit,      name='news_edit'),
+    path('news/<int:pk>/delete/',  views.news_delete,    name='news_delete'),
+
     # Submission Review
     path('submissions/',                  views.submission_list,   name='submission_list'),
     path('submissions/<int:pk>/review/',  views.submission_review, name='submission_review'),

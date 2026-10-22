@@ -227,6 +227,10 @@ body { font-family: var(--font); background: #F0F4F1; color: var(--text); displa
       <i class="bi bi-mic-fill"></i> Elder Interviews
     </a>
 
+    <a href="{% url 'dashboard:news_dashboard' %}" class="dash-nav-link {% if 'news' in request.resolver_match.url_name %}active{% endif %}">
+      <i class="bi bi-newspaper"></i> News &amp; Events
+    </a>
+
     <div class="dash-nav-section">Submissions</div>
     <a href="{% url 'dashboard:submission_list' %}" class="dash-nav-link {% if 'submission' in request.resolver_match.url_name %}active{% endif %}">
       <i class="bi bi-inbox-fill"></i> All Submissions

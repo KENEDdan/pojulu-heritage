@@ -13,6 +13,7 @@ from .models import AdminProfile, ROLE_CHOICES
 from django.forms import inlineformset_factory
 from apps.clans.models import ClanMedia, CLAN_SECTION_CHOICES
 from apps.genealogy.models import PersonMedia
+from apps.news.models import NewsPost, NewsMedia
 
 # ── Widget shorthand ───────────────────────────
 FC  = lambda ph='', rows=0: forms.TextInput(attrs={'class':'form-control','placeholder':ph}) if not rows else forms.Textarea(attrs={'class':'form-control','rows':rows,'placeholder':ph})
@@ -32,6 +33,7 @@ ACHIEVE_FULL  = ['title','description']
 MARRIAGE_FULL = ['children_names','notes']
 CULTURAL_FULL = ['content','translation','context']
 ELDER_FULL    = ['summary','transcript','topics_covered']
+NEWS_FULL     = ['title','excerpt','content','tags']
 
 
 # ═══════════════════════════════════════════════
@@ -397,7 +399,37 @@ class SubmissionReviewForm(forms.ModelForm):
             'reviewer_notes': TA(4,'Internal notes — visible to staff only...'),
         }
 
-        # ═══════════════════════════════════════════════
+
+# ═══════════════════════════════════════════════
+# NEWS FORM
+# ═══════════════════════════════════════════════
+
+DTL = lambda: forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}, format='%Y-%m-%dT%H:%M')
+
+class NewsPostForm(forms.ModelForm):
+    class Meta:
+        model  = NewsPost
+        fields = ['title','post_type','excerpt','content','cover_image','video_url',
+                  'event_date','event_end_date','event_location','is_upcoming',
+                  'tags','is_published','is_featured']
+        widgets = {
+            'title':          FC('Headline'),
+            'post_type':      SEL(),
+            'excerpt':        TA(3,'Brief summary shown on news cards (2–3 sentences)'),
+            'content':        TA(10,'Full article or event description...'),
+            'cover_image':    FIL(),
+            'video_url':      forms.URLInput(attrs={'class':'form-control','placeholder':'YouTube or Vimeo URL'}),
+            'event_date':     DTL(),
+            'event_end_date': DTL(),
+            'event_location': FC('Venue or town'),
+            'is_upcoming':    CHK(),
+            'tags':           FC('Comma-separated tags'),
+            'is_published':   CHK(),
+            'is_featured':    CHK(),
+        }
+
+
+# ═══════════════════════════════════════════════
 # MEDIA FORMSETS — section-tagged photo/document/video/audio uploads
 # ═══════════════════════════════════════════════
 
@@ -428,5 +460,17 @@ PersonMediaFormSet = inlineformset_factory(
         'caption':          TA(2, 'Caption or description...'),
         'date_taken':       FC('Date or approximate year'),
         'is_profile_photo': CHK(),
+    }
+)
+NewsMediaFormSet = inlineformset_factory(
+    NewsPost, NewsMedia,
+    fields=['media_type', 'title', 'file', 'caption', 'order'],
+    extra=2, can_delete=True,
+    widgets={
+        'media_type': SEL(),
+        'title':      FC('Title (optional)'),
+        'file':       FIL(),
+        'caption':    TA(2, 'Caption...'),
+        'order':      NUM('Order'),
     }
 )
