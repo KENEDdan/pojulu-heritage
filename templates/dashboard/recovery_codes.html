@@ -1,0 +1,16 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Recovery Codes{% endblock %}
+{% block page_title %}🔑 Recovery Codes{% endblock %}
+{% block content %}
+<div style="max-width:620px">
+<div class="dash-form-card">
+  <div class="dash-form-title">Save these recovery codes now</div>
+  <p class="dash-form-sub">Each code works <strong>once</strong>, in place of an authenticator code, if you lose your phone.
+     They will <strong>not be shown again</strong>. Print them or store them in a password manager. Any older codes no longer work.</p>
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;font-family:ui-monospace,Consolas,monospace;font-size:1.05rem;background:var(--g0);border:1px solid var(--border);border-radius:8px;padding:18px;user-select:all">
+    {% for code in codes %}<div>{{ code }}</div>{% endfor %}
+  </div>
+  <a href="{% url 'dashboard:home' %}" class="dash-btn dash-btn-primary mt-4">I have saved my codes</a>
+</div>
+</div>
+{% endblock %}

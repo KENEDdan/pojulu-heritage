@@ -36,6 +36,8 @@ from apps.elders.models import ElderInterview
 from apps.news.models import NewsPost
 from apps.submissions.models import Submission
 from apps.wills.models import FamilyAccount, Will
+from django_otp import user_has_device
+from .twofactor import begin_pending_login, superadmin_2fa_redirect
 
 security_log = logging.getLogger('phf.security')
 
@@ -73,6 +75,10 @@ def require_superadmin(view_func):
     def wrapper(request, *args, **kwargs):
         if not request.user.is_authenticated:
             return redirect('dashboard:login')
+        if request.user.is_superuser:
+            needs_2fa = superadmin_2fa_redirect(request)
+            if needs_2fa:
+                return needs_2fa
         if not request.user.is_superuser:
             security_log.warning('Permission denied (superadmin only): user=%s path=%s', request.user.username, request.path)
             if not is_dashboard_user(request.user):
@@ -90,7 +96,7 @@ def require_role(allowed_roles):
             if not request.user.is_authenticated:
                 return redirect('dashboard:login')
             if request.user.is_superuser:
-                return view_func(request, *args, **kwargs)
+                return superadmin_2fa_redirect(request) or view_func(request, *args, **kwargs)
             try:
                 p = request.user.admin_profile
                 if not p.is_active:
@@ -151,6 +157,8 @@ def dashboard_login(request):
         password = request.POST.get('password', '')
         user = authenticate(request, username=username, password=password)
         if user is not None and is_dashboard_user(user):
+            if user.is_superuser and user_has_device(user):
+                return begin_pending_login(request, user)   # second step: authenticator code
             login(request, user)
             security_log.info('Dashboard login: user=%s', user.username)
             return redirect(get_role_redirect(user))

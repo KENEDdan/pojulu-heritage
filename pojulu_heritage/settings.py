@@ -53,6 +53,9 @@ INSTALLED_APPS = [
     'storages',
     'csp',
     'simple_history',
+    'django_otp',
+    'django_otp.plugins.otp_totp',
+    'django_otp.plugins.otp_static',
     'apps.core',
     'apps.clans',
     'apps.genealogy',
@@ -75,6 +78,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django_otp.middleware.OTPMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'apps.dashboard.middleware.ActiveAccountMiddleware',
@@ -162,6 +166,12 @@ CSRF_COOKIE_SAMESITE = 'Lax'
 # X-Forwarded-For (Railway's edge = 1). 0 ignores X-Forwarded-For entirely.
 # See apps/core/net.py.
 TRUSTED_PROXY_COUNT = config('TRUSTED_PROXY_COUNT', default=0 if DEBUG else 1, cast=int)
+
+# ── Two-factor authentication for superadmins (django-otp, TOTP) ───────────
+# When True, superusers must enrol an authenticator app before using any
+# superadmin page. Superusers who have enrolled always get the second step.
+REQUIRE_SUPERADMIN_2FA = config('REQUIRE_SUPERADMIN_2FA', default=False, cast=bool)
+OTP_TOTP_ISSUER = 'Pojulu Heritage Foundation'
 
 # ── django-axes: brute-force lockout for /dashboard/login/ and /family/login/
 AXES_ENABLED = config('AXES_ENABLED', default=True, cast=bool)

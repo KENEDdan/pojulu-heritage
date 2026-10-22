@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views
+from . import twofactor, views
 
 app_name = 'dashboard'
 
@@ -7,6 +7,10 @@ urlpatterns = [
     # Auth
     path('login/',   views.dashboard_login,  name='login'),
     path('logout/',  views.dashboard_logout, name='logout'),
+    path('login/verify/', twofactor.login_verify, name='login_verify'),
+    path('2fa/',                 twofactor.twofactor,                 name='twofactor'),
+    path('2fa/recovery-codes/',  twofactor.regenerate_recovery_codes, name='twofactor_recovery'),
+    path('2fa/disable/',         twofactor.disable_twofactor,         name='twofactor_disable'),
 
     # Superadmin home
     path('', views.home, name='home'),

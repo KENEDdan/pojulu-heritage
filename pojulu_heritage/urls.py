@@ -31,7 +31,9 @@ if settings.ENABLE_DJANGO_ADMIN:
     admin.site.site_header = settings.ADMIN_SITE_HEADER
     admin.site.site_title  = settings.ADMIN_SITE_TITLE
     admin.site.index_title = settings.ADMIN_INDEX_TITLE
-    admin.site.has_permission = lambda request: request.user.is_active and request.user.is_superuser
+    from apps.dashboard.twofactor import superadmin_2fa_ok
+    admin.site.has_permission = lambda request: (request.user.is_active and request.user.is_superuser
+                                                 and superadmin_2fa_ok(request.user))
     urlpatterns.insert(0, path(settings.ADMIN_URL_PREFIX, admin.site.urls))
 
 if settings.DEBUG:

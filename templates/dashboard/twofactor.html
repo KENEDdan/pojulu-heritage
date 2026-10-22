@@ -1,0 +1,45 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Two-Factor Authentication{% endblock %}
+{% block page_title %}🔐 Two-Factor Authentication{% endblock %}
+{% block content %}
+<div style="max-width:720px">
+<div class="dash-form-card">
+{% if enabled %}
+  <div class="dash-form-title"><i class="bi bi-check-circle-fill text-success me-2"></i>Two-factor authentication is on</div>
+  <p class="dash-form-sub">Every sign-in to this Super Administrator account needs a code from your authenticator app
+     (or a recovery code) after the password.</p>
+  <p style="font-size:.9rem">Unused recovery codes: <strong>{{ recovery_left }}</strong>{% if recovery_left < 3 %} &mdash; <span style="color:#C62828">generate new ones soon</span>{% endif %}</p>
+  <div class="d-flex gap-2 flex-wrap mt-3">
+    <form method="post" action="{% url 'dashboard:twofactor_recovery' %}">{% csrf_token %}
+      <button class="dash-btn dash-btn-outline" type="submit"><i class="bi bi-arrow-repeat me-1"></i>Generate new recovery codes</button>
+    </form>
+  </div>
+  {% if not required %}
+  <hr>
+  <form method="post" action="{% url 'dashboard:twofactor_disable' %}" class="d-flex gap-2 flex-wrap align-items-end">{% csrf_token %}
+    <div><label class="dash-label" for="disable-token">Current code</label>
+      <input id="disable-token" name="token" class="form-control" inputmode="numeric" autocomplete="one-time-code" maxlength="32" required></div>
+    <button class="dash-btn dash-btn-danger" type="submit">Turn off two-factor authentication</button>
+  </form>
+  {% else %}
+  <p style="font-size:.8rem;color:var(--light);margin-top:18px">Two-factor authentication is required for Super Administrators on this site.</p>
+  {% endif %}
+{% else %}
+  <div class="dash-form-title">Set up your authenticator app</div>
+  <p class="dash-form-sub">{% if required %}Two-factor authentication is <strong>required</strong> for Super Administrators. {% endif %}
+     Use Google Authenticator, Microsoft Authenticator, Authy, 1Password or any TOTP app.</p>
+  <ol style="font-size:.9rem;line-height:1.7">
+    <li>In the app, add an account and scan this QR code:</li>
+  </ol>
+  <img src="{{ qr }}" alt="QR code for your authenticator app" width="220" height="220" style="display:block;margin:0 0 12px 22px;background:#fff;padding:8px;border:1px solid var(--border);border-radius:8px">
+  <p style="font-size:.82rem;margin-left:22px">Can&rsquo;t scan? Enter this key manually: <code style="font-size:.9rem;user-select:all">{{ secret }}</code></p>
+  <ol start="2" style="font-size:.9rem;line-height:1.7"><li>Enter the 6-digit code the app shows:</li></ol>
+  {% if error %}<div class="alert alert-danger py-2" style="font-size:.84rem">{{ error }}</div>{% endif %}
+  <form method="post" class="d-flex gap-2 flex-wrap align-items-end" style="margin-left:22px" autocomplete="off">{% csrf_token %}
+    <input name="token" class="form-control" style="max-width:180px" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required placeholder="123456">
+    <button class="dash-btn dash-btn-primary" type="submit"><i class="bi bi-shield-check me-1"></i>Turn on</button>
+  </form>
+{% endif %}
+</div>
+</div>
+{% endblock %}

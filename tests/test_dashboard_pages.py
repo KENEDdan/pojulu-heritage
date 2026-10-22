@@ -18,7 +18,7 @@ PAGES = {
     'submission_list': None, 'submission_review': 'submission',
     'accounts': None, 'create_account': None,
     'family_account_list': None, 'family_account_search': None, 'family_account_create_new_person': None,
-    'trash': None, 'activity_log': None,
+    'trash': None, 'activity_log': None, 'twofactor': None,
 }
 EMPTY_OK = [name for name, key in PAGES.items() if key is None]
 

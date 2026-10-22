@@ -256,6 +256,9 @@ body { font-family: var(--font); background: #F0F4F1; color: var(--text); displa
     <a href="{% url 'dashboard:trash' %}" class="dash-nav-link {% if 'trash' in request.resolver_match.url_name %}active{% endif %}">
       <i class="bi bi-trash3"></i> Trash
     </a>
+    <a href="{% url 'dashboard:twofactor' %}" class="dash-nav-link {% if 'twofactor' in request.resolver_match.url_name %}active{% endif %}">
+      <i class="bi bi-phone-vibrate"></i> Two-Factor Auth
+    </a>
     {% endif %}
 
     <div class="dash-nav-section">Site</div>

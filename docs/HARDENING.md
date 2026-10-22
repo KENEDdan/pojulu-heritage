@@ -415,3 +415,53 @@ public template at baseline.
 6. Trigger one run manually and confirm a `.dump` object appears. Then do
    a test restore following `scripts/restore_db.md`. A backup that has never been
    restored is not a backup.
+
+---
+
+## Phase 9 — Two-factor authentication for superadmins
+
+### Design note (written before implementation)
+
+- **Scope**: superusers only. They can create accounts, reveal wills, purge
+  records and read every private file, so they are the account that most needs
+  protecting. Role-scoped staff are unaffected.
+- **Library**: `django-otp` with the TOTP plugin (authenticator apps such as
+  Google Authenticator, Authy, 1Password) and the static plugin for one-time
+  **recovery codes**. `OTPMiddleware` gives `request.user.is_verified()`.
+- **Flow** (inside the existing `/dashboard/login/`, no Django admin):
+  1. The password step runs through axes as before.
+  2. If the superuser has a confirmed authenticator, they are **not** logged
+     in yet. Only their user id and a timestamp go into the session ("2FA
+     pending", valid 5 minutes), and they are sent to `/dashboard/login/verify/`.
+  3. A valid 6-digit TOTP code or an unused recovery code completes the login
+     (`login()` + `otp_login()`; the session key rotates). Five wrong codes end
+     the pending state, so the password must be entered again (and that counts
+     towards the axes lockout). django-otp also throttles TOTP attempts and
+     rejects a code that was already used.
+- **Enrolment**: `/dashboard/2fa/` shows a QR code (inline SVG, no external
+  service, CSP-safe) and the base32 secret. The device is only confirmed once a
+  correct code has been entered. Ten single-use recovery codes are then shown
+  **once**, and can be regenerated later (POST, requires a verified session).
+- **Enforcement**: `REQUIRE_SUPERADMIN_2FA=True` makes every superadmin page
+  redirect to enrolment until the superuser has an authenticator, and requires a
+  verified session afterwards. With the flag off, 2FA is optional, but once a
+  superuser enrols, the second step is always required for them.
+- **Lost device**: use a recovery code, or have someone with shell access
+  run `py manage.py reset_2fa <username>` (removes that user's devices; logged).
+
+### Implementation
+
+Implemented as designed (`apps/dashboard/twofactor.py`): django-otp 1.7
+(TOTP + static), routes `/dashboard/login/verify/`, `/dashboard/2fa/`,
+`/dashboard/2fa/recovery-codes/` (POST) and `/dashboard/2fa/disable/` (POST, needs a
+current code, refused when 2FA is required), sidebar link "Two-Factor Auth",
+`py manage.py reset_2fa <username>`. The enrolment check also applies to the
+private-media gate and to the (optional) Django admin. Tests cover: password alone
+doesn't log in, valid code logs in, wrong codes capped at 5, a code can't be
+replayed, recovery codes are single-use, the pending step expires, stale
+unverified sessions are rejected, enrolment and the require flag, and staff roles
+being unaffected.
+
+**Rollout:** deploy with `REQUIRE_SUPERADMIN_2FA=False`. Each superadmin opens
+*Two-Factor Auth* in the dashboard, enrols and saves their recovery codes. Then
+set `REQUIRE_SUPERADMIN_2FA=True`.

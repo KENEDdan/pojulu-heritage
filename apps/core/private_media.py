@@ -49,7 +49,8 @@ def staff_role(user):
     if not user.is_authenticated or not user.is_active:
         return None
     if user.is_superuser:
-        return 'superadmin'
+        from apps.dashboard.twofactor import superadmin_2fa_ok
+        return 'superadmin' if superadmin_2fa_ok(user) else None
     profile = getattr(user, 'admin_profile', None)
     if profile is not None and profile.is_active:
         return profile.role
