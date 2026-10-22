@@ -11,7 +11,7 @@
 
   {% if query %}
     {% if total_results == 0 %}
-    <div class="phf-empty"><span class="phf-empty-icon">🔍</span><h5><span data-en="No results found for" data-ar="لا توجد نتائج لـ">No results found for</span> &ldquo;{{ query }}&rdquo;</h5><p><span data-en="Try different keywords, or" data-ar="جرّب كلمات مختلفة، أو">Try different keywords, or</span> <a href="{% url 'submissions:form' %}" data-en="submit this record" data-ar="أرسل هذا السجل">submit this record</a> <span data-en="if it doesn&rsquo;t exist yet." data-ar="إذا لم يكن موجودًا بعد.">if it doesn&rsquo;t exist yet.</span></p></div>
+    <div class="phf-empty"><span class="phf-empty-icon">🔍</span><h5><span data-en="No results found for" data-ar="لا توجد نتائج لـ">No results found for</span> &ldquo;{{ query }}&rdquo;</h5><p><span data-en="Try different or shorter keywords.">Try different or shorter keywords.</span></p></div>
     {% else %}
     <p class="mb-5" style="color:var(--text-light);font-size:.88rem">{{ total_results }} result{{ total_results|pluralize }} found</p>
 

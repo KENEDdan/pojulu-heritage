@@ -34,5 +34,5 @@
 {% endfor %}
 </div>
 {% include "partials/pagination.html" %}
-{% else %}<div class="phf-empty"><span class="phf-empty-icon">🎙️</span><h5 data-en="No interviews published yet" data-ar="لا توجد مقابلات منشورة بعد">No interviews published yet</h5><p><span data-en="The elder interview programme is underway. Check back soon, or " data-ar="برنامج مقابلات الشيوخ قيد التنفيذ. تفقد الصفحة قريبًا، أو ">The elder interview programme is underway. Check back soon, or </span><a href="{% url 'submissions:form' %}" data-en="request an elder interview" data-ar="اطلب مقابلة مع أحد الشيوخ">request an elder interview</a>.</p></div>{% endif %}
+{% else %}<div class="phf-empty"><span class="phf-empty-icon">🎙️</span><h5 data-en="No interviews published yet" data-ar="لا توجد مقابلات منشورة بعد">No interviews published yet</h5><p><span data-en="The elder interview programme is underway. Check back soon.">The elder interview programme is underway. Check back soon.</span></p></div>{% endif %}
 </div></section>{% endblock %}

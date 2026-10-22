@@ -95,14 +95,6 @@
           <td style="font-size:.78rem;color:var(--light)">{{ sub.created_at|date:"d M Y" }}</td>
           <td>
             <div class="d-flex gap-1">
-              <form method="post" action="{% url 'dashboard:approve_submission' sub.pk %}">
-                {% csrf_token %}<input type="hidden" name="action" value="approve">
-                <button type="submit" class="dash-btn dash-btn-primary dash-btn-sm dash-btn-icon" title="Approve"><i class="bi bi-check-lg"></i></button>
-              </form>
-              <form method="post" action="{% url 'dashboard:approve_submission' sub.pk %}">
-                {% csrf_token %}<input type="hidden" name="action" value="reject">
-                <button type="submit" class="dash-btn dash-btn-danger dash-btn-sm dash-btn-icon" title="Reject"><i class="bi bi-x-lg"></i></button>
-              </form>
               <a href="{% url 'dashboard:submission_review' sub.pk %}" class="dash-btn dash-btn-outline dash-btn-sm dash-btn-icon" title="Full review"><i class="bi bi-eye"></i></a>
             </div>
           </td>
