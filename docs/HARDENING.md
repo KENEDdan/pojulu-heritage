@@ -364,3 +364,54 @@ public template at baseline.
 - **Caching**: the home page stats and news blocks are cached for 60 s
   (`home:stats`, `home:news`) in the default cache: LocMem in dev, Redis when
   `REDIS_URL` is set.
+
+---
+
+## Phase 8 — Observability and backups
+
+- **Sentry** (`sentry-sdk` + DjangoIntegration) only when `SENTRY_DSN` is set:
+  `send_default_pii=False`, `max_request_body_size='never'` (no form bodies,
+  so no passwords, will passphrases or personal data), `traces_sample_rate`
+  0.1 (env `SENTRY_TRACES_SAMPLE_RATE`), `environment` from
+  `SENTRY_ENVIRONMENT`, release = Railway's `RAILWAY_GIT_COMMIT_SHA`.
+- **Logging**: one-line JSON to stdout in production (`apps/core/logging.py`),
+  plain text in dev. The `phf.security` logger records failed logins
+  (username + proxy-aware IP, never the password), lockouts (axes), permission
+  denials, refused dashboard logins, staff account creation / role changes /
+  (de)activation, Trash moves, restores and permanent deletes, and sessions ended
+  because an account was deactivated. `django.security` (CSRF failures,
+  disallowed hosts) and `django.request` (4xx/5xx) are kept at WARNING.
+- **`/healthz`**: `SELECT 1` against the DB → `{"status":"ok","database":"ok"}`
+  or HTTP 503 `{"status":"error","database":"unavailable"}`. No versions, hosts
+  or error text. Exempt from the HTTPS redirect for Railway's probe.
+- **Backups** (`scripts/backup_db.py`): `pg_dump --format=custom --compress=9`
+  from `DATABASE_URL` (password passed only via `PGPASSWORD`), validates the
+  `PGDMP` header, uploads to `s3://$BACKUP_BUCKET_NAME/db-backups/yyyy/mm/dd/`,
+  checks the uploaded size, then deletes backups older than 30 days while always
+  keeping the 7 newest. Exits non-zero on any failure. **Tested locally**: dump
+  from the compose Postgres 16, restored into a scratch DB, table and row counts
+  identical (`scripts/restore_db.md`).
+  - The Dockerfile now installs `postgresql-client-17` from the PGDG apt repo.
+    Debian's default client is older than Railway's Postgres, and pg_dump refuses
+    to dump a newer server.
+- **`py manage.py check_media_integrity [--fail]`**: lists every record
+  (including the Trash) whose file is missing from storage. `--fail` exits 1, for
+  cron or alerts.
+
+### Scheduling the backup on Railway (cron service)
+
+1. In the Railway project: **New → GitHub Repo → this repo** (a second
+   service built from the same Dockerfile). Name it `phf-backup`.
+2. Settings → **Cron Schedule**: `0 1 * * *` (01:00 UTC = 03:00 Juba time).
+3. Settings → **Custom Start Command**: `python scripts/backup_db.py`
+   (no web server; the container exits when the backup finishes).
+4. Remove the health check and pre-deploy command for this service (the
+   `railway.toml` values apply to the web service; override them in the
+   service settings).
+5. Variables: `DATABASE_URL=${{Postgres.DATABASE_URL}}`, `SECRET_KEY`
+   (any value; Django isn't started), and `AWS_ACCESS_KEY_ID`,
+   `AWS_SECRET_ACCESS_KEY`, `AWS_S3_ENDPOINT_URL`, `AWS_S3_REGION_NAME`,
+   `BACKUP_BUCKET_NAME` (a **private** bucket; a dedicated `phf-backups` bucket is ideal).
+6. Trigger one run manually and confirm a `.dump` object appears. Then do
+   a test restore following `scripts/restore_db.md`. A backup that has never been
+   restored is not a backup.

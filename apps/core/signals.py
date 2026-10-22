@@ -39,3 +39,18 @@ def connect_file_cleanup():
         if any(isinstance(f, models.FileField) for f in model._meta.get_fields()):
             post_delete.connect(_delete_files, sender=model, weak=False,
                                 dispatch_uid=f'phf-file-cleanup-{model._meta.label}')
+
+
+def log_failed_login(sender, credentials, request=None, **kwargs):
+    from apps.core.net import client_ip
+    log.warning('Failed login', extra={
+        'event': 'login_failed',
+        'username': (credentials or {}).get('username', '')[:150],
+        'ip': client_ip(request) if request is not None else None,
+        'path': getattr(request, 'path', None),
+    })
+
+
+def connect_security_logging():
+    from django.contrib.auth.signals import user_login_failed
+    user_login_failed.connect(log_failed_login, dispatch_uid='phf-log-failed-login')

@@ -4,9 +4,18 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1
 
-# postgresql-client provides pg_dump for scripts/backup_db.py (cron service).
+# pg_dump/pg_restore for scripts/backup_db.py (Railway cron service). They
+# must be at least the server's major version, so install them from the
+# PostgreSQL project's apt repo rather than Debian's older default.
+ARG PG_CLIENT_VERSION=17
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential libpq-dev curl postgresql-client \
+        build-essential libpq-dev curl ca-certificates \
+    && install -d /usr/share/postgresql-common/pgdg \
+    && curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+    && . /etc/os-release \
+    && echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt ${VERSION_CODENAME}-pgdg main" \
+        > /etc/apt/sources.list.d/pgdg.list \
+    && apt-get update && apt-get install -y --no-install-recommends postgresql-client-${PG_CLIENT_VERSION} \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -22,7 +31,7 @@ RUN chmod +x docker-entrypoint.sh
 RUN SECRET_KEY=collectstatic-build-only DEBUG=False python manage.py collectstatic --noinput
 
 RUN useradd --create-home --uid 1000 appuser \
-    && mkdir -p /app/media \
+    && mkdir -p /app/media /app/private_media \
     && chown -R appuser:appuser /app
 USER appuser
 

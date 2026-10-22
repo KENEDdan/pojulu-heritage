@@ -9,3 +9,4 @@ class CoreConfig(AppConfig):
     def ready(self):
         from . import signals
         signals.connect_file_cleanup()
+        signals.connect_security_logging()

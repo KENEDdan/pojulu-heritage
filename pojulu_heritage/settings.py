@@ -354,6 +354,50 @@ else:
 # History rows keep file *names* only, never a second copy of the file.
 SIMPLE_HISTORY_FILEFIELD_TO_CHARFIELD = True
 
+# ── LOGGING ───────────────────────────────────────────────────────────────────
+# JSON lines on stdout (Railway collects them). Security events go to the
+# `phf.security` logger: failed logins, lockouts (axes), permission denials,
+# role/account changes, Trash moves and permanent deletes.
+LOG_LEVEL = config('LOG_LEVEL', default='INFO')
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'json': {'()': 'apps.core.logging.JsonFormatter'},
+        'plain': {'format': '%(levelname)s %(name)s: %(message)s'},
+    },
+    'handlers': {
+        'console': {'class': 'logging.StreamHandler', 'formatter': 'plain' if DEBUG else 'json'},
+    },
+    'root': {'handlers': ['console'], 'level': 'WARNING'},
+    'loggers': {
+        'django': {'handlers': ['console'], 'level': 'INFO', 'propagate': False},
+        'django.request': {'handlers': ['console'], 'level': 'WARNING', 'propagate': False},
+        'django.security': {'handlers': ['console'], 'level': 'WARNING', 'propagate': False},
+        'django.db.backends': {'handlers': ['console'], 'level': 'WARNING', 'propagate': False},
+        'axes': {'handlers': ['console'], 'level': 'WARNING', 'propagate': False},
+        'phf': {'handlers': ['console'], 'level': LOG_LEVEL, 'propagate': False},
+    },
+}
+
+# ── ERROR MONITORING (Sentry) ─────────────────────────────────────────────────
+SENTRY_DSN = config('SENTRY_DSN', default='')
+if SENTRY_DSN:
+    import sentry_sdk
+    from sentry_sdk.integrations.django import DjangoIntegration
+
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        integrations=[DjangoIntegration()],
+        environment=config('SENTRY_ENVIRONMENT', default='development' if DEBUG else 'production'),
+        release=config('RAILWAY_GIT_COMMIT_SHA', default='') or None,
+        traces_sample_rate=config('SENTRY_TRACES_SAMPLE_RATE', default=0.1, cast=float),
+        # No user IPs, cookies, headers or request bodies (wills, passwords,
+        # personal data) are ever sent to Sentry.
+        send_default_pii=False,
+        max_request_body_size='never',
+    )
+
 # ── MISC ──────────────────────────────────────────────────────────────────────
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = 'bootstrap5'
