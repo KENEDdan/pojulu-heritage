@@ -10,3 +10,14 @@ db.sqlite3
 *.sqlite3
 .DS_Store
 Thumbs.db
+
+# Local-only
+scratch_*.py
+*.dump
+*.sql
+*.sql.gz
+*.dump.gz
+backups/
+.coverage
+htmlcov/
+.pytest_cache/

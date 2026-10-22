@@ -1,5 +1,6 @@
 from django.db import models
 from django.urls import reverse
+from apps.core.validators import validate_upload_size, validate_image_extension, validate_audio_extension
 
 RECORD_TYPE_CHOICES = [
     ('song',      'Traditional Song'),
@@ -38,9 +39,11 @@ class CulturalRecord(models.Model):
                                       help_text="When, how, and why this is used / performed")
     performers    = models.CharField(max_length=300, blank=True,
                                       help_text="Who traditionally performs or recites this")
-    audio_file    = models.FileField(upload_to='cultural/audio/', blank=True, null=True)
+    audio_file    = models.FileField(upload_to='cultural/audio/', blank=True, null=True,
+                                      validators=[validate_audio_extension, validate_upload_size])
     video_url     = models.URLField(blank=True, help_text="YouTube/Vimeo link to a recording")
-    image         = models.ImageField(upload_to='cultural/images/', blank=True, null=True)
+    image         = models.ImageField(upload_to='cultural/images/', blank=True, null=True,
+                                       validators=[validate_image_extension, validate_upload_size])
     language      = models.CharField(max_length=100, default='Pojulu')
     source        = models.CharField(max_length=300, blank=True,
                                       help_text="Source: elder name, interview date, document ref")

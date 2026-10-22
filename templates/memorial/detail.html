@@ -3,9 +3,9 @@
 {% block content %}
 <div class="phf-page-header">
   <div class="container-xl">
-    <div class="phf-breadcrumb"><a href="{% url 'core:home' %}">Home</a><span class="phf-breadcrumb-sep">›</span><a href="{% url 'memorial:list' %}">Memorial</a><span class="phf-breadcrumb-sep">›</span>{{ memorial.person.full_name }}</div>
-    <h1>In Memoriam: <em>{{ memorial.person.full_name }}</em></h1>
-    <p>{{ memorial.person.lifespan }} {% if memorial.person.clan %}&bull; {{ memorial.person.clan.name }} Clan{% endif %}</p>
+    <div class="phf-breadcrumb"><a href="{% url 'core:home' %}" data-en="Home" data-ar="الرئيسية">Home</a><span class="phf-breadcrumb-sep">›</span><a href="{% url 'memorial:list' %}" data-en="Memorial" data-ar="تذكار">Memorial</a><span class="phf-breadcrumb-sep">›</span>{{ memorial.person.full_name }}</div>
+    <h1><span data-en="In Memoriam:" data-ar="في ذكرى:">In Memoriam:</span> <em>{{ memorial.person.full_name }}</em></h1>
+    <p>{{ memorial.person.lifespan }} {% if memorial.person.clan %}&bull; {{ memorial.person.clan.name }} <span data-en="Clan" data-ar="قبيلة">Clan</span>{% endif %}</p>
   </div>
 </div>
 <section class="phf-section">
@@ -15,28 +15,28 @@
       <div>
         <h2 class="text-display" style="font-size:2.2rem;color:var(--text)">{{ memorial.person.full_name }}</h2>
         <p style="color:var(--text-light);font-size:.9rem">{{ memorial.person.lifespan }}</p>
-        {% if memorial.person.clan %}<span class="phf-tag">{{ memorial.person.clan.name }} Clan</span>{% endif %}
+        {% if memorial.person.clan %}<span class="phf-tag">{{ memorial.person.clan.name }} <span data-en="Clan" data-ar="قبيلة">Clan</span></span>{% endif %}
         {% if memorial.person.payam %}<span class="phf-tag ms-2">{{ memorial.person.get_payam_display }}</span>{% endif %}
         {% if memorial.epitaph %}<p class="mt-3 fst-italic" style="color:var(--text-mid);font-family:var(--font-display);font-size:1.1rem">"{{ memorial.epitaph }}"</p>{% endif %}
       </div>
     </div>
     <div class="phf-detail-block mb-4">
-      <div class="phf-detail-block-header"><i class="bi bi-book text-success me-2"></i><h6 class="phf-detail-block-title">Life & Legacy</h6></div>
+      <div class="phf-detail-block-header"><i class="bi bi-book text-success me-2"></i><h6 class="phf-detail-block-title" data-en="Life &amp; Legacy" data-ar="الحياة والإرث">Life &amp; Legacy</h6></div>
       <div style="padding:24px;font-size:.93rem;line-height:1.85;color:var(--text-mid)">{{ memorial.tribute }}</div>
     </div>
     {% if memorial.survived_by %}
     <div class="phf-detail-block mb-4">
-      <div class="phf-detail-block-header"><i class="bi bi-people text-success me-2"></i><h6 class="phf-detail-block-title">Survived By</h6></div>
+      <div class="phf-detail-block-header"><i class="bi bi-people text-success me-2"></i><h6 class="phf-detail-block-title" data-en="Survived By" data-ar="يخلفه">Survived By</h6></div>
       <div style="padding:24px;font-size:.9rem;color:var(--text-mid)">{{ memorial.survived_by }}</div>
     </div>
     {% endif %}
     {% if memorial.burial_place %}
     <div class="phf-detail-block">
-      <div class="phf-detail-row"><span class="phf-detail-label">Resting Place</span><span class="phf-detail-value">{{ memorial.burial_place }}</span></div>
+      <div class="phf-detail-row"><span class="phf-detail-label" data-en="Resting Place" data-ar="مكان الدفن">Resting Place</span><span class="phf-detail-value">{{ memorial.burial_place }}</span></div>
     </div>
     {% endif %}
     <div class="mt-4 d-flex gap-3 flex-wrap">
-      <a href="{% url 'memorial:list' %}" class="phf-btn phf-btn-outline"><i class="bi bi-arrow-left"></i> Back to Memorial</a>
+      <a href="{% url 'memorial:list' %}" class="phf-btn phf-btn-outline"><i class="bi bi-arrow-left"></i> <span data-en="Back to Memorial" data-ar="العودة إلى صفحة التذكار">Back to Memorial</span></a>
       
   </div>
 </section>

@@ -3,21 +3,21 @@
 {% block content %}
 <div class="phf-page-header">
   <div class="container-xl">
-    <div class="phf-breadcrumb"><a href="{% url 'core:home' %}">Home</a><span class="phf-breadcrumb-sep">›</span>Memorial</div>
-    <h1>In <em>Memoriam</em></h1>
-    <p>Honouring the memory of those who came before us — the elders, leaders, parents, and community pillars whose lives shaped who we are.</p>
+    <div class="phf-breadcrumb"><a href="{% url 'core:home' %}" data-en="Home" data-ar="الرئيسية">Home</a><span class="phf-breadcrumb-sep">›</span><span data-en="Memorial" data-ar="تذكار">Memorial</span></div>
+    <h1 data-en="In <em>Memoriam</em>" data-ar="في <em>ذكرى الراحلين</em>">In <em>Memoriam</em></h1>
+    <p data-en="Honouring the memory of those who came before us — the elders, leaders, parents, and community pillars whose lives shaped who we are." data-ar="تكريماً لذكرى من سبقونا — الشيوخ والقادة والآباء وركائز المجتمع الذين شكّلت حياتهم من نحن.">Honouring the memory of those who came before us — the elders, leaders, parents, and community pillars whose lives shaped who we are.</p>
   </div>
 </div>
 <section class="phf-section">
   <div class="container-xl">
     <form method="get" class="phf-search-bar">
-      <input type="text" name="q" class="form-control" placeholder="Search by name or tribute…" value="{{ query }}">
+      <input type="text" name="q" class="form-control" placeholder="Search by name or tribute…" data-placeholder-en="Search by name or tribute…" data-placeholder-ar="ابحث بالاسم أو التكريم…" value="{{ query }}">
       <select name="clan" class="form-select phf-auto-submit" style="max-width:200px">
-        <option value="">All Clans</option>
+        <option value="" data-en="All Clans" data-ar="جميع القبائل">All Clans</option>
         {% for clan in clans %}<option value="{{ clan.slug }}" {% if selected_clan == clan.slug %}selected{% endif %}>{{ clan.name }}</option>{% endfor %}
       </select>
-      <button type="submit" class="phf-btn phf-btn-primary"><i class="bi bi-search"></i> Search</button>
-      {% if query or selected_clan %}<a href="{% url 'memorial:list' %}" class="phf-btn phf-btn-outline">Clear</a>{% endif %}
+      <button type="submit" class="phf-btn phf-btn-primary"><i class="bi bi-search"></i> <span data-en="Search" data-ar="بحث">Search</span></button>
+      {% if query or selected_clan %}<a href="{% url 'memorial:list' %}" class="phf-btn phf-btn-outline" data-en="Clear" data-ar="مسح">Clear</a>{% endif %}
     </form>
     {% if memorials %}
     <div class="row g-4">
@@ -28,7 +28,7 @@
             <div class="phf-memorial-avatar">{{ mem.person.initials }}</div>
             <h5 class="phf-memorial-name">{{ mem.person.full_name }}</h5>
             <p class="phf-memorial-years">{{ mem.person.lifespan }}</p>
-            {% if mem.person.clan %}<p class="phf-memorial-clan">{{ mem.person.clan.name }} Clan &bull; {{ mem.person.get_payam_display }}</p>{% endif %}
+            {% if mem.person.clan %}<p class="phf-memorial-clan">{{ mem.person.clan.name }} <span data-en="Clan" data-ar="قبيلة">Clan</span> &bull; {{ mem.person.get_payam_display }}</p>{% endif %}
             <p class="phf-memorial-excerpt">{{ mem.tribute|truncatewords:24 }}</p>
           </div>
         </a>
@@ -37,7 +37,7 @@
     </div>
     {% include "partials/pagination.html" %}
     {% else %}
-    <div class="phf-empty"><span class="phf-empty-icon">🕊️</span><h5>No memorial records yet</h5></div>
+    <div class="phf-empty"><span class="phf-empty-icon">🕊️</span><h5 data-en="No memorial records yet" data-ar="لا توجد سجلات تذكارية بعد">No memorial records yet</h5></div>
     {% endif %}
   </div>
 </section>

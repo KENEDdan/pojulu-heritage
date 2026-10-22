@@ -3,8 +3,8 @@
 {% block content %}
 <div class="phf-page-header">
   <div class="container-xl">
-    <div class="phf-breadcrumb"><a href="{% url 'core:home' %}">Home</a><span class="phf-breadcrumb-sep">›</span><a href="{% url 'clans:list' %}">Clans</a><span class="phf-breadcrumb-sep">›</span>{{ clan.name }}</div>
-    <h1>{{ clan.name }} <em>Clan</em></h1>
+    <div class="phf-breadcrumb"><a href="{% url 'core:home' %}" data-en="Home" data-ar="الرئيسية">Home</a><span class="phf-breadcrumb-sep">›</span><a href="{% url 'clans:list' %}" data-en="Clans" data-ar="القبائل">Clans</a><span class="phf-breadcrumb-sep">›</span>{{ clan.name }}</div>
+    <h1>{{ clan.name }} <em data-en="Clan" data-ar="قبيلة">Clan</em></h1>
     <p>{{ clan.tagline|default:clan.description|truncatewords:30 }}</p>
   </div>
 </div>
@@ -14,15 +14,15 @@
       <!-- Sidebar -->
       <div class="col-lg-3">
         <div class="phf-detail-block">
-          <div class="phf-detail-block-header"><i class="bi bi-info-circle text-success me-2"></i><h6 class="phf-detail-block-title">Quick Facts</h6></div>
-          <div class="phf-detail-row"><span class="phf-detail-label">Payam</span><span class="phf-detail-value">{{ clan.get_payam_display }}</span></div>
-          <div class="phf-detail-row"><span class="phf-detail-label">Families</span><span class="phf-detail-value">{{ families.count }}</span></div>
-          <div class="phf-detail-row"><span class="phf-detail-label">Persons</span><span class="phf-detail-value">{{ persons.count }}</span></div>
-          {% if clan.sub_clan_list %}<div class="phf-detail-row"><span class="phf-detail-label">Sub-Clans</span><span class="phf-detail-value">{{ clan.sub_clan_list|join:", " }}</span></div>{% endif %}
+          <div class="phf-detail-block-header"><i class="bi bi-info-circle text-success me-2"></i><h6 class="phf-detail-block-title" data-en="Quick Facts" data-ar="حقائق سريعة">Quick Facts</h6></div>
+          <div class="phf-detail-row"><span class="phf-detail-label" data-en="Payam" data-ar="البايام">Payam</span><span class="phf-detail-value">{{ clan.get_payam_display }}</span></div>
+          <div class="phf-detail-row"><span class="phf-detail-label" data-en="Families" data-ar="العائلات">Families</span><span class="phf-detail-value">{{ families.count }}</span></div>
+          <div class="phf-detail-row"><span class="phf-detail-label" data-en="Persons" data-ar="الأشخاص">Persons</span><span class="phf-detail-value">{{ persons.count }}</span></div>
+          {% if clan.sub_clan_list %}<div class="phf-detail-row"><span class="phf-detail-label" data-en="Sub-Clans" data-ar="القبائل الفرعية">Sub-Clans</span><span class="phf-detail-value">{{ clan.sub_clan_list|join:", " }}</span></div>{% endif %}
         </div>
         {% if chiefs %}
         <div class="phf-detail-block">
-          <div class="phf-detail-block-header"><i class="bi bi-person-check text-success me-2"></i><h6 class="phf-detail-block-title">Chiefs & Elders</h6></div>
+          <div class="phf-detail-block-header"><i class="bi bi-person-check text-success me-2"></i><h6 class="phf-detail-block-title" data-en="Chiefs & Elders" data-ar="الزعماء والشيوخ">Chiefs & Elders</h6></div>
           {% for chief in chiefs %}<div class="phf-detail-row"><span class="phf-detail-label">{{ chief.title }}</span><span class="phf-detail-value">{{ chief.name }}{% if chief.tenure %}<br><small class="text-muted">{{ chief.tenure }}</small>{% endif %}</span></div>{% endfor %}
         </div>
         {% endif %}
@@ -31,18 +31,18 @@
       <!-- Main content -->
       <div class="col-lg-9">
         <ul class="nav phf-tabs mb-4" id="clanTabs">
-          <li><button class="phf-tab active" data-target="tab-overview">Overview</button></li>
-          {% if clan.origin_story %}<li><button class="phf-tab" data-target="tab-origin">Origins</button></li>{% endif %}
-          {% if clan.cultural_practices %}<li><button class="phf-tab" data-target="tab-culture">Culture</button></li>{% endif %}
-          {% if events %}<li><button class="phf-tab" data-target="tab-events">History</button></li>{% endif %}
-          {% if families %}<li><button class="phf-tab" data-target="tab-families">Families</button></li>{% endif %}
-          {% if persons %}<li><button class="phf-tab" data-target="tab-persons">Persons</button></li>{% endif %}
+          <li><button class="phf-tab active" data-target="tab-overview" data-en="Overview" data-ar="نظرة عامة">Overview</button></li>
+          {% if clan.origin_story %}<li><button class="phf-tab" data-target="tab-origin" data-en="Origins" data-ar="الأصول">Origins</button></li>{% endif %}
+          {% if clan.cultural_practices %}<li><button class="phf-tab" data-target="tab-culture" data-en="Culture" data-ar="الثقافة">Culture</button></li>{% endif %}
+          {% if events %}<li><button class="phf-tab" data-target="tab-events" data-en="History" data-ar="التاريخ">History</button></li>{% endif %}
+          {% if families %}<li><button class="phf-tab" data-target="tab-families" data-en="Families" data-ar="العائلات">Families</button></li>{% endif %}
+          {% if persons %}<li><button class="phf-tab" data-target="tab-persons" data-en="Persons" data-ar="الأشخاص">Persons</button></li>{% endif %}
         </ul>
 
         <div id="tab-overview" class="phf-tab-pane active">
           <p style="font-size:.95rem;line-height:1.8;color:var(--text-mid)">{{ clan.description }}</p>
-          {% if clan.migration_history %}<h5 class="text-display mt-4 mb-2" style="color:var(--g700)">Migration & Settlement</h5><p style="font-size:.93rem;line-height:1.8;color:var(--text-mid)">{{ clan.migration_history }}</p>{% endif %}
-          {% if clan.territorial_notes %}<h5 class="text-display mt-4 mb-2" style="color:var(--g700)">Territorial History</h5><p style="font-size:.93rem;line-height:1.8;color:var(--text-mid)">{{ clan.territorial_notes }}</p>{% endif %}
+          {% if clan.migration_history %}<h5 class="text-display mt-4 mb-2" style="color:var(--g700)" data-en="Migration & Settlement" data-ar="الهجرة والاستيطان">Migration & Settlement</h5><p style="font-size:.93rem;line-height:1.8;color:var(--text-mid)">{{ clan.migration_history }}</p>{% endif %}
+          {% if clan.territorial_notes %}<h5 class="text-display mt-4 mb-2" style="color:var(--g700)" data-en="Territorial History" data-ar="التاريخ الإقليمي">Territorial History</h5><p style="font-size:.93rem;line-height:1.8;color:var(--text-mid)">{{ clan.territorial_notes }}</p>{% endif %}
         </div>
         {% if clan.origin_story %}
         <div id="tab-origin" class="phf-tab-pane" style="display:none">
@@ -51,7 +51,7 @@
         {% if clan.cultural_practices %}
         <div id="tab-culture" class="phf-tab-pane" style="display:none">
           <p style="font-size:.95rem;line-height:1.8;color:var(--text-mid)">{{ clan.cultural_practices }}</p>
-          {% if clan.traditional_beliefs %}<h5 class="text-display mt-4 mb-2" style="color:var(--g700)">Traditional Beliefs</h5><p style="font-size:.93rem;line-height:1.8;color:var(--text-mid)">{{ clan.traditional_beliefs }}</p>{% endif %}
+          {% if clan.traditional_beliefs %}<h5 class="text-display mt-4 mb-2" style="color:var(--g700)" data-en="Traditional Beliefs" data-ar="المعتقدات التقليدية">Traditional Beliefs</h5><p style="font-size:.93rem;line-height:1.8;color:var(--text-mid)">{{ clan.traditional_beliefs }}</p>{% endif %}
         </div>{% endif %}
         {% if events %}
         <div id="tab-events" class="phf-tab-pane" style="display:none">
@@ -61,11 +61,11 @@
         </div>{% endif %}
         {% if families %}
         <div id="tab-families" class="phf-tab-pane" style="display:none">
-          <div class="row g-3">{% for fam in families %}<div class="col-md-6"><a href="{{ fam.get_absolute_url }}" class="text-decoration-none"><div class="phf-family-card"><div class="phf-family-card-header"><div class="phf-family-initials">{{ fam.name.0 }}</div><div><h6 class="phf-family-card-name">{{ fam.name }}</h6><p class="phf-family-card-clan">{{ fam.member_count }} member{{ fam.member_count|pluralize }}</p></div></div></div></a></div>{% endfor %}</div>
+          <div class="row g-3">{% for fam in families %}<div class="col-md-6"><a href="{{ fam.get_absolute_url }}" class="text-decoration-none"><div class="phf-family-card"><div class="phf-family-card-header"><div class="phf-family-initials">{{ fam.name.0 }}</div><div><h6 class="phf-family-card-name">{{ fam.name }}</h6><p class="phf-family-card-clan">{{ fam.member_count }} <span data-en="member{{ fam.member_count|pluralize }}" data-ar="عضو">member{{ fam.member_count|pluralize }}</span></p></div></div></div></a></div>{% endfor %}</div>
         </div>{% endif %}
         {% if persons %}
         <div id="tab-persons" class="phf-tab-pane" style="display:none">
-          <div class="phf-table-wrap"><table class="table phf-table"><thead><tr><th>Name</th><th>Birth Year</th><th>Status</th></tr></thead><tbody>{% for p in persons %}<tr onclick="window.location='{{ p.get_absolute_url }}'"><td class="td-primary">{{ p.full_name }}</td><td>{{ p.birth_year|default:"—" }}</td><td>{% if p.is_deceased %}<span class="phf-tag" style="background:#fce4ec;color:#c62828">Deceased</span>{% else %}<span class="phf-tag">Living</span>{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+          <div class="phf-table-wrap"><table class="table phf-table"><thead><tr><th data-en="Name" data-ar="الاسم">Name</th><th data-en="Birth Year" data-ar="سنة الميلاد">Birth Year</th><th data-en="Status" data-ar="الحالة">Status</th></tr></thead><tbody>{% for p in persons %}<tr onclick="window.location='{{ p.get_absolute_url }}'"><td class="td-primary">{{ p.full_name }}</td><td>{{ p.birth_year|default:"—" }}</td><td>{% if p.is_deceased %}<span class="phf-tag" style="background:#fce4ec;color:#c62828" data-en="Deceased" data-ar="متوفى">Deceased</span>{% else %}<span class="phf-tag" data-en="Living" data-ar="على قيد الحياة">Living</span>{% endif %}</td></tr>{% endfor %}</tbody></table></div>
         </div>{% endif %}
       </div>
     </div>

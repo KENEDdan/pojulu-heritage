@@ -1,18 +1,18 @@
 {% extends "base.html" %}
 {% block title %}Marriages & Lineage{% endblock %}
 {% block content %}
-<div class="phf-page-header"><div class="container-xl"><div class="phf-breadcrumb"><a href="{% url 'core:home' %}">Home</a><span class="phf-breadcrumb-sep">›</span>Marriages</div><h1>Marriage &amp; <em>Lineage</em></h1><p>A record of unions connecting Pojulu families, clans, and neighboring communities across generations.</p></div></div>
+<div class="phf-page-header"><div class="container-xl"><div class="phf-breadcrumb"><a href="{% url 'core:home' %}" data-en="Home" data-ar="الرئيسية">Home</a><span class="phf-breadcrumb-sep">›</span><span data-en="Marriages" data-ar="الزيجات">Marriages</span></div><h1 data-en="Marriage &amp; &lt;em&gt;Lineage&lt;/em&gt;" data-ar="الزواج &lt;em&gt;والنسب&lt;/em&gt;">Marriage &amp; <em>Lineage</em></h1><p data-en="A record of unions connecting Pojulu families, clans, and neighboring communities across generations." data-ar="سجل للزيجات التي تربط عائلات وقبائل البوجولو والمجتمعات المجاورة عبر الأجيال.">A record of unions connecting Pojulu families, clans, and neighboring communities across generations.</p></div></div>
 <section class="phf-section"><div class="container-xl">
 <form method="get" class="phf-search-bar">
-  <input type="text" name="q" class="form-control" placeholder="Search by name or clan…" value="{{ query }}">
-  <select name="clan" class="form-select phf-auto-submit" style="max-width:200px"><option value="">All Clans</option>{% for c in clans %}<option value="{{ c.slug }}" {% if selected_clan == c.slug %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select>
-  <button type="submit" class="phf-btn phf-btn-primary">Search</button>
-  <a href="{% url 'submissions:form' %}" class="phf-btn phf-btn-outline ms-auto"><i class="bi bi-plus-lg"></i> Add Record</a>
+  <input type="text" name="q" class="form-control" placeholder="Search by name or clan…" data-placeholder-en="Search by name or clan…" data-placeholder-ar="ابحث بالاسم أو القبيلة…" value="{{ query }}">
+  <select name="clan" class="form-select phf-auto-submit" style="max-width:200px"><option value="" data-en="All Clans" data-ar="جميع القبائل">All Clans</option>{% for c in clans %}<option value="{{ c.slug }}" {% if selected_clan == c.slug %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select>
+  <button type="submit" class="phf-btn phf-btn-primary" data-en="Search" data-ar="بحث">Search</button>
+
 </form>
 {% if marriages %}
 <div class="phf-table-wrap">
   <table class="table phf-table">
-    <thead><tr><th>Husband</th><th>Wife</th><th>Husband's Clan</th><th>Wife's Clan</th><th>Year</th><th>Payam</th><th></th></tr></thead>
+    <thead><tr><th data-en="Husband" data-ar="الزوج">Husband</th><th data-en="Wife" data-ar="الزوجة">Wife</th><th data-en="Husband's Clan" data-ar="قبيلة الزوج">Husband's Clan</th><th data-en="Wife's Clan" data-ar="قبيلة الزوجة">Wife's Clan</th><th data-en="Year" data-ar="السنة">Year</th><th data-en="Payam" data-ar="بايام">Payam</th><th></th></tr></thead>
     <tbody>
     {% for m in marriages %}
     <tr onclick="window.location='{{ m.get_absolute_url }}'">
@@ -22,12 +22,12 @@
       <td><span class="phf-tag">{{ m.wife_clan_display }}</span></td>
       <td>{{ m.year|default:"—" }}</td>
       <td>{{ m.payam|default:"—" }}</td>
-      <td class="td-action">View →</td>
+      <td class="td-action" data-en="View →" data-ar="عرض ←">View →</td>
     </tr>
     {% endfor %}
     </tbody>
   </table>
 </div>
 {% include "partials/pagination.html" %}
-{% else %}<div class="phf-empty"><span class="phf-empty-icon">💍</span><h5>No marriage records yet</h5><p><a href="{% url 'submissions:form' %}">Submit a marriage record</a>.</p></div>{% endif %}
+{% else %}<div class="phf-empty"><span class="phf-empty-icon">💍</span><h5 data-en="No marriage records yet" data-ar="لا توجد سجلات زواج بعد">No marriage records yet</h5></div>{% endif %}
 </div></section>{% endblock %}

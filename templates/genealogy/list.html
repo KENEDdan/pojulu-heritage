@@ -1,20 +1,22 @@
 {% extends "base.html" %}
 {% block title %}Family Records{% endblock %}
 {% block content %}
-<div class="phf-page-header"><div class="container-xl"><div class="phf-breadcrumb"><a href="{% url 'core:home' %}">Home</a><span class="phf-breadcrumb-sep">›</span>Families</div><h1>Family <em>Records</em></h1><p>Search for your family, trace your lineage, and discover how your line is woven into the wider Pojulu story.</p></div></div>
+<div class="phf-page-header"><div class="container-xl"><div class="phf-breadcrumb"><a href="{% url 'core:home' %}" data-en="Home" data-ar="الرئيسية">Home</a><span class="phf-breadcrumb-sep">›</span><span data-en="Families" data-ar="العائلات">Families</span></div><h1 data-en="Family &lt;em&gt;Records&lt;/em&gt;" data-ar="سجلات &lt;em&gt;العائلات&lt;/em&gt;">Family <em>Records</em></h1><p data-en="Search for your family, trace your lineage, and discover how your line is woven into the wider Pojulu story." data-ar="ابحث عن عائلتك، تتبّع نسبك، واكتشف كيف يرتبط خطك العائلي بقصة البوجولو الأوسع.">Search for your family, trace your lineage, and discover how your line is woven into the wider Pojulu story.</p></div></div>
 <section class="phf-section"><div class="container-xl">
 <form method="get" class="phf-search-bar">
-  <input type="text" name="q" class="form-control" placeholder="Search by family name…" value="{{ query }}">
-  <select name="clan" class="form-select phf-auto-submit" style="max-width:200px"><option value="">All Clans</option>{% for c in clans %}<option value="{{ c.slug }}" {% if selected_clan == c.slug %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select>
-  <button type="submit" class="phf-btn phf-btn-primary">Search</button>
-  
+  <input type="text" name="q" class="form-control" placeholder="Search by family name…" data-placeholder-en="Search by family name…" data-placeholder-ar="ابحث باسم العائلة…" value="{{ query }}">
+  <select name="clan" class="form-select phf-auto-submit" style="max-width:200px"><option value="" data-en="All Clans" data-ar="جميع القبائل">All Clans</option>{% for c in clans %}<option value="{{ c.slug }}" {% if selected_clan == c.slug %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select>
+  <button type="submit" class="phf-btn phf-btn-primary" data-en="Search" data-ar="بحث">Search</button>
+</form>
 {% if families %}
 <div class="row g-4">
 {% for fam in families %}
-<div class="col-md-6 col-lg-4"><a href="{{ fam.get_absolute_url }}" class="text-decoration-none"><div class="phf-family-card"><div class="phf-family-card-header"><div class="phf-family-initials">{{ fam.name.0 }}</div><div><h6 class="phf-family-card-name">{{ fam.name }}</h6><p class="phf-family-card-clan">{% if fam.clan %}{{ fam.clan.name }} Clan · {% endif %}{{ fam.get_payam_display }}</p></div></div><div class="phf-family-card-body"><div class="phf-family-member"><span class="phf-family-member-role">Members</span><span class="phf-family-member-name">{{ fam.member_count }} recorded</span></div>{% if fam.origin_village %}<div class="phf-family-member"><span class="phf-family-member-role">Origin</span><span class="phf-family-member-name">{{ fam.origin_village }}</span></div>{% endif %}<span class="phf-card-link mt-2">View Family Tree</span></div></div></a></div>
-{% endfor %}</div>
+<div class="col-md-6 col-lg-4"><a href="{{ fam.get_absolute_url }}" class="text-decoration-none"><div class="phf-family-card"><div class="phf-family-card-header"><div class="phf-family-initials">{{ fam.name.0 }}</div><div><h6 class="phf-family-card-name">{{ fam.name }}</h6><p class="phf-family-card-clan">{% if fam.clan %}{{ fam.clan.name }} <span data-en="Clan" data-ar="قبيلة">Clan</span> · {% endif %}{{ fam.get_payam_display }}</p></div></div><div class="phf-family-card-body"><div class="phf-family-member"><span class="phf-family-member-role" data-en="Members" data-ar="الأفراد">Members</span><span class="phf-family-member-name">{{ fam.member_count }} <span data-en="recorded" data-ar="مسجل">recorded</span></span></div>{% if fam.origin_village %}<div class="phf-family-member"><span class="phf-family-member-role" data-en="Origin" data-ar="الأصل">Origin</span><span class="phf-family-member-name">{{ fam.origin_village }}</span></div>{% endif %}<span class="phf-card-link mt-2" data-en="View Family Tree" data-ar="عرض شجرة العائلة">View Family Tree</span></div></div></a></div>
+{% endfor %}
+</div>
 {% include "partials/pagination.html" %}
-{% else %}<div class="phf-empty"><span class="phf-empty-icon">🌳</span><h5>No family records found</h5>
-</div></section>
+{% else %}
+<div class="phf-empty"><span class="phf-empty-icon">🌳</span><h5 data-en="No family records found" data-ar="لم يتم العثور على سجلات عائلية">No family records found</h5></div>
 {% endif %}
+</div></section>
 {% endblock %}

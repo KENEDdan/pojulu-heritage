@@ -8,6 +8,20 @@ class SubmissionForm(forms.ModelForm):
         choices=SUBMISSION_TYPE_CHOICES,
         widget=forms.Select(attrs={'class': 'form-select form-select-lg'})
     )
+    # Honeypot: hidden from real visitors via CSS; bots that auto-fill every
+    # field will populate it, so any non-empty value marks the submission as spam.
+    website = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'autocomplete': 'off', 'tabindex': '-1',
+            'style': 'position:absolute;left:-9999px;',
+        }),
+    )
+
+    def clean_website(self):
+        if self.cleaned_data.get('website'):
+            raise forms.ValidationError('Spam detected.')
+        return ''
 
     class Meta:
         model = Submission

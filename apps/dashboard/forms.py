@@ -61,6 +61,44 @@ class CreateAdminForm(forms.Form):
         return e
 
 
+class FamilyAccountCredentialsForm(forms.Form):
+    """Superadmin: username/password/email for a new private family (will) account."""
+    username = forms.CharField(max_length=150, widget=FC('Username (for login)'))
+    password = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control',
+        'placeholder': 'Set an initial password — they will be required to change it on first login'}))
+    email    = forms.EmailField(required=False, widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Email address (optional)'}))
+
+    def clean_username(self):
+        u = self.cleaned_data['username']
+        if User.objects.filter(username=u).exists():
+            raise forms.ValidationError('This username is already taken.')
+        return u
+
+    def clean_password(self):
+        pw = self.cleaned_data['password']
+        from django.contrib.auth.password_validation import validate_password
+        from django.core.exceptions import ValidationError as DjangoValidationError
+        try:
+            validate_password(pw)
+        except DjangoValidationError as e:
+            raise forms.ValidationError(e.messages)
+        return pw
+
+
+class ResetPasswordForm(forms.Form):
+    password = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'New password'}))
+
+    def clean_password(self):
+        pw = self.cleaned_data['password']
+        from django.contrib.auth.password_validation import validate_password
+        from django.core.exceptions import ValidationError as DjangoValidationError
+        try:
+            validate_password(pw)
+        except DjangoValidationError as e:
+            raise forms.ValidationError(e.messages)
+        return pw
+
+
 class EditAdminForm(forms.ModelForm):
     first_name = forms.CharField(max_length=100, widget=FC('First name'))
     last_name  = forms.CharField(max_length=100, widget=FC('Last name'))

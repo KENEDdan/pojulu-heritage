@@ -1,0 +1,74 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Family (Will) Accounts{% endblock %}
+{% block page_title %}Family (Will) Accounts{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-end mb-4">
+  <a href="{% url 'dashboard:family_account_search' %}" class="dash-btn dash-btn-primary">
+    <i class="bi bi-person-plus-fill me-1"></i> New Family Account
+  </a>
+</div>
+<div class="dash-table-card">
+  <div class="dash-table-header">
+    <span class="dash-table-title">All Family Accounts</span>
+    <span style="font-size:.82rem;color:var(--light)">{{ accounts.count }} account{{ accounts.count|pluralize }}</span>
+  </div>
+  <div style="overflow-x:auto">
+    <table class="dash-table">
+      <thead>
+        <tr><th>Person</th><th>Username</th><th>Status</th><th>Will</th><th>Created By</th><th>Date</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for account in accounts %}
+        <tr>
+          <td class="td-name"><a href="{{ account.person.get_absolute_url }}" style="color:inherit">{{ account.person.full_name }}</a></td>
+          <td style="font-size:.82rem;color:var(--light)">{{ account.user.username }}</td>
+          <td>
+            {% if account.is_active %}
+            <span class="dash-badge dash-badge-green">Active</span>
+            {% else %}
+            <span class="dash-badge dash-badge-red">Inactive</span>
+            {% endif %}
+          </td>
+          <td>
+            {% with will=account.will %}
+            {% if will and will.content_encrypted %}
+              {% if will.is_revealed %}
+              <span class="dash-badge dash-badge-green">Revealed</span>
+              {% else %}
+              <span class="dash-badge dash-badge-yellow">Sealed</span>
+              <a href="{% url 'dashboard:will_reveal' will.pk %}" class="dash-btn dash-btn-outline dash-btn-sm" style="margin-left:6px">Reveal…</a>
+              {% endif %}
+            {% else %}
+            <span class="dash-badge dash-badge-grey">Not written</span>
+            {% endif %}
+            {% endwith %}
+          </td>
+          <td style="font-size:.82rem">{{ account.created_by.get_full_name|default:account.created_by.username|default:"—" }}</td>
+          <td style="font-size:.78rem;color:var(--light)">{{ account.created_at|date:"d M Y" }}</td>
+          <td>
+            <div class="d-flex gap-1 flex-wrap">
+              <a href="{% url 'dashboard:family_account_reset_password' account.pk %}" class="dash-btn dash-btn-outline dash-btn-sm">Reset PW</a>
+              {% if account.is_active %}
+              <form method="post" action="{% url 'dashboard:family_account_deactivate' account.pk %}"
+                    onsubmit="return confirm('Deactivate this family account? They will lose access.')">
+                {% csrf_token %}
+                <button type="submit" class="dash-btn dash-btn-danger dash-btn-sm">Deactivate</button>
+              </form>
+              {% else %}
+              <form method="post" action="{% url 'dashboard:family_account_reactivate' account.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="dash-btn dash-btn-outline dash-btn-sm">Reactivate</button>
+              </form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" style="text-align:center;padding:48px;color:var(--light)">No family accounts yet. <a href="{% url 'dashboard:family_account_search' %}">Create the first one.</a></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

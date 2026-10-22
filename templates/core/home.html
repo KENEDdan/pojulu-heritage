@@ -9,35 +9,35 @@
   <div class="phf-hero-pattern"></div>
   <div class="phf-hero-geo"></div>
   <div class="phf-hero-content">
-    <div class="phf-hero-eyebrow">Pojulu Heritage Foundation</div>
-    <h1 class="phf-hero-title">Our Roots.<br><em>Preserved Forever.</em></h1>
-    <p class="phf-hero-subtitle">The living digital archive of the Pojulu People — Lainya County, Central Equatoria</p>
+    <div class="phf-hero-eyebrow" data-en="Pojulu Heritage Foundation" data-ar="مؤسسة تراث البوجولو">Pojulu Heritage Foundation</div>
+    <h1 class="phf-hero-title" data-en="Our Roots.<br><em>Preserved Forever.</em>" data-ar="جذورنا.<br><em>محفوظة إلى الأبد.</em>">Our Roots.<br><em>Preserved Forever.</em></h1>
+    <p class="phf-hero-subtitle" data-en="The living digital archive of the Pojulu People — Lainya County, Central Equatoria" data-ar="الأرشيف الرقمي الحي لشعب البوجولو — مقاطعة لينيا، وسط الاستوائية">The living digital archive of the Pojulu People — Lainya County, Central Equatoria</p>
     <form action="{% url 'core:search' %}" method="get" class="phf-hero-search">
       <select name="kind">
-        <option value="all">All Records</option>
-        <option value="clans">Clans</option>
-        <option value="persons">Persons</option>
-        <option value="families">Families</option>
-        <option value="memorial">Memorial</option>
-        <option value="news">News</option>
+        <option value="all" data-en="All Records" data-ar="جميع السجلات">All Records</option>
+        <option value="clans" data-en="Clans" data-ar="القبائل">Clans</option>
+        <option value="persons" data-en="Persons" data-ar="الأشخاص">Persons</option>
+        <option value="families" data-en="Families" data-ar="العائلات">Families</option>
+        <option value="memorial" data-en="Memorial" data-ar="تذكار">Memorial</option>
+        <option value="news" data-en="News" data-ar="الأخبار">News</option>
       </select>
-      <input type="text" name="q" placeholder="Search by name, clan, family, or location…">
-      <button type="submit">Search</button>
+      <input type="text" name="q" placeholder="Search by name, clan, family, or location…" data-placeholder-en="Search by name, clan, family, or location…" data-placeholder-ar="ابحث بالاسم، القبيلة، العائلة، أو الموقع…">
+      <button type="submit" data-en="Search" data-ar="بحث">Search</button>
     </form>
     <div class="phf-hero-tags">
-      <a href="{% url 'clans:list' %}" class="phf-hero-tag">Browse Clans</a>
-      <a href="{% url 'genealogy:list' %}" class="phf-hero-tag">Family Trees</a>
-      <a href="{% url 'elders:list' %}" class="phf-hero-tag">Elder Interviews</a>
-      <a href="{% url 'memorial:list' %}" class="phf-hero-tag">In Memoriam</a>
-      <a href="{% url 'news:list' %}" class="phf-hero-tag">News & Events</a>
+      <a href="{% url 'clans:list' %}" class="phf-hero-tag" data-en="Browse Clans" data-ar="تصفح القبائل">Browse Clans</a>
+      <a href="{% url 'genealogy:list' %}" class="phf-hero-tag" data-en="Family Trees" data-ar="أشجار العائلات">Family Trees</a>
+      <a href="{% url 'elders:list' %}" class="phf-hero-tag" data-en="Elder Interviews" data-ar="مقابلات الشيوخ">Elder Interviews</a>
+      <a href="{% url 'memorial:list' %}" class="phf-hero-tag" data-en="In Memoriam" data-ar="في الذكرى">In Memoriam</a>
+      <a href="{% url 'news:list' %}" class="phf-hero-tag" data-en="News & Events" data-ar="الأخبار والفعاليات">News & Events</a>
     </div>
   </div>
   <div class="phf-hero-stats">
-    <div class="phf-hero-stat"><span class="phf-hero-stat-num" data-counter data-target="{{ stats.clans }}">{{ stats.clans }}</span><span class="phf-hero-stat-label">Clans Documented</span></div>
-    <div class="phf-hero-stat"><span class="phf-hero-stat-num" data-counter data-target="{{ stats.persons }}">{{ stats.persons }}</span><span class="phf-hero-stat-label">Persons Recorded</span></div>
-    <div class="phf-hero-stat"><span class="phf-hero-stat-num" data-counter data-target="{{ stats.families }}">{{ stats.families }}</span><span class="phf-hero-stat-label">Family Records</span></div>
-    <div class="phf-hero-stat"><span class="phf-hero-stat-num" data-counter data-target="{{ stats.memorial }}">{{ stats.memorial }}</span><span class="phf-hero-stat-label">In Memoriam</span></div>
-    <div class="phf-hero-stat"><span class="phf-hero-stat-num" data-counter data-target="{{ stats.interviews }}">{{ stats.interviews }}</span><span class="phf-hero-stat-label">Elder Interviews</span></div>
+    <div class="phf-hero-stat"><span class="phf-hero-stat-num" data-counter data-target="{{ stats.clans }}">{{ stats.clans }}</span><span class="phf-hero-stat-label" data-en="Clans Documented" data-ar="قبيلة موثّقة">Clans Documented</span></div>
+    <div class="phf-hero-stat"><span class="phf-hero-stat-num" data-counter data-target="{{ stats.persons }}">{{ stats.persons }}</span><span class="phf-hero-stat-label" data-en="Persons Recorded" data-ar="شخص مسجّل">Persons Recorded</span></div>
+    <div class="phf-hero-stat"><span class="phf-hero-stat-num" data-counter data-target="{{ stats.families }}">{{ stats.families }}</span><span class="phf-hero-stat-label" data-en="Family Records" data-ar="سجل عائلي">Family Records</span></div>
+    <div class="phf-hero-stat"><span class="phf-hero-stat-num" data-counter data-target="{{ stats.memorial }}">{{ stats.memorial }}</span><span class="phf-hero-stat-label" data-en="In Memoriam" data-ar="في الذكرى">In Memoriam</span></div>
+    <div class="phf-hero-stat"><span class="phf-hero-stat-num" data-counter data-target="{{ stats.interviews }}">{{ stats.interviews }}</span><span class="phf-hero-stat-label" data-en="Elder Interviews" data-ar="مقابلات الشيوخ">Elder Interviews</span></div>
   </div>
 </section>
 
@@ -46,11 +46,11 @@
   <div class="container-xl">
     <div class="d-flex align-items-end justify-content-between flex-wrap gap-3 mb-5">
       <div>
-        <div class="phf-section-eyebrow">Latest from PHF</div>
-        <h2 class="phf-section-title">News, Events & <em>Updates</em></h2>
-        <p class="phf-section-body">Current happenings, upcoming events, and important announcements from the Pojulu Heritage Foundation.</p>
+        <div class="phf-section-eyebrow" data-en="Latest from PHF" data-ar="أحدث أخبار المؤسسة">Latest from PHF</div>
+        <h2 class="phf-section-title" data-en="News, Events & <em>Updates</em>" data-ar="الأخبار والفعاليات و<em>التحديثات</em>">News, Events & <em>Updates</em></h2>
+        <p class="phf-section-body" data-en="Current happenings, upcoming events, and important announcements from the Pojulu Heritage Foundation." data-ar="آخر المستجدات والفعاليات القادمة والإعلانات المهمة من مؤسسة تراث البوجولو.">Current happenings, upcoming events, and important announcements from the Pojulu Heritage Foundation.</p>
       </div>
-      <a href="{% url 'news:list' %}" class="phf-btn phf-btn-outline flex-shrink-0">All News →</a>
+      <a href="{% url 'news:list' %}" class="phf-btn phf-btn-outline flex-shrink-0" data-en="All News →" data-ar="جميع الأخبار ←">All News →</a>
     </div>
 
     {% if featured_post or news_posts %}
@@ -76,7 +76,7 @@
             <div class="phf-news-meta">
               {% if featured_post.published_at %}<span><i class="bi bi-calendar3 me-1"></i>{{ featured_post.published_at|date:"d M Y" }}</span>{% endif %}
               {% if featured_post.event_location %}<span class="ms-3"><i class="bi bi-geo-alt me-1"></i>{{ featured_post.event_location }}</span>{% endif %}
-              <span class="ms-auto phf-news-readmore">Read full story →</span>
+              <span class="ms-auto phf-news-readmore" data-en="Read full story →" data-ar="اقرأ القصة كاملة ←">Read full story →</span>
             </div>
           </div>
         </a>
@@ -125,7 +125,7 @@
               <p class="phf-news-card-excerpt">{{ post.excerpt|truncatewords:18 }}</p>
               <div class="d-flex align-items-center justify-content-between mt-2">
                 <span class="phf-news-meta-sm">{{ post.published_at|date:"d M Y" }}</span>
-                <span class="phf-news-readmore-sm">Read →</span>
+                <span class="phf-news-readmore-sm" data-en="Read →" data-ar="اقرأ ←">Read →</span>
               </div>
             </div>
           </div>
@@ -136,7 +136,7 @@
     {% endif %}
 
     {% else %}
-    <div class="phf-empty"><span class="phf-empty-icon">📰</span><h5>No news published yet</h5><p>News and events will appear here once published by the editorial team.</p></div>
+    <div class="phf-empty"><span class="phf-empty-icon">📰</span><h5 data-en="No news published yet" data-ar="لا توجد أخبار منشورة بعد">No news published yet</h5><p data-en="News and events will appear here once published by the editorial team." data-ar="ستظهر الأخبار والفعاليات هنا بمجرد نشرها من قبل فريق التحرير.">News and events will appear here once published by the editorial team.</p></div>
     {% endif %}
   </div>
 </section>
@@ -147,10 +147,10 @@
   <div class="container-xl">
     <div class="d-flex align-items-end justify-content-between flex-wrap gap-3 mb-4">
       <div>
-        <div class="phf-section-eyebrow">Coming Up</div>
-        <h2 class="phf-section-title">Upcoming <em>Events</em></h2>
+        <div class="phf-section-eyebrow" data-en="Coming Up" data-ar="قريبًا">Coming Up</div>
+        <h2 class="phf-section-title" data-en="Upcoming <em>Events</em>" data-ar="الفعاليات <em>القادمة</em>">Upcoming <em>Events</em></h2>
       </div>
-      <a href="{% url 'news:list' %}?type=event" class="phf-btn phf-btn-outline">All Events →</a>
+      <a href="{% url 'news:list' %}?type=event" class="phf-btn phf-btn-outline" data-en="All Events →" data-ar="جميع الفعاليات ←">All Events →</a>
     </div>
     <div class="row g-4">
       {% for event in events %}
@@ -183,11 +183,11 @@
   <div class="container-xl">
     <div class="d-flex align-items-end justify-content-between flex-wrap gap-3 mb-5">
       <div>
-        <div class="phf-section-eyebrow">Explore the Archive</div>
-        <h2 class="phf-section-title">Featured <em>Clans</em></h2>
-        <p class="phf-section-body">Discover the histories, lineages, and legacies of the great Pojulu clans.</p>
+        <div class="phf-section-eyebrow" data-en="Explore the Archive" data-ar="استكشف الأرشيف">Explore the Archive</div>
+        <h2 class="phf-section-title" data-en="Featured <em>Clans</em>" data-ar="قبائل <em>مميزة</em>">Featured <em>Clans</em></h2>
+        <p class="phf-section-body" data-en="Discover the histories, lineages, and legacies of the great Pojulu clans." data-ar="اكتشف تاريخ وأنساب وإرث قبائل البوجولو العريقة.">Discover the histories, lineages, and legacies of the great Pojulu clans.</p>
       </div>
-      <a href="{% url 'clans:list' %}" class="phf-btn phf-btn-outline flex-shrink-0">View All Clans →</a>
+      <a href="{% url 'clans:list' %}" class="phf-btn phf-btn-outline flex-shrink-0" data-en="View All Clans →" data-ar="عرض جميع القبائل ←">View All Clans →</a>
     </div>
     <div class="row g-4">
       {% for clan in featured_clans %}
@@ -206,7 +206,7 @@
                 <span class="phf-tag">{{ clan.person_count }} Persons</span>
                 {% if clan.bomas.exists %}<span class="phf-tag">{{ clan.bomas.count }} Boma{{ clan.bomas.count|pluralize }}</span>{% endif %}
               </div>
-              <span class="phf-card-link">View Clan History</span>
+              <span class="phf-card-link" data-en="View Clan History" data-ar="عرض تاريخ القبيلة">View Clan History</span>
             </div>
           </div>
         </a>
@@ -223,11 +223,11 @@
   <div class="container-xl">
     <div class="d-flex align-items-end justify-content-between flex-wrap gap-3 mb-5">
       <div>
-        <div class="phf-section-eyebrow">Living Memory</div>
-        <h2 class="phf-section-title">Elder <em>Interviews</em></h2>
-        <p class="phf-section-body">Voices of our elders — the most irreplaceable resource in this archive.</p>
+        <div class="phf-section-eyebrow" data-en="Living Memory" data-ar="الذاكرة الحية">Living Memory</div>
+        <h2 class="phf-section-title" data-en="Elder <em>Interviews</em>" data-ar="مقابلات <em>الشيوخ</em>">Elder <em>Interviews</em></h2>
+        <p class="phf-section-body" data-en="Voices of our elders — the most irreplaceable resource in this archive." data-ar="أصوات شيوخنا — أثمن مورد لا يُعوَّض في هذا الأرشيف.">Voices of our elders — the most irreplaceable resource in this archive.</p>
       </div>
-      <a href="{% url 'elders:list' %}" class="phf-btn phf-btn-outline flex-shrink-0">All Interviews →</a>
+      <a href="{% url 'elders:list' %}" class="phf-btn phf-btn-outline flex-shrink-0" data-en="All Interviews →" data-ar="جميع المقابلات ←">All Interviews →</a>
     </div>
     <div class="row g-4">
       {% for iv in recent_interviews %}
@@ -241,9 +241,9 @@
             <div class="phf-elder-body">
               <p class="phf-elder-summary">{{ iv.summary|truncatewords:20 }}</p>
               <div class="phf-elder-media-badges mt-2">
-                {% if iv.has_audio %}<span class="phf-media-badge"><i class="bi bi-mic-fill"></i> Audio</span>{% endif %}
-                {% if iv.has_video %}<span class="phf-media-badge"><i class="bi bi-camera-video-fill"></i> Video</span>{% endif %}
-                {% if iv.has_transcript %}<span class="phf-media-badge"><i class="bi bi-file-text-fill"></i> Transcript</span>{% endif %}
+                {% if iv.has_audio %}<span class="phf-media-badge"><i class="bi bi-mic-fill"></i> <span data-en="Audio" data-ar="صوت">Audio</span></span>{% endif %}
+                {% if iv.has_video %}<span class="phf-media-badge"><i class="bi bi-camera-video-fill"></i> <span data-en="Video" data-ar="فيديو">Video</span></span>{% endif %}
+                {% if iv.has_transcript %}<span class="phf-media-badge"><i class="bi bi-file-text-fill"></i> <span data-en="Transcript" data-ar="نص مكتوب">Transcript</span></span>{% endif %}
               </div>
             </div>
           </div>
@@ -261,10 +261,10 @@
   <div class="container-xl">
     <div class="d-flex align-items-end justify-content-between flex-wrap gap-3 mb-5">
       <div>
-        <div class="phf-section-eyebrow">In Memoriam</div>
-        <h2 class="phf-section-title">Honouring Those <em>Who Came Before</em></h2>
+        <div class="phf-section-eyebrow" data-en="In Memoriam" data-ar="في الذكرى">In Memoriam</div>
+        <h2 class="phf-section-title" data-en="Honouring Those <em>Who Came Before</em>" data-ar="تكريمًا لـ<em>من سبقونا</em>">Honouring Those <em>Who Came Before</em></h2>
       </div>
-      <a href="{% url 'memorial:list' %}" class="phf-btn phf-btn-outline flex-shrink-0">Full Memorial →</a>
+      <a href="{% url 'memorial:list' %}" class="phf-btn phf-btn-outline flex-shrink-0" data-en="Full Memorial →" data-ar="التذكار الكامل ←">Full Memorial →</a>
     </div>
     <div class="row g-4">
       {% for mem in recent_memorials %}
@@ -288,14 +288,14 @@
 <!-- ══ CTA ══ -->
 <section class="phf-section phf-section-dark text-center">
   <div class="container-xl">
-    <div class="phf-section-eyebrow justify-content-center">About the Foundation</div>
-    <h2 class="phf-section-title">Preserving <em>Pojulu Heritage</em> for Future Generations</h2>
-    <p class="phf-section-body mx-auto text-center mb-5" style="max-width:560px">
+    <div class="phf-section-eyebrow justify-content-center" data-en="About the Foundation" data-ar="عن المؤسسة">About the Foundation</div>
+    <h2 class="phf-section-title" data-en="Preserving <em>Pojulu Heritage</em> for Future Generations" data-ar="الحفاظ على <em>تراث البوجولو</em> للأجيال القادمة">Preserving <em>Pojulu Heritage</em> for Future Generations</h2>
+    <p class="phf-section-body mx-auto text-center mb-5" style="max-width:560px" data-en="The Pojulu Heritage Foundation is a community-driven initiative documenting the history, genealogy, culture, and legacy of the Pojulu people of Lainya County. All records are managed and verified by our editorial team." data-ar="مؤسسة تراث البوجولو هي مبادرة مجتمعية توثّق تاريخ وأنساب وثقافة وإرث شعب البوجولو في مقاطعة لينيا. تتم إدارة جميع السجلات والتحقق منها من قبل فريق التحرير لدينا.">
       The Pojulu Heritage Foundation is a community-driven initiative documenting the history, genealogy, culture, and legacy of the Pojulu people of Lainya County. All records are managed and verified by our editorial team.
     </p>
     <div class="d-flex gap-3 justify-content-center flex-wrap">
-      <a href="{% url 'core:about' %}" class="phf-btn phf-btn-white phf-btn-lg">About the Foundation</a>
-      <a href="mailto:pojuluheritage@gmail.com" class="phf-btn phf-btn-white-outline phf-btn-lg"><i class="bi bi-envelope me-1"></i> Contact Us</a>
+      <a href="{% url 'core:about' %}" class="phf-btn phf-btn-white phf-btn-lg" data-en="About the Foundation" data-ar="عن المؤسسة">About the Foundation</a>
+      <a href="mailto:pojuluheritage@gmail.com" class="phf-btn phf-btn-white-outline phf-btn-lg" data-en="<i class=&quot;bi bi-envelope me-1&quot;></i> Contact Us" data-ar="<i class=&quot;bi bi-envelope me-1&quot;></i> تواصل معنا"><i class="bi bi-envelope me-1"></i> Contact Us</a>
     </div>
   </div>
 </section>

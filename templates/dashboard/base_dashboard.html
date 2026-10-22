@@ -243,6 +243,9 @@ body { font-family: var(--font); background: #F0F4F1; color: var(--text); displa
     <a href="{% url 'dashboard:content_dashboard' %}" class="dash-nav-link {% if request.resolver_match.url_name == 'content_dashboard' %}active{% endif %}">
       <i class="bi bi-grid-fill"></i> Full Content Admin
     </a>
+    <a href="{% url 'dashboard:family_account_list' %}" class="dash-nav-link {% if 'family_account' in request.resolver_match.url_name or request.resolver_match.url_name == 'will_reveal' %}active{% endif %}">
+      <i class="bi bi-shield-lock-fill"></i> Family (Will) Accounts
+    </a>
     {% endif %}
 
     <div class="dash-nav-section">Site</div>

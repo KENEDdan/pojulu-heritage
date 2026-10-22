@@ -2,6 +2,9 @@ from django.db import models
 from django.urls import reverse
 from django.utils.text import slugify
 from apps.core.models import PAYAM_CHOICES
+from apps.core.validators import (
+    validate_upload_size, validate_image_extension, validate_general_media_extension,
+)
 
 
 class Clan(models.Model):
@@ -68,7 +71,8 @@ class ClanChief(models.Model):
     start_year = models.CharField(max_length=10, blank=True)
     end_year   = models.CharField(max_length=10, blank=True)
     notes      = models.TextField(blank=True)
-    photo      = models.ImageField(upload_to='clans/chiefs/', blank=True, null=True)
+    photo      = models.ImageField(upload_to='clans/chiefs/', blank=True, null=True,
+                                    validators=[validate_image_extension, validate_upload_size])
     order      = models.PositiveSmallIntegerField(default=0)
 
     class Meta:
@@ -148,7 +152,8 @@ class ClanMedia(models.Model):
     media_type = models.CharField(max_length=20, choices=MEDIA_TYPES, default='photo')
     section    = models.CharField(max_length=30, choices=CLAN_SECTION_CHOICES, default='general', help_text='Which section of the clan page this media belongs to')
     title      = models.CharField(max_length=300)
-    file       = models.FileField(upload_to='clans/media/', blank=True, null=True)
+    file       = models.FileField(upload_to='clans/media/', blank=True, null=True,
+                                   validators=[validate_general_media_extension, validate_upload_size])
     video_url  = models.URLField(blank=True, help_text='YouTube/Vimeo link')
     caption    = models.TextField(blank=True)
     date_taken = models.CharField(max_length=100, blank=True, help_text='Date or approximate year')

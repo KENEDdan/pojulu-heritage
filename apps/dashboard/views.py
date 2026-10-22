@@ -2,8 +2,12 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.contrib import messages
+from django.core.cache import cache
 from django.core.exceptions import PermissionDenied
+from django.conf import settings
 from django.urls import reverse
+from django.db.models import Q
+from django.utils import timezone
 from .forms import ClanMediaFormSet, PersonMediaFormSet
 
 from .models import AdminProfile, ROLE_CHOICES
@@ -14,6 +18,7 @@ from .forms import (
     MemorialRecordForm, AchievementForm,
     MarriageForm, CulturalRecordForm,
     ElderInterviewForm, SubmissionReviewForm,
+    FamilyAccountCredentialsForm, ResetPasswordForm,
     CLAN_FULL, PERSON_FULL, FAMILY_FULL, MEMORIAL_FULL,
     ACHIEVE_FULL, MARRIAGE_FULL, CULTURAL_FULL, ELDER_FULL,
 )
@@ -25,6 +30,7 @@ from apps.marriages.models import Marriage
 from apps.cultural.models import CulturalRecord
 from apps.elders.models import ElderInterview
 from apps.submissions.models import Submission
+from apps.wills.models import FamilyAccount, Will
 
 
 # ── DECORATORS ────────────────────────────────────────
@@ -119,22 +125,40 @@ def _render_form(request, form, title, cancel_url, full_fields=None,
 
 # ── AUTH ──────────────────────────────────────────────
 
+def _client_ip(request):
+    forwarded = request.META.get('HTTP_X_FORWARDED_FOR')
+    if forwarded:
+        return forwarded.split(',')[0].strip()
+    return request.META.get('REMOTE_ADDR', 'unknown')
+
+
+def _login_attempts_key(request, username):
+    return f'login_attempts:{_client_ip(request)}:{username.lower()}'
+
+
 def dashboard_login(request):
     if request.user.is_authenticated:
         return redirect(get_role_redirect(request.user))
     error = None
     if request.method == 'POST':
-        user = authenticate(request,
-                            username=request.POST.get('username', '').strip(),
-                            password=request.POST.get('password', ''))
-        if user:
-            if user.is_superuser or (hasattr(user, 'admin_profile') and user.admin_profile.is_active):
-                login(request, user)
-                return redirect(get_role_redirect(user))
-            else:
-                error = 'Your account has been deactivated or you do not have staff access.'
+        username = request.POST.get('username', '').strip()
+        password = request.POST.get('password', '')
+        key = _login_attempts_key(request, username)
+        attempts = cache.get(key, 0)
+        if attempts >= settings.LOGIN_ATTEMPT_LIMIT:
+            error = 'Too many failed login attempts. Please try again in a few minutes.'
         else:
-            error = 'Invalid username or password.'
+            user = authenticate(request, username=username, password=password)
+            if user:
+                if user.is_superuser or (hasattr(user, 'admin_profile') and user.admin_profile.is_active):
+                    cache.delete(key)
+                    login(request, user)
+                    return redirect(get_role_redirect(user))
+                else:
+                    error = 'Your account has been deactivated or you do not have staff access.'
+            else:
+                cache.set(key, attempts + 1, settings.LOGIN_LOCKOUT_SECONDS)
+                error = 'Invalid username or password.'
     return render(request, 'dashboard/login.html', {'error': error})
 
 
@@ -818,3 +842,129 @@ def reactivate_account(request, pk):
         profile.user.is_active = True; profile.user.save()
         messages.success(request, f'{profile.user.get_full_name()} reactivated.')
     return redirect('dashboard:accounts')
+
+
+# ── FAMILY (WILL) ACCOUNT MANAGEMENT ──────────────────
+# Family accounts are private, non-staff logins (they never touch /admin/
+# or /dashboard/) that let an individual write their own will in secret.
+# Creation always ends with the account linked to a Person: either an
+# existing verified record, or one created inline here — the link is what
+# lets family_dashboard() work out who the will should be revealed to.
+
+@require_superadmin
+def family_account_list(request):
+    return render(request, 'dashboard/family_accounts.html', {
+        'accounts': FamilyAccount.objects.select_related('user', 'person', 'will').order_by('-created_at'),
+        'page_title': 'Family (Will) Accounts',
+    })
+
+
+@require_superadmin
+def family_account_search(request):
+    q = request.GET.get('q', '').strip()
+    results = Person.objects.none()
+    if q:
+        results = Person.objects.filter(
+            Q(first_name__icontains=q) | Q(last_name__icontains=q) | Q(other_names__icontains=q)
+        ).filter(family_account__isnull=True).select_related('clan')[:20]
+    return render(request, 'dashboard/family_account_search.html', {
+        'q': q, 'results': results,
+        'page_title': 'New Family Account',
+    })
+
+
+@require_superadmin
+def family_account_create_existing(request, person_id):
+    person = get_object_or_404(Person, pk=person_id)
+    if hasattr(person, 'family_account'):
+        messages.error(request, f'{person.full_name} already has a family account.')
+        return redirect('dashboard:family_account_list')
+    form = FamilyAccountCredentialsForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        d = form.cleaned_data
+        user = User.objects.create_user(username=d['username'], email=d['email'], password=d['password'], is_staff=False)
+        FamilyAccount.objects.create(user=user, person=person, created_by=request.user)
+        messages.success(request, f'✅ Family account created for {person.full_name}.')
+        return redirect('dashboard:family_account_list')
+    return _render_form(request, form,
+        title=f'Create Family Account for {person.full_name}',
+        subtitle='This creates a private login they can use to write their will. It stays secret from everyone, including family, until you reveal it.',
+        cancel_url=reverse('dashboard:family_account_search'),
+        page_title='Create Family Account', submit_label='Create Account')
+
+
+@require_superadmin
+def family_account_create_new_person(request):
+    person_form = PersonForm(request.POST or None, request.FILES or None)
+    account_form = FamilyAccountCredentialsForm(request.POST or None)
+    if request.method == 'POST' and person_form.is_valid() and account_form.is_valid():
+        person = person_form.save()
+        d = account_form.cleaned_data
+        user = User.objects.create_user(username=d['username'], email=d['email'], password=d['password'], is_staff=False)
+        FamilyAccount.objects.create(user=user, person=person, created_by=request.user)
+        messages.success(request, f'✅ {person.full_name} added to the archive and a family account created.')
+        return redirect('dashboard:family_account_list')
+    return render(request, 'dashboard/family_account_new_person.html', {
+        'person_form': person_form, 'account_form': account_form,
+        'full_fields': PERSON_FULL,
+        'cancel_url': reverse('dashboard:family_account_search'),
+        'page_title': 'Create Person & Family Account',
+    })
+
+
+@require_superadmin
+def family_account_deactivate(request, pk):
+    account = get_object_or_404(FamilyAccount, pk=pk)
+    if request.method == 'POST':
+        account.is_active = False; account.save()
+        account.user.is_active = False; account.user.save()
+        messages.success(request, f"{account.person.full_name}'s family account deactivated.")
+    return redirect('dashboard:family_account_list')
+
+
+@require_superadmin
+def family_account_reactivate(request, pk):
+    account = get_object_or_404(FamilyAccount, pk=pk)
+    if request.method == 'POST':
+        account.is_active = True; account.save()
+        account.user.is_active = True; account.user.save()
+        messages.success(request, f"{account.person.full_name}'s family account reactivated.")
+    return redirect('dashboard:family_account_list')
+
+
+@require_superadmin
+def family_account_reset_password(request, pk):
+    account = get_object_or_404(FamilyAccount, pk=pk)
+    form = ResetPasswordForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        account.user.set_password(form.cleaned_data['password'])
+        account.user.save()
+        account.must_change_password = True
+        account.save()
+        messages.success(request, f"Password reset for {account.person.full_name}. They'll be asked to change it on next login.")
+        return redirect('dashboard:family_account_list')
+    return _render_form(request, form,
+        title=f'Reset Password: {account.person.full_name}',
+        cancel_url=reverse('dashboard:family_account_list'),
+        page_title='Reset Password', submit_label='Reset Password')
+
+
+@require_superadmin
+def will_reveal(request, pk):
+    # The content is encrypted with a passphrase only the will's owner ever
+    # knew, never stored anywhere — this view has no way to decrypt or
+    # preview it, by design. Revealing only flips visibility; it grants no
+    # one here any decryption ability they didn't already have.
+    will = get_object_or_404(Will, pk=pk)
+    if request.method == 'POST':
+        if not will.is_revealed:
+            will.is_revealed = True
+            will.revealed_by = request.user
+            will.revealed_at = timezone.now()
+            will.save()
+            messages.success(request, f"{will.account.person.full_name}'s will has been revealed to their immediate family.")
+        return redirect('dashboard:family_account_list')
+    return render(request, 'dashboard/will_reveal_confirm.html', {
+        'will': will,
+        'page_title': f'Reveal Will: {will.account.person.full_name}',
+    })

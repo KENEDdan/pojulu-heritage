@@ -1,0 +1,51 @@
+{% extends "wills/base_family.html" %}
+{% block title %}My Family Portal{% endblock %}
+{% block content %}
+
+<div class="fam-card">
+  <div class="fam-card-title">Welcome, {{ account.person.full_name }}</div>
+  <p class="fam-card-sub">This is your private family portal. Only you can see this page's contents until you choose to save your will — and even then, it stays sealed until a Foundation administrator reveals it.</p>
+
+  <div style="background:var(--g0);border-radius:8px;padding:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+    <div>
+      <div class="fam-label" style="margin-bottom:2px">Your Will</div>
+      {% if will and will.content_encrypted %}
+        {% if will.is_revealed %}
+        <span class="fam-badge fam-badge-green"><i class="bi bi-unlock-fill me-1"></i>Revealed to family — {{ will.revealed_at|date:"d M Y" }}</span>
+        {% else %}
+        <span class="fam-badge fam-badge-grey"><i class="bi bi-lock-fill me-1"></i>Saved &amp; sealed</span>
+        {% endif %}
+      {% else %}
+      <span class="fam-badge fam-badge-grey">Not written yet</span>
+      {% endif %}
+    </div>
+    {% if will and will.is_revealed %}
+    <a href="{% url 'wills:will_read' %}" class="fam-btn fam-btn-outline"><i class="bi bi-eye me-1"></i> View (locked)</a>
+    {% else %}
+    <a href="{% url 'wills:will_write' %}" class="fam-btn fam-btn-primary"><i class="bi bi-pencil-square me-1"></i> {% if will and will.content_encrypted %}Edit{% else %}Write{% endif %} Your Will</a>
+    {% if will and will.content_encrypted %}
+    <a href="{% url 'wills:will_read' %}" class="fam-btn fam-btn-outline"><i class="bi bi-eye me-1"></i> View</a>
+    {% endif %}
+    {% endif %}
+  </div>
+</div>
+
+<div class="fam-card">
+  <div class="fam-card-title">Shared With You</div>
+  <p class="fam-card-sub">Wills of your immediate family (parents, children, siblings, spouse) that have been revealed.</p>
+
+  {% if shared_wills %}
+  <div class="d-flex flex-column gap-2">
+    {% for w in shared_wills %}
+    <a href="{% url 'wills:will_view' w.pk %}" class="fam-btn fam-btn-outline" style="justify-content:space-between;width:100%">
+      <span><i class="bi bi-file-earmark-text me-2"></i>{{ w.account.person.full_name }}</span>
+      <span style="font-size:.72rem;opacity:.75">Revealed {{ w.revealed_at|date:"d M Y" }}</span>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p style="font-size:.85rem;color:var(--light)">Nothing has been shared with you yet.</p>
+  {% endif %}
+</div>
+
+{% endblock %}

@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from apps.core.validators import validate_upload_size, validate_general_media_extension
 
 User = get_user_model()
 
@@ -49,7 +50,8 @@ class Submission(models.Model):
     # Attachments
     attachment            = models.FileField(upload_to='submissions/attachments/',
                                               blank=True, null=True,
-                                              help_text="Document, photo, or audio file")
+                                              help_text="Document, photo, or audio file",
+                                              validators=[validate_general_media_extension, validate_upload_size])
 
     # Workflow
     status                = models.CharField(max_length=20, choices=STATUS_CHOICES,

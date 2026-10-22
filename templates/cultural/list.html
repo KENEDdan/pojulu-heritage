@@ -1,15 +1,15 @@
 {% extends "base.html" %}
 {% block title %}Cultural Archive{% endblock %}
 {% block content %}
-<div class="phf-page-header"><div class="container-xl"><div class="phf-breadcrumb"><a href="{% url 'core:home' %}">Home</a><span class="phf-breadcrumb-sep">›</span>Cultural Archive</div><h1>Cultural <em>Archive</em></h1><p>Songs, proverbs, ceremonies, stories, and oral traditions — the living cultural heritage of the Pojulu people.</p></div></div>
+<div class="phf-page-header"><div class="container-xl"><div class="phf-breadcrumb"><a href="{% url 'core:home' %}" data-en="Home" data-ar="الرئيسية">Home</a><span class="phf-breadcrumb-sep">›</span><span data-en="Cultural Archive" data-ar="التراث الثقافي">Cultural Archive</span></div><h1 data-en="Cultural <em>Archive</em>" data-ar="<em>التراث</em> الثقافي">Cultural <em>Archive</em></h1><p data-en="Songs, proverbs, ceremonies, stories, and oral traditions — the living cultural heritage of the Pojulu people." data-ar="أغانٍ وأمثال وطقوس وقصص وتقاليد شفهية — التراث الثقافي الحي لشعب البوجولو.">Songs, proverbs, ceremonies, stories, and oral traditions — the living cultural heritage of the Pojulu people.</p></div></div>
 <section class="phf-section"><div class="container-xl">
 <form method="get" class="phf-search-bar">
-  <input type="text" name="q" class="form-control" placeholder="Search cultural records…" value="{{ query }}">
-  <select name="type" class="form-select phf-auto-submit" style="max-width:200px"><option value="">All Types</option>{% for val,label in type_choices %}<option value="{{ val }}" {% if selected_type == val %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
-  <button type="submit" class="phf-btn phf-btn-primary">Search</button>
+  <input type="text" name="q" class="form-control" placeholder="Search cultural records…" data-placeholder-en="Search cultural records…" data-placeholder-ar="ابحث في السجلات الثقافية…" value="{{ query }}">
+  <select name="type" class="form-select phf-auto-submit" style="max-width:200px"><option value="" data-en="All Types" data-ar="جميع الأنواع">All Types</option>{% for val,label in type_choices %}<option value="{{ val }}" {% if selected_type == val %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+  <button type="submit" class="phf-btn phf-btn-primary"><span data-en="Search" data-ar="بحث">Search</span></button>
 </form>
 <div class="phf-tabs mb-4">
-  <a href="{% url 'cultural:list' %}" class="phf-tab {% if not selected_type %}active{% endif %}">All</a>
+  <a href="{% url 'cultural:list' %}" class="phf-tab {% if not selected_type %}active{% endif %}" data-en="All" data-ar="الكل">All</a>
   {% for val,label in type_choices %}<a href="{% url 'cultural:list' %}?type={{ val }}" class="phf-tab {% if selected_type == val %}active{% endif %}">{{ label }}</a>{% endfor %}
 </div>
 {% if records %}
@@ -23,8 +23,8 @@
       {% if rec.clan %}<span class="phf-tag mb-2 d-inline-block">{{ rec.clan.name }}</span>{% endif %}
       <p style="font-size:.85rem;color:var(--text-mid);line-height:1.6">{{ rec.content|truncatewords:22 }}</p>
       <div class="d-flex gap-2 mt-3 flex-wrap">
-        {% if rec.has_audio %}<span class="phf-media-badge"><i class="bi bi-mic-fill"></i> Audio</span>{% endif %}
-        {% if rec.has_video %}<span class="phf-media-badge"><i class="bi bi-camera-video-fill"></i> Video</span>{% endif %}
+        {% if rec.has_audio %}<span class="phf-media-badge"><i class="bi bi-mic-fill"></i> <span data-en="Audio" data-ar="صوت">Audio</span></span>{% endif %}
+        {% if rec.has_video %}<span class="phf-media-badge"><i class="bi bi-camera-video-fill"></i> <span data-en="Video" data-ar="فيديو">Video</span></span>{% endif %}
         <span class="phf-tag">{{ rec.language }}</span>
       </div>
     </div>
@@ -33,5 +33,5 @@
 {% endfor %}
 </div>
 {% include "partials/pagination.html" %}
-{% else %}<div class="phf-empty"><span class="phf-empty-icon">🎵</span><h5>No cultural records found</h5><p><a href="{% url 'submissions:form' %}">Submit a cultural record</a>.</p></div>{% endif %}
+{% else %}<div class="phf-empty"><span class="phf-empty-icon">🎵</span><h5 data-en="No cultural records found" data-ar="لم يتم العثور على سجلات ثقافية">No cultural records found</h5></div>{% endif %}
 </div></section>{% endblock %}

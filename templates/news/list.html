@@ -3,21 +3,21 @@
 {% block content %}
 <div class="phf-page-header">
   <div class="container-xl">
-    <div class="phf-breadcrumb"><a href="{% url 'core:home' %}">Home</a><span class="phf-breadcrumb-sep">›</span>News & Events</div>
-    <h1>News, Events & <em>Updates</em></h1>
-    <p>Current happenings, upcoming events, and important announcements from the Pojulu Heritage Foundation.</p>
+    <div class="phf-breadcrumb"><a href="{% url 'core:home' %}" data-en="Home" data-ar="الرئيسية">Home</a><span class="phf-breadcrumb-sep">›</span><span data-en="News & Events" data-ar="الأخبار والفعاليات">News & Events</span></div>
+    <h1 data-en="News, Events & <em>Updates</em>" data-ar="الأخبار والفعاليات و<em>التحديثات</em>">News, Events & <em>Updates</em></h1>
+    <p data-en="Current happenings, upcoming events, and important announcements from the Pojulu Heritage Foundation." data-ar="آخر المستجدات، والفعاليات القادمة، والإعلانات الهامة من مؤسسة تراث البوجولو.">Current happenings, upcoming events, and important announcements from the Pojulu Heritage Foundation.</p>
   </div>
 </div>
 <section class="phf-section">
   <div class="container-xl">
     <form method="get" class="phf-search-bar">
-      <input type="text" name="q" class="form-control" placeholder="Search news and events…" value="{{ query }}">
+      <input type="text" name="q" class="form-control" placeholder="Search news and events…" data-placeholder-en="Search news and events…" data-placeholder-ar="ابحث في الأخبار والفعاليات…" value="{{ query }}">
       <select name="type" class="form-select phf-auto-submit" style="max-width:180px">
-        <option value="">All Types</option>
+        <option value="" data-en="All Types" data-ar="كل الأنواع">All Types</option>
         {% for val,label in type_choices %}<option value="{{ val }}" {% if selected_type == val %}selected{% endif %}>{{ label }}</option>{% endfor %}
       </select>
-      <button type="submit" class="phf-btn phf-btn-primary">Search</button>
-      {% if query or selected_type %}<a href="{% url 'news:list' %}" class="phf-btn phf-btn-outline">Clear</a>{% endif %}
+      <button type="submit" class="phf-btn phf-btn-primary" data-en="Search" data-ar="بحث">Search</button>
+      {% if query or selected_type %}<a href="{% url 'news:list' %}" class="phf-btn phf-btn-outline" data-en="Clear" data-ar="مسح">Clear</a>{% endif %}
     </form>
 
     {% if posts %}
@@ -38,7 +38,7 @@
               <p class="phf-news-card-excerpt">{{ post.excerpt|truncatewords:20 }}</p>
               <div class="d-flex align-items-center justify-content-between mt-2">
                 <span class="phf-news-meta-sm">{{ post.published_at|date:"d M Y" }}</span>
-                <span class="phf-news-readmore-sm">Read →</span>
+                <span class="phf-news-readmore-sm" data-en="Read →" data-ar="اقرأ ←">Read →</span>
               </div>
             </div>
           </div>
@@ -48,7 +48,7 @@
     </div>
     {% include "partials/pagination.html" %}
     {% else %}
-    <div class="phf-empty"><span class="phf-empty-icon">📰</span><h5>No posts found</h5><p>Check back soon for news and events.</p></div>
+    <div class="phf-empty"><span class="phf-empty-icon">📰</span><h5 data-en="No posts found" data-ar="لا توجد منشورات">No posts found</h5><p data-en="Check back soon for news and events." data-ar="تفقد الصفحة قريبًا لمزيد من الأخبار والفعاليات.">Check back soon for news and events.</p></div>
     {% endif %}
   </div>
 </section>

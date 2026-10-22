@@ -7,6 +7,14 @@ admin.site.site_header = settings.ADMIN_SITE_HEADER
 admin.site.site_title  = settings.ADMIN_SITE_TITLE
 admin.site.index_title = settings.ADMIN_INDEX_TITLE
 
+# Role-scoped admins (clan_admin, genealogy_admin, ...) are granted raw Django
+# model permissions (including delete) in AdminProfile.assign_permissions() so
+# they can use the role-gated /dashboard/ views. Those same permissions would
+# otherwise let them reach the un-gated Django admin at /admin/ and bypass
+# dashboard-only restrictions (e.g. delete is superadmin-only in the
+# dashboard). /admin/ is reserved for superusers; scoped admins use /dashboard/.
+admin.site.has_permission = lambda request: request.user.is_active and request.user.is_superuser
+
 urlpatterns = [
     path('admin/',        admin.site.urls),
     path('',              include('apps.core.urls',         namespace='core')),
@@ -20,6 +28,7 @@ urlpatterns = [
     path('submit/',       include('apps.submissions.urls',  namespace='submissions')),
     path('dashboard/',    include('apps.dashboard.urls',    namespace='dashboard')),
     path('news/',         include('apps.news.urls',         namespace='news')),
+    path('family/',       include('apps.wills.urls',        namespace='wills')),
 ]
 
 if settings.DEBUG:

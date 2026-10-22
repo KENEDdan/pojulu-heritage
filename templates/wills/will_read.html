@@ -1,0 +1,36 @@
+{% extends "wills/base_family.html" %}
+{% block title %}{% if is_own %}Your Will{% else %}Will of {{ will.account.person.full_name }}{% endif %}{% endblock %}
+{% block content %}
+<div class="fam-card">
+  <div class="fam-card-title">
+    {% if is_own %}Your Will{% else %}Will of {{ will.account.person.full_name }}{% endif %}
+  </div>
+
+  {% if will.is_revealed %}
+  <p class="fam-card-sub">
+    <span class="fam-badge fam-badge-green"><i class="bi bi-unlock-fill me-1"></i>Revealed {{ will.revealed_at|date:"d M Y" }}</span>
+    {% if not is_own %}— shared with you as an immediate family member.{% endif %}
+  </p>
+  {% endif %}
+
+  {% if content is not None %}
+  <div style="background:var(--g0);border:1px solid var(--border);border-radius:8px;padding:24px;white-space:pre-wrap;font-size:.92rem;line-height:1.7;color:var(--text)">{{ content }}</div>
+  {% else %}
+  <p class="fam-card-sub">
+    {% if is_own %}Enter your Will Passphrase to view it.{% else %}Enter the passphrase {{ will.account.person.first_name }} gave you to read this will.{% endif %}
+  </p>
+  <form method="post">
+    {% csrf_token %}
+    <div class="mb-3">
+      {{ form.passphrase }}
+      {% for e in form.passphrase.errors %}<div style="color:#c62828;font-size:.76rem;margin-top:3px">{{ e }}</div>{% endfor %}
+    </div>
+    <button type="submit" class="fam-btn fam-btn-primary"><i class="bi bi-unlock me-1"></i> View</button>
+  </form>
+  {% endif %}
+
+  <div class="mt-4">
+    <a href="{% url 'wills:dashboard' %}" class="fam-btn fam-btn-outline"><i class="bi bi-arrow-left me-1"></i> Back</a>
+  </div>
+</div>
+{% endblock %}

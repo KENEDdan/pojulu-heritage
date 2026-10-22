@@ -1058,8 +1058,123 @@ img { max-width: 100%; }
 .phf-tree-box-faded  { border-color: var(--g200); opacity: .8; }
 .phf-tree-box-faded .phf-tree-box-name { color: var(--text-mid); font-weight: 600; }
 
+.phf-tree-box-rel {
+  font-size: .68rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .03em; color: var(--g600); margin-bottom: 2px;
+}
+.phf-tree-box-center .phf-tree-box-rel { color: rgba(255,255,255,.75); }
+.phf-tree-box-path { font-size: .66rem; color: var(--text-light); font-style: italic; margin-top: 2px; }
+
+.phf-tree-row-title {
+  text-align: center; font-size: .72rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--text-light); margin: 20px 0 10px;
+}
+.phf-tree-row-title:first-child { margin-top: 0; }
+
+.phf-tree-controls {
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
+  gap: 10px; margin-bottom: 16px;
+}
+.phf-tree-controls-label { font-size: .84rem; color: var(--text-mid); }
+.phf-tree-controls-links { display: flex; gap: 8px; }
+
+.phf-tree-truncated {
+  text-align: center; font-size: .78rem; color: var(--text-light);
+  margin: 8px 0 16px;
+}
+.phf-tree-truncated a { color: var(--g600); font-weight: 600; }
+
 @media (max-width: 767px) {
   .phf-tree-chart { padding: 24px 12px; }
   .phf-tree-box { min-width: 110px; padding: 10px 12px; }
   .phf-tree-box-name { font-size: .85rem; }
+}
+
+/* ══════════════════════════════════════════════
+   MOBILE NAV FIXES
+   ══════════════════════════════════════════════ */
+
+/* 1. Let the navbar grow to fit its content on mobile,
+      instead of clipping/overlapping the page below it */
+@media (max-width: 991px) {
+  .phf-nav {
+    height: auto;
+    min-height: var(--nav-h);
+    padding: 10px 0;
+  }
+  .phf-nav .container-xl {
+    flex-wrap: wrap;
+    row-gap: 10px;
+  }
+}
+
+/* 2. Give the mobile dropdown menu (hamburger) a solid
+      background so hero content doesn't show through */
+@media (max-width: 991px) {
+  .navbar-collapse.show,
+  .navbar-collapse.collapsing {
+    background: var(--g900);
+    border-radius: 8px;
+    margin-top: 10px;
+    padding: 12px 8px;
+    box-shadow: 0 12px 40px rgba(0,0,0,.4);
+    position: relative;
+    z-index: 1050;
+  }
+  [data-theme="ivory"] .navbar-collapse.show,
+  [data-theme="ivory"] .navbar-collapse.collapsing {
+    background: var(--white);
+    border: 1px solid var(--g200);
+  }
+}
+
+/* 3. Force the language dropdown panel to render with a
+      solid background and visible text, regardless of
+      Bootstrap's default .dropdown-menu styles */
+.phf-lang-menu {
+  background: var(--g900) !important;
+  border: 1px solid rgba(255,255,255,.15) !important;
+  min-width: 150px !important;
+  padding: 6px !important;
+}
+.phf-lang-menu .phf-lang-opt,
+.phf-lang-menu .dropdown-item {
+  display: block !important;
+  width: 100% !important;
+  text-align: left !important;
+  background: transparent !important;
+  color: rgba(255,255,255,.85) !important;
+  font-size: .85rem !important;
+  font-weight: 500 !important;
+  padding: 10px 14px !important;
+  border-radius: 4px !important;
+  border: none !important;
+}
+.phf-lang-menu .phf-lang-opt:hover,
+.phf-lang-menu .dropdown-item:hover {
+  background: rgba(255,255,255,.12) !important;
+  color: #fff !important;
+}
+[data-theme="ivory"] .phf-lang-menu {
+  background: var(--white) !important;
+  border-color: var(--g200) !important;
+  box-shadow: var(--shadow) !important;
+}
+[data-theme="ivory"] .phf-lang-menu .phf-lang-opt,
+[data-theme="ivory"] .phf-lang-menu .dropdown-item {
+  color: var(--g800) !important;
+}
+[data-theme="ivory"] .phf-lang-menu .phf-lang-opt:hover,
+[data-theme="ivory"] .phf-lang-menu .dropdown-item:hover {
+  background: var(--g100) !important;
+  color: var(--g900) !important;
+}
+
+/* 4. Theme toggle dropdown / panel — same treatment in case
+      it ever renders as a dropdown */
+.dropdown-menu.phf-dropdown {
+  background: var(--g900) !important;
+}
+[data-theme="ivory"] .dropdown-menu.phf-dropdown {
+  background: var(--white) !important;
 }

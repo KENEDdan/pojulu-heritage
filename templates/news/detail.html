@@ -3,14 +3,14 @@
 {% block content %}
 <div class="phf-page-header">
   <div class="container-xl">
-    <div class="phf-breadcrumb"><a href="{% url 'core:home' %}">Home</a><span class="phf-breadcrumb-sep">›</span><a href="{% url 'news:list' %}">News</a><span class="phf-breadcrumb-sep">›</span>{{ post.get_post_type_display }}</div>
+    <div class="phf-breadcrumb"><a href="{% url 'core:home' %}" data-en="Home" data-ar="الرئيسية">Home</a><span class="phf-breadcrumb-sep">›</span><a href="{% url 'news:list' %}" data-en="News" data-ar="الأخبار">News</a><span class="phf-breadcrumb-sep">›</span>{{ post.get_post_type_display }}</div>
     <span class="phf-tag phf-tag-dark mb-3 d-inline-block">{{ post.get_post_type_display }}</span>
     <h1><em>{{ post.title }}</em></h1>
     <div class="d-flex gap-3 flex-wrap mt-2" style="color:rgba(255,255,255,.65);font-size:.85rem">
       {% if post.published_at %}<span><i class="bi bi-calendar3 me-1"></i>{{ post.published_at|date:"j F Y" }}</span>{% endif %}
       {% if post.author %}<span><i class="bi bi-person me-1"></i>{{ post.author.get_full_name|default:post.author.username }}</span>{% endif %}
       {% if post.event_location %}<span><i class="bi bi-geo-alt me-1"></i>{{ post.event_location }}</span>{% endif %}
-      <span><i class="bi bi-eye me-1"></i>{{ post.views }} views</span>
+      <span><i class="bi bi-eye me-1"></i>{{ post.views }} <span data-en="views" data-ar="مشاهدة">views</span></span>
     </div>
   </div>
 </div>
@@ -38,7 +38,7 @@
           </div>
           <div>
             {% if post.event_location %}<p style="font-size:.9rem;color:var(--text-mid);margin:0"><i class="bi bi-geo-alt-fill me-2 text-success"></i>{{ post.event_location }}</p>{% endif %}
-            {% if post.event_end_date %}<p style="font-size:.85rem;color:var(--text-light);margin-top:4px"><i class="bi bi-clock me-2"></i>Ends: {{ post.event_end_date|date:"j M Y, P" }}</p>{% endif %}
+            {% if post.event_end_date %}<p style="font-size:.85rem;color:var(--text-light);margin-top:4px"><i class="bi bi-clock me-2"></i><span data-en="Ends: " data-ar="ينتهي: ">Ends: </span>{{ post.event_end_date|date:"j M Y, P" }}</p>{% endif %}
           </div>
         </div>
         {% endif %}
@@ -54,7 +54,7 @@
         <!-- Media gallery -->
         {% if media %}
         <div class="mt-5">
-          <h5 class="text-display mb-3" style="color:var(--g700)">Photos & Documents</h5>
+          <h5 class="text-display mb-3" style="color:var(--g700)" data-en="Photos & Documents" data-ar="الصور والمستندات">Photos & Documents</h5>
           <div class="row g-3">
             {% for item in media %}
             {% if item.media_type == 'photo' %}
@@ -66,7 +66,7 @@
             </div>
             {% elif item.media_type == 'document' %}
             <div class="col-12">
-              <a href="{{ item.file.url }}" class="phf-btn phf-btn-outline" target="_blank"><i class="bi bi-file-pdf me-1"></i> {{ item.title|default:"Download Document" }}</a>
+              <a href="{{ item.file.url }}" class="phf-btn phf-btn-outline" target="_blank"><i class="bi bi-file-pdf me-1"></i> {% if item.title %}{{ item.title }}{% else %}<span data-en="Download Document" data-ar="تحميل المستند">Download Document</span>{% endif %}</a>
             </div>
             {% endif %}
             {% endfor %}
@@ -81,14 +81,14 @@
         </div>
         {% endif %}
 
-        <div class="mt-4"><a href="{% url 'news:list' %}" class="phf-btn phf-btn-outline"><i class="bi bi-arrow-left me-1"></i> Back to News</a></div>
+        <div class="mt-4"><a href="{% url 'news:list' %}" class="phf-btn phf-btn-outline"><i class="bi bi-arrow-left me-1"></i> <span data-en="Back to News" data-ar="العودة إلى الأخبار">Back to News</span></a></div>
       </div>
 
       <!-- Sidebar -->
       <div class="col-lg-4">
         {% if related %}
         <div class="phf-detail-block">
-          <div class="phf-detail-block-header"><h6 class="phf-detail-block-title">Related Stories</h6></div>
+          <div class="phf-detail-block-header"><h6 class="phf-detail-block-title" data-en="Related Stories" data-ar="مقالات ذات صلة">Related Stories</h6></div>
           <div style="padding:16px">
             {% for r in related %}
             <a href="{{ r.get_absolute_url }}" class="text-decoration-none" style="display:block;padding:12px 0;border-bottom:1px solid var(--g100)">

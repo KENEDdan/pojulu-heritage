@@ -5,8 +5,8 @@ import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = config('SECRET_KEY', default='django-insecure-pojulu-heritage-foundation-change-in-production')
-DEBUG = config('DEBUG', default=True, cast=bool)
+SECRET_KEY = config('SECRET_KEY')
+DEBUG = config('DEBUG', default=False, cast=bool)
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
 
 INSTALLED_APPS = [
@@ -31,7 +31,8 @@ INSTALLED_APPS = [
     'apps.elders',
     'apps.submissions',
     'apps.dashboard',
-    'apps.news',      
+    'apps.news',
+    'apps.wills',
 ]
 
 MIDDLEWARE = [
@@ -115,3 +116,27 @@ CSRF_TRUSTED_ORIGINS = config(
     'CSRF_TRUSTED_ORIGINS',
     default='http://localhost,http://127.0.0.1'
 ).split(',')
+
+# Security headers
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'DENY'
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = True
+
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+
+# Login brute-force protection (used in apps.dashboard.views.dashboard_login
+# and apps.wills.views.family_login)
+LOGIN_ATTEMPT_LIMIT = config('LOGIN_ATTEMPT_LIMIT', default=5, cast=int)
+LOGIN_LOCKOUT_SECONDS = config('LOGIN_LOCKOUT_SECONDS', default=900, cast=int)
+
+# Note: wills are encrypted with a passphrase each owner chooses themself
+# (see apps.wills.crypto) — deliberately no server-held key here. There is
+# nothing to configure and nothing the app can decrypt on anyone's behalf.

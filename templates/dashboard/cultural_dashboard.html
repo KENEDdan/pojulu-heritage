@@ -3,24 +3,56 @@
 {% block page_title %}🎵 Cultural Archive Management{% endblock %}
 {% block content %}
 <div class="row g-4 mb-4">
-  <div class="col-6 col-lg-3"><div class="dash-stat-card"><div class="dash-stat-icon">🎵</div><div class="dash-stat-num">{{ total }}</div><div class="dash-stat-label">Total Cultural Records</div><a href="/admin/cultural/culturalrecord/" class="dash-stat-link" target="_blank">Manage</a></div></div>
-  <div class="col-6 col-lg-3"><div class="dash-stat-card"><div class="dash-stat-icon">✅</div><div class="dash-stat-num">{{ verified }}</div><div class="dash-stat-label">Published</div></div></div>
-  <div class="col-6 col-lg-3"><div class="dash-stat-card"><div class="dash-stat-icon">📝</div><div class="dash-stat-num">{{ total|add:"-"|add:verified|default:0 }}</div><div class="dash-stat-label">Awaiting Review</div></div></div>
+  <div class="col-6 col-lg-4">
+    <div class="dash-stat-card">
+      <div class="dash-stat-icon">🎵</div>
+      <div class="dash-stat-num">{{ total }}</div>
+      <div class="dash-stat-label">Total Cultural Records</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-4">
+    <div class="dash-stat-card">
+      <div class="dash-stat-icon">✅</div>
+      <div class="dash-stat-num">{{ verified }}</div>
+      <div class="dash-stat-label">Published</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-4">
+    <div class="dash-stat-card" style="{% if total > verified %}border-color:#FFB300{% endif %}">
+      <div class="dash-stat-icon">📝</div>
+      <div class="dash-stat-num" style="{% if total > verified %}color:#F57F17{% endif %}">{{ total|add:"-"|add:verified|default:0 }}</div>
+      <div class="dash-stat-label">Awaiting Review</div>
+    </div>
+  </div>
 </div>
+
+{% if type_counts %}
 <div class="row g-3 mb-4">
   {% for label, count in type_counts.items %}
-  <div class="col-6 col-lg-2"><div style="background:var(--g0);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center"><div style="font-size:1.3rem;margin-bottom:6px">📄</div><div style="font-size:1.3rem;font-weight:700;color:var(--g7)">{{ count }}</div><div style="font-size:.72rem;color:var(--mid)">{{ label }}</div></div></div>
+  <div class="col-6 col-lg-2">
+    <div style="background:var(--g0);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center">
+      <div style="font-size:1.3rem;font-weight:700;color:var(--g7)">{{ count }}</div>
+      <div style="font-size:.72rem;color:var(--mid)">{{ label }}</div>
+    </div>
+  </div>
   {% endfor %}
 </div>
+{% endif %}
+
 <div class="d-flex gap-2 mb-4 flex-wrap">
   <a href="{% url 'dashboard:cultural_add' %}" class="dash-btn dash-btn-primary"><i class="bi bi-plus-lg me-1"></i> Add Cultural Record</a>
-  <a href="{% url 'dashboard:elder_add' %}" class="dash-btn dash-btn-outline"><i class="bi bi-mic me-1"></i> Add Elder Interview</a>
+  <a href="{% url 'dashboard:elder_add' %}"    class="dash-btn dash-btn-outline"><i class="bi bi-mic me-1"></i> Add Elder Interview</a>
 </div>
+
 <div class="dash-table-card">
-  <div class="dash-table-header"><span class="dash-table-title">Recent Cultural Records</span><a href="/admin/cultural/culturalrecord/" class="dash-btn dash-btn-outline dash-btn-sm" target="_blank">View All</a></div>
+  <div class="dash-table-header">
+    <span class="dash-table-title">Recent Cultural Records</span>
+  </div>
   <div style="overflow-x:auto">
     <table class="dash-table">
-      <thead><tr><th>Title</th><th>Type</th><th>Clan</th><th>Language</th><th>Status</th><th>Action</th></tr></thead>
+      <thead>
+        <tr><th>Title</th><th>Type</th><th>Clan</th><th>Language</th><th>Status</th><th>Action</th></tr>
+      </thead>
       <tbody>
         {% for rec in records %}
         <tr>
@@ -32,7 +64,7 @@
           <td><a href="{% url 'dashboard:cultural_edit' rec.pk %}" class="dash-btn dash-btn-outline dash-btn-sm">Edit</a></td>
         </tr>
         {% empty %}
-        <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--light)">No records yet.</td></tr>
+        <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--light)">No records yet. <a href="{% url 'dashboard:cultural_add' %}">Add the first.</a></td></tr>
         {% endfor %}
       </tbody>
     </table>

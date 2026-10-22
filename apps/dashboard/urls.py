@@ -74,4 +74,14 @@ urlpatterns = [
     path('accounts/<int:pk>/edit/',          views.edit_account,      name='edit_account'),
     path('accounts/<int:pk>/deactivate/',    views.deactivate_account, name='deactivate_account'),
     path('accounts/<int:pk>/reactivate/',    views.reactivate_account, name='reactivate_account'),
+
+    # Family (will) account management
+    path('family-accounts/',                          views.family_account_list,          name='family_account_list'),
+    path('family-accounts/new/',                       views.family_account_search,        name='family_account_search'),
+    path('family-accounts/new/existing/<int:person_id>/', views.family_account_create_existing, name='family_account_create_existing'),
+    path('family-accounts/new/person/',                views.family_account_create_new_person, name='family_account_create_new_person'),
+    path('family-accounts/<int:pk>/deactivate/',        views.family_account_deactivate,    name='family_account_deactivate'),
+    path('family-accounts/<int:pk>/reactivate/',        views.family_account_reactivate,    name='family_account_reactivate'),
+    path('family-accounts/<int:pk>/reset-password/',   views.family_account_reset_password, name='family_account_reset_password'),
+    path('wills/<int:pk>/reveal/',                      views.will_reveal,                  name='will_reveal'),
 ]

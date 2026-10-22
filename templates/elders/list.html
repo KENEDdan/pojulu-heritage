@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 {% block title %}Elder Interviews{% endblock %}
 {% block content %}
-<div class="phf-page-header"><div class="container-xl"><div class="phf-breadcrumb"><a href="{% url 'core:home' %}">Home</a><span class="phf-breadcrumb-sep">›</span>Elder Interviews</div><h1>Elder <em>Interviews</em></h1><p>Recorded oral histories from Pojulu elders — the most irreplaceable resource in this entire archive. Every interview is a library saved.</p></div></div>
+<div class="phf-page-header"><div class="container-xl"><div class="phf-breadcrumb"><a href="{% url 'core:home' %}" data-en="Home" data-ar="الرئيسية">Home</a><span class="phf-breadcrumb-sep">›</span><span data-en="Elder Interviews" data-ar="مقابلات الشيوخ">Elder Interviews</span></div><h1 data-en="Elder <em>Interviews</em>" data-ar="مقابلات <em>الشيوخ</em>">Elder <em>Interviews</em></h1><p data-en="Recorded oral histories from Pojulu elders — the most irreplaceable resource in this entire archive. Every interview is a library saved." data-ar="سجلات تاريخية شفهية من شيوخ البوجولو — أثمن مورد في هذا الأرشيف بأكمله. كل مقابلة هي مكتبة تم إنقاذها.">Recorded oral histories from Pojulu elders — the most irreplaceable resource in this entire archive. Every interview is a library saved.</p></div></div>
 <section class="phf-section"><div class="container-xl">
-<div class="phf-quote mb-5"><p>"Our elders are living archives. When they pass without being recorded, a library burns. We are here to ensure no more libraries burn."</p><cite>— Pojulu Heritage Foundation Mission</cite></div>
+<div class="phf-quote mb-5"><p data-en="&quot;Our elders are living archives. When they pass without being recorded, a library burns. We are here to ensure no more libraries burn.&quot;" data-ar="&quot;شيوخنا مكتبات حية. حين يرحلون دون أن تُسجَّل ذكرياتهم، تحترق مكتبة. نحن هنا لضمان ألا تحترق مكتبة أخرى بعد اليوم.&quot;">"Our elders are living archives. When they pass without being recorded, a library burns. We are here to ensure no more libraries burn."</p><cite data-en="— Pojulu Heritage Foundation Mission" data-ar="— رسالة مؤسسة تراث البوجولو">— Pojulu Heritage Foundation Mission</cite></div>
 <form method="get" class="phf-search-bar">
-  <input type="text" name="q" class="form-control" placeholder="Search by elder name or topic…" value="{{ query }}">
-  <select name="clan" class="form-select phf-auto-submit" style="max-width:200px"><option value="">All Clans</option>{% for c in clans %}<option value="{{ c.slug }}" {% if selected_clan == c.slug %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select>
-  <button type="submit" class="phf-btn phf-btn-primary">Search</button>
+  <input type="text" name="q" class="form-control" placeholder="Search by elder name or topic…" data-placeholder-en="Search by elder name or topic…" data-placeholder-ar="ابحث باسم الشيخ أو الموضوع…" value="{{ query }}">
+  <select name="clan" class="form-select phf-auto-submit" style="max-width:200px"><option value="" data-en="All Clans" data-ar="جميع القبائل">All Clans</option>{% for c in clans %}<option value="{{ c.slug }}" {% if selected_clan == c.slug %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select>
+  <button type="submit" class="phf-btn phf-btn-primary" data-en="Search" data-ar="بحث">Search</button>
 </form>
 {% if interviews %}
 <div class="row g-4">
@@ -17,15 +17,15 @@
     <div class="phf-elder-card">
       <div class="phf-elder-card-header">
         <div class="phf-elder-avatar">{% if interview.photo_of_elder %}<img src="{{ interview.photo_of_elder.url }}" alt="">{% else %}{{ interview.initials }}{% endif %}</div>
-        <div><h6 class="phf-elder-name">{{ interview.elder_name }}</h6><p class="phf-elder-meta">{% if interview.clan %}{{ interview.clan.name }} · {% endif %}{% if interview.approximate_age %}Age ~{{ interview.approximate_age }} · {% endif %}{% if interview.interview_date %}{{ interview.interview_date|date:"M Y" }}{% endif %}</p></div>
+        <div><h6 class="phf-elder-name">{{ interview.elder_name }}</h6><p class="phf-elder-meta">{% if interview.clan %}{{ interview.clan.name }} · {% endif %}{% if interview.approximate_age %}<span data-en="Age ~" data-ar="العمر تقريبًا ">Age ~</span>{{ interview.approximate_age }} · {% endif %}{% if interview.interview_date %}{{ interview.interview_date|date:"M Y" }}{% endif %}</p></div>
       </div>
       <div class="phf-elder-body">
         <p class="phf-elder-summary">{{ interview.summary|truncatewords:24 }}</p>
         {% if interview.topics_list %}<div class="d-flex flex-wrap gap-1 mt-2">{% for topic in interview.topics_list|slice:":3" %}<span class="phf-tag" style="font-size:.62rem">{{ topic }}</span>{% endfor %}</div>{% endif %}
         <div class="phf-elder-media-badges mt-2">
-          {% if interview.has_audio %}<span class="phf-media-badge"><i class="bi bi-mic-fill"></i> Audio</span>{% endif %}
-          {% if interview.has_video %}<span class="phf-media-badge"><i class="bi bi-camera-video-fill"></i> Video</span>{% endif %}
-          {% if interview.has_transcript %}<span class="phf-media-badge"><i class="bi bi-file-text-fill"></i> Transcript</span>{% endif %}
+          {% if interview.has_audio %}<span class="phf-media-badge"><i class="bi bi-mic-fill"></i> <span data-en="Audio" data-ar="صوت">Audio</span></span>{% endif %}
+          {% if interview.has_video %}<span class="phf-media-badge"><i class="bi bi-camera-video-fill"></i> <span data-en="Video" data-ar="فيديو">Video</span></span>{% endif %}
+          {% if interview.has_transcript %}<span class="phf-media-badge"><i class="bi bi-file-text-fill"></i> <span data-en="Transcript" data-ar="نص مكتوب">Transcript</span></span>{% endif %}
         </div>
       </div>
     </div>
@@ -34,5 +34,5 @@
 {% endfor %}
 </div>
 {% include "partials/pagination.html" %}
-{% else %}<div class="phf-empty"><span class="phf-empty-icon">🎙️</span><h5>No interviews published yet</h5><p>The elder interview programme is underway. Check back soon, or <a href="{% url 'submissions:form' %}">request an elder interview</a>.</p></div>{% endif %}
+{% else %}<div class="phf-empty"><span class="phf-empty-icon">🎙️</span><h5 data-en="No interviews published yet" data-ar="لا توجد مقابلات منشورة بعد">No interviews published yet</h5><p><span data-en="The elder interview programme is underway. Check back soon, or " data-ar="برنامج مقابلات الشيوخ قيد التنفيذ. تفقد الصفحة قريبًا، أو ">The elder interview programme is underway. Check back soon, or </span><a href="{% url 'submissions:form' %}" data-en="request an elder interview" data-ar="اطلب مقابلة مع أحد الشيوخ">request an elder interview</a>.</p></div>{% endif %}
 </div></section>{% endblock %}

@@ -1,0 +1,76 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block page_title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div style="max-width:920px">
+  <div class="dash-form-card">
+    <div class="dash-form-title">Create Person &amp; Family Account</div>
+    <p class="dash-form-sub">This adds a new person to the genealogy archive and creates their private family (will) account in one step.</p>
+
+    {% if person_form.non_field_errors or account_form.non_field_errors %}
+    <div class="alert alert-danger py-2 mb-4" style="font-size:.84rem">
+      {% for error in person_form.non_field_errors %}⚠️ {{ error }}<br>{% endfor %}
+      {% for error in account_form.non_field_errors %}⚠️ {{ error }}<br>{% endfor %}
+    </div>
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data" novalidate>
+      {% csrf_token %}
+
+      <div class="dash-form-title" style="font-size:1.1rem;margin-top:4px">Person Details</div>
+      <div class="row g-3 mb-3">
+        {% for field in person_form %}
+        {% if not field.is_hidden %}
+          {% if field.html_name in full_fields %}
+          <div class="col-12">
+            <label class="dash-label" for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} <span style="color:#c62828">*</span>{% endif %}</label>
+            {{ field }}
+            {% if field.errors %}<div style="color:#c62828;font-size:.76rem;margin-top:3px">{% for e in field.errors %}{{ e }}{% endfor %}</div>{% endif %}
+          </div>
+          {% elif field.field.widget.input_type == 'checkbox' %}
+          <div class="col-12">
+            <div class="form-check mt-1 p-3" style="background:var(--g0);border-radius:6px;border:1px solid var(--border)">
+              {{ field }}
+              <label class="form-check-label ms-2" for="{{ field.id_for_label }}" style="font-size:.88rem;font-weight:500;color:var(--text)">{{ field.label }}</label>
+            </div>
+          </div>
+          {% else %}
+          <div class="col-md-6">
+            <label class="dash-label" for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} <span style="color:#c62828">*</span>{% endif %}</label>
+            {{ field }}
+            {% if field.errors %}<div style="color:#c62828;font-size:.76rem;margin-top:3px">{% for e in field.errors %}{{ e }}{% endfor %}</div>{% endif %}
+          </div>
+          {% endif %}
+        {% else %}{{ field }}{% endif %}
+        {% endfor %}
+      </div>
+
+      <hr style="border-color:var(--border);margin:24px 0">
+
+      <div class="dash-form-title" style="font-size:1.1rem">Login Details</div>
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label class="dash-label">Username *</label>
+          {{ account_form.username }}
+          {% for e in account_form.username.errors %}<div style="color:#c62828;font-size:.76rem;margin-top:3px">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="col-md-6">
+          <label class="dash-label">Password *</label>
+          {{ account_form.password }}
+          {% for e in account_form.password.errors %}<div style="color:#c62828;font-size:.76rem;margin-top:3px">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="col-md-6">
+          <label class="dash-label">Email (optional)</label>
+          {{ account_form.email }}
+        </div>
+      </div>
+
+      <div class="d-flex gap-3 mt-4 pt-3" style="border-top:1px solid var(--border)">
+        <button type="submit" class="dash-btn dash-btn-primary"><i class="bi bi-person-check-fill me-1"></i> Create Person &amp; Account</button>
+        <a href="{{ cancel_url }}" class="dash-btn dash-btn-outline">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -4,23 +4,23 @@
 {% block content %}
 <div class="phf-page-header">
   <div class="container-xl">
-    <div class="phf-breadcrumb"><a href="{% url 'core:home' %}">Home</a><span class="phf-breadcrumb-sep">›</span>Clans</div>
-    <h1>Pojulu <em>Clan Histories</em></h1>
-    <p>The documented histories of the great Pojulu clans — their origins, leadership lineages, territorial roots, and cultural legacies.</p>
+    <div class="phf-breadcrumb"><a href="{% url 'core:home' %}" data-en="Home" data-ar="الرئيسية">Home</a><span class="phf-breadcrumb-sep">›</span><span data-en="Clans" data-ar="القبائل">Clans</span></div>
+    <h1 data-en="Pojulu <em>Clan Histories</em>" data-ar="<em>تواريخ قبائل</em> البوجولو">Pojulu <em>Clan Histories</em></h1>
+    <p data-en="The documented histories of the great Pojulu clans — their origins, leadership lineages, territorial roots, and cultural legacies." data-ar="التاريخ الموثّق لقبائل البوجولو العريقة — أصولها وسلاسل قيادتها وجذورها الإقليمية وإرثها الثقافي.">The documented histories of the great Pojulu clans — their origins, leadership lineages, territorial roots, and cultural legacies.</p>
   </div>
 </div>
 <section class="phf-section">
   <div class="container-xl">
     <form method="get" class="phf-search-bar">
-      <input type="text" name="q" class="form-control" placeholder="Search clans…" value="{{ query }}">
+      <input type="text" name="q" class="form-control" placeholder="Search clans…" value="{{ query }}" data-placeholder-en="Search clans…" data-placeholder-ar="ابحث عن قبيلة…">
       <select name="payam" class="form-select phf-auto-submit" style="max-width:180px">
-        <option value="">All Payams</option>
+        <option value="" data-en="All Payams" data-ar="جميع البايامات">All Payams</option>
         {% for val,label in payam_choices %}<option value="{{ val }}" {% if selected_payam == val %}selected{% endif %}>{{ label }}</option>{% endfor %}
       </select>
-      <button type="submit" class="phf-btn phf-btn-primary">Search</button>
-      {% if query or selected_payam %}<a href="{% url 'clans:list' %}" class="phf-btn phf-btn-outline">Clear</a>{% endif %}
+      <button type="submit" class="phf-btn phf-btn-primary" data-en="Search" data-ar="بحث">Search</button>
+      {% if query or selected_payam %}<a href="{% url 'clans:list' %}" class="phf-btn phf-btn-outline" data-en="Clear" data-ar="مسح">Clear</a>{% endif %}
     </form>
-    <p class="text-muted mb-4" style="font-size:.84rem">{{ total_count }} clan{{ total_count|pluralize }} found</p>
+    <p class="text-muted mb-4" style="font-size:.84rem">{{ total_count }} <span data-en="clan{{ total_count|pluralize }} found" data-ar="قبيلة تم العثور عليها">clan{{ total_count|pluralize }} found</span></p>
     {% if clans %}
     <div class="row g-4">
       {% for clan in clans %}
@@ -29,17 +29,17 @@
           <div class="phf-card">
             <div class="phf-card-header">
               <div class="phf-card-icon">🌿</div>
-              <h5 class="phf-card-title">{{ clan.name }} Clan</h5>
+              <h5 class="phf-card-title">{{ clan.name }} <span data-en="Clan" data-ar="قبيلة">Clan</span></h5>
               <p class="phf-card-subtitle"><i class="bi bi-geo-alt me-1"></i>{{ clan.get_payam_display }}</p>
             </div>
             <div class="phf-card-body">
               <p class="phf-card-desc">{{ clan.tagline|default:clan.description|truncatewords:22 }}</p>
               <div class="d-flex flex-wrap gap-2">
-                <span class="phf-tag">{{ clan.family_count }} Families</span>
-                <span class="phf-tag">{{ clan.person_count }} Persons</span>
-                {% if clan.chiefs.count %}<span class="phf-tag">{{ clan.chiefs.count }} Chief{{ clan.chiefs.count|pluralize }}</span>{% endif %}
+                <span class="phf-tag">{{ clan.family_count }} <span data-en="Families" data-ar="عائلات">Families</span></span>
+                <span class="phf-tag">{{ clan.person_count }} <span data-en="Persons" data-ar="أشخاص">Persons</span></span>
+                {% if clan.chiefs.count %}<span class="phf-tag">{{ clan.chiefs.count }} <span data-en="Chief{{ clan.chiefs.count|pluralize }}" data-ar="زعيم">Chief{{ clan.chiefs.count|pluralize }}</span></span>{% endif %}
               </div>
-              <span class="phf-card-link">View Full History</span>
+              <span class="phf-card-link" data-en="View Full History" data-ar="عرض التاريخ الكامل">View Full History</span>
             </div>
           </div>
         </a>
@@ -48,7 +48,7 @@
     </div>
     {% include "partials/pagination.html" %}
     {% else %}
-    <div class="phf-empty"><span class="phf-empty-icon">🔍</span><h5>No clans found</h5><p>Try a different search.
+    <div class="phf-empty"><span class="phf-empty-icon">🔍</span><h5 data-en="No clans found" data-ar="لم يتم العثور على قبائل">No clans found</h5><p data-en="Try a different search." data-ar="جرّب بحثًا مختلفًا.">Try a different search.
   </div>
 </section>
 {% endif%}

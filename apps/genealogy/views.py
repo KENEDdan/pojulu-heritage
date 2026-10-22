@@ -49,36 +49,156 @@ class PersonDetailView(DetailView):
     queryset = Person.objects.filter(is_verified=True)
 
 
+DEFAULT_TREE_GENERATIONS = 4
+MAX_TREE_GENERATIONS = 10
+
+
+def _ancestor_relation_label(gender, generation):
+    if generation == 1:
+        return {'M': 'Father', 'F': 'Mother'}.get(gender, 'Parent')
+    label = ('Great-' * (generation - 2)) + {'M': 'grandfather', 'F': 'grandmother'}.get(gender, 'grandparent')
+    return label[0].upper() + label[1:]
+
+
+def _descendant_relation_label(gender, generation):
+    if generation == 1:
+        return {'M': 'Son', 'F': 'Daughter'}.get(gender, 'Child')
+    label = ('Great-' * (generation - 2)) + {'M': 'grandson', 'F': 'granddaughter'}.get(gender, 'grandchild')
+    return label[0].upper() + label[1:]
+
+
+def _generation_row_title(generation, direction):
+    noun = 'Grandparents' if direction == 'up' else 'Grandchildren'
+    base = 'Parents' if (direction == 'up' and generation == 1) else \
+           'Children' if (direction == 'down' and generation == 1) else None
+    if base:
+        return base
+    return ('Great-' * (generation - 2)) + noun
+
+
+def _walk_ancestors(person, max_generations):
+    """BFS upward from `person`. Returns (generations, truncated) where
+    generations is a list (index 0 = parents) of lists of (Person, path)
+    tuples; path is the chain of 'Father'/'Mother' steps taken to reach
+    them, used to disambiguate e.g. paternal vs maternal great-grandparents.
+    Stops at unverified records (same visibility rule as the rest of the
+    site) and de-duplicates by pk, so a lineage that loops back on itself
+    (e.g. clan-endogamous marriages producing a shared ancestor) is shown
+    once, at the generation it was first reached.
+    """
+    generations = []
+    visited = {person.pk}
+    frontier = [(person, [])]
+    truncated = False
+    for gen in range(1, max_generations + 1):
+        parent_ids = set()
+        for p, _ in frontier:
+            if p.father_id:
+                parent_ids.add(p.father_id)
+            if p.mother_id:
+                parent_ids.add(p.mother_id)
+        parent_ids -= visited
+        if not parent_ids:
+            break
+        people_map = {pp.pk: pp for pp in Person.objects.filter(pk__in=parent_ids, is_verified=True)}
+        next_frontier = []
+        seen_this_gen = set()
+        for p, path in frontier:
+            for parent_id, rel in ((p.father_id, 'Father'), (p.mother_id, 'Mother')):
+                if parent_id and parent_id in people_map and parent_id not in seen_this_gen:
+                    seen_this_gen.add(parent_id)
+                    next_frontier.append((people_map[parent_id], path + [rel]))
+        if not next_frontier:
+            break
+        visited.update(seen_this_gen)
+        generations.append(next_frontier)
+        frontier = next_frontier
+        if gen == max_generations:
+            more_ids = set()
+            for p, _ in frontier:
+                if p.father_id and p.father_id not in visited:
+                    more_ids.add(p.father_id)
+                if p.mother_id and p.mother_id not in visited:
+                    more_ids.add(p.mother_id)
+            truncated = bool(more_ids)
+    return generations, truncated
+
+
+def _walk_descendants(person, max_generations):
+    """BFS downward from `person`. Returns (generations, truncated) where
+    generations is a list (index 0 = children) of lists of Person.
+    """
+    generations = []
+    visited = {person.pk}
+    frontier_ids = [person.pk]
+    truncated = False
+    for gen in range(1, max_generations + 1):
+        children = list(Person.objects.filter(
+            Q(father_id__in=frontier_ids) | Q(mother_id__in=frontier_ids),
+            is_verified=True
+        ).exclude(pk__in=visited).distinct())
+        if not children:
+            break
+        visited.update(c.pk for c in children)
+        generations.append(children)
+        frontier_ids = [c.pk for c in children]
+        if gen == max_generations:
+            truncated = Person.objects.filter(
+                Q(father_id__in=frontier_ids) | Q(mother_id__in=frontier_ids),
+                is_verified=True
+            ).exclude(pk__in=visited).exists()
+    return generations, truncated
+
+
 def family_tree(request, slug):
     person = get_object_or_404(Person, slug=slug, is_verified=True)
 
-    # ── Generation -2: Grandparents ──
-    grandparents = []
-    for parent in [person.father, person.mother]:
-        if parent:
-            if parent.father:
-                grandparents.append(parent.father)
-            if parent.mother:
-                grandparents.append(parent.mother)
+    try:
+        requested_generations = int(request.GET.get('gens', DEFAULT_TREE_GENERATIONS))
+    except (TypeError, ValueError):
+        requested_generations = DEFAULT_TREE_GENERATIONS
+    generations = max(1, min(requested_generations, MAX_TREE_GENERATIONS))
 
-    # ── Generation -1: Parents + their siblings (uncles/aunts) ──
+    ancestor_data, ancestors_truncated = _walk_ancestors(person, generations)
+    descendant_data, descendants_truncated = _walk_descendants(person, generations)
+
+    ancestor_rows = [{
+        'generation': i,
+        'title': _generation_row_title(i, 'up'),
+        'members': [{
+            'person': p,
+            'relation': _ancestor_relation_label(p.gender, i),
+            'path': ' → '.join(path),
+        } for p, path in gen_people],
+    } for i, gen_people in enumerate(ancestor_data, start=1)]
+    ancestor_rows.reverse()  # farthest ancestors render first (top of chart)
+
+    descendant_rows = [{
+        'generation': i,
+        'title': _generation_row_title(i, 'down'),
+        'members': [{
+            'person': p,
+            'relation': _descendant_relation_label(p.gender, i),
+        } for p in gen_people],
+    } for i, gen_people in enumerate(descendant_data, start=1)]
+
+    # ── Immediate collaterals: siblings, aunts/uncles, cousins, nieces/nephews.
+    # Kept at one level regardless of the N-generation depth control above —
+    # a full N-generation collateral expansion (great-aunts, their
+    # descendants, ...) grows combinatorially and isn't shown here.
     parents = [p for p in [person.father, person.mother] if p]
     aunts_uncles = []
     for parent in parents:
         for sib in parent.siblings.filter(is_verified=True):
             aunts_uncles.append(sib)
 
-    # ── Generation 0: Person + siblings ──
     siblings = list(person.siblings.filter(is_verified=True))
 
-    # ── Cousins (children of aunts/uncles) ──
     cousins = []
     for au in aunts_uncles:
         for child in au.children.filter(is_verified=True):
             cousins.append(child)
 
-    # ── Generation +1: Children + nieces/nephews ──
-    children = list(person.children.filter(is_verified=True))
     nieces_nephews = []
     for sib in siblings:
         for child in sib.children.filter(is_verified=True):
@@ -86,12 +206,16 @@ def family_tree(request, slug):
 
     return render(request, 'genealogy/tree.html', {
         'person': person,
-        'grandparents': grandparents,
-        'parents': parents,
+        'ancestor_rows': ancestor_rows,
+        'descendant_rows': descendant_rows,
+        'ancestors_truncated': ancestors_truncated,
+        'descendants_truncated': descendants_truncated,
         'aunts_uncles': aunts_uncles,
         'siblings': siblings,
         'cousins': cousins,
-        'children': children,
         'nieces_nephews': nieces_nephews,
         'spouses': person.spouses,
+        'generations': generations,
+        'default_generations': DEFAULT_TREE_GENERATIONS,
+        'max_generations': MAX_TREE_GENERATIONS,
     })
