@@ -417,3 +417,6 @@ EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.conso
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='Pojulu Heritage Foundation <noreply@pojuluheritage.org>')
 
 RECORDS_PER_PAGE = 25
+
+# Django 6.0 default, opted into now: URL form fields assume https:// when no scheme is typed.
+FORMS_URLFIELD_ASSUME_HTTPS = True

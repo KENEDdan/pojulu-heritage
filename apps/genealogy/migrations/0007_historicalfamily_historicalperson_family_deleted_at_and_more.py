@@ -150,19 +150,19 @@ class Migration(migrations.Migration):
         migrations.RunPython(clean_invalid_parentage, migrations.RunPython.noop),
         migrations.AddConstraint(
             model_name='person',
-            constraint=models.CheckConstraint(check=models.Q(('father', models.F('id')), _negated=True), name='person_not_own_father', violation_error_message='A person cannot be their own father.'),
+            constraint=models.CheckConstraint(condition=models.Q(('father', models.F('id')), _negated=True), name='person_not_own_father', violation_error_message='A person cannot be their own father.'),
         ),
         migrations.AddConstraint(
             model_name='person',
-            constraint=models.CheckConstraint(check=models.Q(('mother', models.F('id')), _negated=True), name='person_not_own_mother', violation_error_message='A person cannot be their own mother.'),
+            constraint=models.CheckConstraint(condition=models.Q(('mother', models.F('id')), _negated=True), name='person_not_own_mother', violation_error_message='A person cannot be their own mother.'),
         ),
         migrations.AddConstraint(
             model_name='person',
-            constraint=models.CheckConstraint(check=models.Q(('father__isnull', True), ('mother__isnull', True), models.Q(('father', models.F('mother')), _negated=True), _connector='OR'), name='person_parents_distinct', violation_error_message='Father and mother must be different people.'),
+            constraint=models.CheckConstraint(condition=models.Q(('father__isnull', True), ('mother__isnull', True), models.Q(('father', models.F('mother')), _negated=True), _connector='OR'), name='person_parents_distinct', violation_error_message='Father and mother must be different people.'),
         ),
         migrations.AddConstraint(
             model_name='person',
-            constraint=models.CheckConstraint(check=models.Q(('birth_date__isnull', True), ('death_date__isnull', True), ('death_date__gte', models.F('birth_date')), _connector='OR'), name='person_death_after_birth', violation_error_message='Date of death cannot be before date of birth.'),
+            constraint=models.CheckConstraint(condition=models.Q(('birth_date__isnull', True), ('death_date__isnull', True), ('death_date__gte', models.F('birth_date')), _connector='OR'), name='person_death_after_birth', violation_error_message='Date of death cannot be before date of birth.'),
         ),
         migrations.AddField(
             model_name='historicalperson',

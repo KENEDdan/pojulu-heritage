@@ -47,9 +47,9 @@ def test_missing_secret_key_is_fatal_in_production():
 def test_django_admin_mounts_only_when_enabled():
     probe = ("from django.urls import reverse;"
              "print(reverse('admin:index'))")
-    off = _manage('shell', '-c', probe, env=_prod_env())
+    off = _manage('shell', '--no-imports', '-c', probe, env=_prod_env())
     assert off.returncode != 0 and 'NoReverseMatch' in off.stderr
-    on = _manage('shell', '-c', probe, env=_prod_env(ENABLE_DJANGO_ADMIN='True', ADMIN_URL_PREFIX='hidden-door/'))
+    on = _manage('shell', '--no-imports', '-c', probe, env=_prod_env(ENABLE_DJANGO_ADMIN='True', ADMIN_URL_PREFIX='hidden-door/'))
     assert on.returncode == 0, on.stderr
     assert on.stdout.strip() == '/hidden-door/'
 

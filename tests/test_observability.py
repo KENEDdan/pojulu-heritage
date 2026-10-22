@@ -141,7 +141,7 @@ def _sentry_probe(**env_extra):
     probe = ("import sentry_sdk; c = sentry_sdk.get_client(); "
              "print(c.is_active(), c.options.get('send_default_pii'), c.options.get('traces_sample_rate'), "
              "c.options.get('environment'), c.options.get('max_request_body_size'))")
-    return subprocess.run([sys.executable, 'manage.py', 'shell', '-c', probe], cwd=ROOT, env=env,
+    return subprocess.run([sys.executable, 'manage.py', 'shell', '--no-imports', '-c', probe], cwd=ROOT, env=env,
                           capture_output=True, text=True, timeout=120)
 
 

@@ -197,7 +197,7 @@ def _check(**env_extra):
     probe = ("from django.core.files.storage import storages;"
              "print(type(storages['default']).__name__, type(storages['private']).__name__);"
              "print(storages['private'].url('persons/pdfs/a.pdf'))")
-    return subprocess.run([sys.executable, 'manage.py', 'shell', '-c', probe], cwd=ROOT, env=env,
+    return subprocess.run([sys.executable, 'manage.py', 'shell', '--no-imports', '-c', probe], cwd=ROOT, env=env,
                           capture_output=True, text=True, timeout=120)
 
 

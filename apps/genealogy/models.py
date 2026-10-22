@@ -155,16 +155,16 @@ class Person(SoftDeleteModel):
             models.Index(fields=['is_verified', 'is_deleted'], name='person_visible_idx'),
         ]
         constraints = [
-            models.CheckConstraint(check=~models.Q(father=models.F('id')), name='person_not_own_father',
+            models.CheckConstraint(condition=~models.Q(father=models.F('id')), name='person_not_own_father',
                                    violation_error_message='A person cannot be their own father.'),
-            models.CheckConstraint(check=~models.Q(mother=models.F('id')), name='person_not_own_mother',
+            models.CheckConstraint(condition=~models.Q(mother=models.F('id')), name='person_not_own_mother',
                                    violation_error_message='A person cannot be their own mother.'),
             models.CheckConstraint(
-                check=models.Q(father__isnull=True) | models.Q(mother__isnull=True) | ~models.Q(father=models.F('mother')),
+                condition=models.Q(father__isnull=True) | models.Q(mother__isnull=True) | ~models.Q(father=models.F('mother')),
                 name='person_parents_distinct',
                 violation_error_message='Father and mother must be different people.'),
             models.CheckConstraint(
-                check=models.Q(birth_date__isnull=True) | models.Q(death_date__isnull=True)
+                condition=models.Q(birth_date__isnull=True) | models.Q(death_date__isnull=True)
                 | models.Q(death_date__gte=models.F('birth_date')),
                 name='person_death_after_birth',
                 violation_error_message='Date of death cannot be before date of birth.'),

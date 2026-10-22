@@ -465,3 +465,33 @@ being unaffected.
 **Rollout:** deploy with `REQUIRE_SUPERADMIN_2FA=False`. Each superadmin opens
 *Two-Factor Auth* in the dashboard, enrols and saves their recovery codes. Then
 set `REQUIRE_SUPERADMIN_2FA=True`.
+
+---
+
+## Phase 10 — Dependencies and CI
+
+- **D17: Django 4.2 → 5.2 LTS (5.2.18).** Django 4.2 left security support in
+  April 2026, and `pip-audit` reported 8 Django vulnerabilities fixed only in
+  5.2.x/6.0.x. 5.2 LTS is supported until April 2028. The whole suite passed
+  unchanged apart from test plumbing: `manage.py shell --no-imports` in
+  subprocess tests, and two Django 6.0 deprecations cleaned up early
+  (`CheckConstraint(condition=…)` and `FORMS_URLFIELD_ASSUME_HTTPS = True`).
+  Plugins moved to their 5.2-compatible releases (crispy-forms 2.7,
+  crispy-bootstrap5 2026.9, django-filter 26.2, django-mptt 0.20). **Exercise the
+  dashboard forms manually once before deploying** (see the QA checklist).
+- Also fixed by upgrading: Pillow 11.2.1 → 13.0.0 (41 advisories) and
+  sqlparse 0.5.5 → 0.6.0 (5 advisories). After the upgrade, `pip-audit` reports
+  **no known vulnerabilities** in `requirements.txt` or `requirements-dev.txt`
+  (2026-10-22).
+- `requirements.txt` pins **every** runtime package, transitive ones included
+  (resolved in a clean venv). `requirements-dev.txt` adds pytest,
+  pytest-django and pip-audit. Removed: `django-extensions` (not in
+  `INSTALLED_APPS`, unused).
+- `.github/workflows/ci.yml`: Postgres 16 service, Python 3.11 (same as the
+  Dockerfile), then `makemigrations --check`, `migrate`, the full pytest suite,
+  `check --deploy --fail-level WARNING` with production-like variables (**fails on
+  any deploy warning**), `collectstatic` in production mode, and `pip-audit`.
+- `.gitattributes` forces LF for `*.sh`, `Dockerfile`, `Procfile`, `*.toml`
+  and `*.yml`, so a Windows checkout can't break the container entrypoint.
+- The Docker image was built locally (PGDG `postgresql-client-17`, baked
+  `collectstatic`).

@@ -1,0 +1,7 @@
+# Files executed inside Linux containers must keep LF line endings even when
+# checked out on Windows (CRLF breaks `sh docker-entrypoint.sh`).
+*.sh        text eol=lf
+Dockerfile  text eol=lf
+Procfile    text eol=lf
+*.toml      text eol=lf
+*.yml       text eol=lf

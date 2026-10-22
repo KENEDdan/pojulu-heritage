@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches: [main, hardening]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: phf
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s
+          --health-timeout 5s --health-retries 10
+
+    env:
+      # Test settings: DEBUG=True so the test client isn't redirected to HTTPS.
+      DEBUG: 'True'
+      SECRET_KEY: ci-only-not-a-real-secret-0123456789abcdefghijklmnopqrstuvwxyz
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/phf
+      ALLOWED_HOSTS: localhost,127.0.0.1,testserver
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'   # matches the Dockerfile
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Migrations are complete
+        run: python manage.py makemigrations --check --dry-run
+
+      - name: Migrations apply cleanly
+        run: python manage.py migrate --noinput
+
+      - name: Test suite
+        run: python -m pytest --create-db -p no:cacheprovider
+
+      - name: Deploy check (production settings, fails on any warning)
+        env:
+          DEBUG: 'False'
+          SECRET_KEY: ci-deploy-check-${{ github.run_id }}-${{ github.run_attempt }}-abcdefghijklmnopqrstuvwxyz0123456789
+          ALLOWED_HOSTS: phf.example.org
+          CSRF_TRUSTED_ORIGINS: https://phf.example.org,https://*.up.railway.app
+        run: python manage.py check --deploy --fail-level WARNING
+
+      - name: Static files collect in production mode
+        env:
+          DEBUG: 'False'
+        run: python manage.py collectstatic --noinput
+
+      - name: Dependency vulnerability audit
+        run: pip-audit -r requirements.txt --progress-spinner off
