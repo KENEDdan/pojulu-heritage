@@ -3,7 +3,8 @@ from django.contrib.auth.models import User
 from django.urls import reverse
 from django.utils.text import slugify
 from django.utils import timezone
-from apps.core.validators import validate_upload_size, validate_image_extension, validate_general_media_extension
+from apps.core.uploads import SafeFileField, SafeImageField, UploadTo
+from apps.core.validators import validate_image, validate_media
 
 
 POST_TYPE_CHOICES = [
@@ -29,8 +30,8 @@ class NewsPost(models.Model):
     post_type      = models.CharField(max_length=20, choices=POST_TYPE_CHOICES, default='news')
     excerpt        = models.TextField(max_length=600, help_text='Brief summary shown on news cards (2–3 sentences)')
     content        = models.TextField(help_text='Full article or event description')
-    cover_image    = models.ImageField(upload_to='news/covers/', blank=True, null=True,
-                                        validators=[validate_image_extension, validate_upload_size])
+    cover_image    = SafeImageField(upload_to=UploadTo('news/covers'), blank=True, null=True,
+                                    validators=[validate_image])
     video_url      = models.URLField(blank=True, help_text='YouTube or Vimeo URL — shown as video card')
 
     # Event-specific fields
@@ -91,8 +92,7 @@ class NewsMedia(models.Model):
     post       = models.ForeignKey(NewsPost, on_delete=models.CASCADE, related_name='media')
     media_type = models.CharField(max_length=20, choices=MEDIA_TYPES, default='photo')
     title      = models.CharField(max_length=300, blank=True)
-    file       = models.FileField(upload_to='news/media/',
-                                   validators=[validate_general_media_extension, validate_upload_size])
+    file       = SafeFileField(upload_to=UploadTo('news/media'), validators=[validate_media])
     caption    = models.TextField(blank=True)
     order      = models.PositiveSmallIntegerField(default=0)
 

@@ -199,6 +199,13 @@ WHITENOISE_USE_FINDERS = DEBUG
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+# Request bodies: non-file form data is capped at 10 MB; uploaded files over
+# 5 MB are streamed to a temp file instead of held in memory. Per-type file
+# size limits live in apps/core/validators.py.
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
+FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
+FILE_UPLOAD_PERMISSIONS = 0o640
+
 STORAGES = {
     'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
     'staticfiles': {

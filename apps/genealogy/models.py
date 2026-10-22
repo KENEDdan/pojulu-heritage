@@ -2,10 +2,8 @@ from django.db import models
 from django.urls import reverse
 from django.utils.text import slugify
 from apps.core.models import PAYAM_CHOICES
-from apps.core.validators import (
-    validate_upload_size, validate_image_extension, validate_document_extension,
-    validate_document_or_image_extension, validate_general_media_extension,
-)
+from apps.core.uploads import SafeFileField, SafeImageField, UploadTo
+from apps.core.validators import validate_document_or_image, validate_image, validate_media, validate_pdf
 
 GENDER_CHOICES = [('M', 'Male'), ('F', 'Female'), ('U', 'Unknown')]
 
@@ -76,8 +74,8 @@ class Person(models.Model):
     current_residence = models.CharField(max_length=300, blank=True)
 
     # ── PROFILE ──
-    photo            = models.ImageField(upload_to='persons/photos/', blank=True, null=True,
-                                          validators=[validate_image_extension, validate_upload_size])
+    photo            = SafeImageField(upload_to=UploadTo('persons/photos'), blank=True, null=True,
+                                      validators=[validate_image])
     biography        = models.TextField(blank=True)
     occupation       = models.CharField(max_length=300, blank=True)
     hobbies          = models.TextField(blank=True, help_text='Hobbies and personal interests')
@@ -87,8 +85,9 @@ class Person(models.Model):
     contributions    = models.TextField(blank=True, help_text='Community contributions and service')
 
     # ── DOCUMENTS ──
-    profile_pdf      = models.FileField(upload_to='persons/pdfs/', blank=True, null=True, help_text='Upload full profile PDF document',
-                                         validators=[validate_document_extension, validate_upload_size])
+    profile_pdf      = SafeFileField(upload_to=UploadTo('persons/pdfs'), blank=True, null=True,
+                                     help_text='Upload full profile PDF document (max 25 MB)',
+                                     validators=[validate_pdf])
 
     # ── META ──
     is_verified  = models.BooleanField(default=False)
@@ -161,8 +160,9 @@ class PersonEducation(models.Model):
     is_current   = models.BooleanField(default=False, help_text='Currently studying here')
     honors       = models.CharField(max_length=200, blank=True, help_text='e.g. First Class, Distinction')
     notes        = models.TextField(blank=True)
-    certificate  = models.FileField(upload_to='persons/education/', blank=True, null=True, help_text='Upload certificate or transcript (PDF/JPG)',
-                                     validators=[validate_document_or_image_extension, validate_upload_size])
+    certificate  = SafeFileField(upload_to=UploadTo('persons/education'), blank=True, null=True,
+                                 help_text='Upload certificate or transcript (PDF/JPG)',
+                                 validators=[validate_document_or_image], image_max_edge=2400)
     order        = models.PositiveSmallIntegerField(default=0, help_text='Display order (0 = most recent)')
 
     class Meta:
@@ -214,8 +214,8 @@ class PersonMedia(models.Model):
     person          = models.ForeignKey(Person, on_delete=models.CASCADE, related_name='media_files')
     media_type      = models.CharField(max_length=20, choices=MEDIA_TYPES, default='photo')
     title           = models.CharField(max_length=300, blank=True)
-    file            = models.FileField(upload_to='persons/media/', help_text='Photo, PDF, audio, or video file',
-                                        validators=[validate_general_media_extension, validate_upload_size])
+    file            = SafeFileField(upload_to=UploadTo('persons/media'), help_text='Photo, PDF, audio, or video file',
+                                    validators=[validate_media])
     video_url       = models.URLField(blank=True, help_text='YouTube/Vimeo link (alternative to file upload)')
     caption         = models.TextField(blank=True)
     date_taken      = models.CharField(max_length=100, blank=True, help_text='Date or approximate year')

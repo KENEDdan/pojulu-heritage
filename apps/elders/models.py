@@ -1,8 +1,7 @@
 from django.db import models
 from django.urls import reverse
-from apps.core.validators import (
-    validate_upload_size, validate_image_extension, validate_audio_extension, validate_video_extension,
-)
+from apps.core.uploads import SafeFileField, SafeImageField, UploadTo
+from apps.core.validators import validate_audio, validate_image, validate_video
 
 
 class ElderInterview(models.Model):
@@ -25,13 +24,13 @@ class ElderInterview(models.Model):
     topics_covered  = models.CharField(max_length=600, blank=True,
                                         help_text="Comma-separated list of topics covered")
 
-    audio_file      = models.FileField(upload_to='interviews/audio/', blank=True, null=True,
-                                        validators=[validate_audio_extension, validate_upload_size])
-    video_file      = models.FileField(upload_to='interviews/video/', blank=True, null=True,
-                                        validators=[validate_video_extension, validate_upload_size])
+    audio_file      = SafeFileField(upload_to=UploadTo('interviews/audio'), blank=True, null=True,
+                                    validators=[validate_audio])
+    video_file      = SafeFileField(upload_to=UploadTo('interviews/video'), blank=True, null=True,
+                                    validators=[validate_video])
     video_url       = models.URLField(blank=True, help_text="External video link")
-    photo_of_elder  = models.ImageField(upload_to='interviews/photos/', blank=True, null=True,
-                                         validators=[validate_image_extension, validate_upload_size])
+    photo_of_elder  = SafeImageField(upload_to=UploadTo('interviews/photos'), blank=True, null=True,
+                                     validators=[validate_image])
 
     clans_mentioned    = models.ManyToManyField('clans.Clan', blank=True,
                                                  related_name='mentioned_in_interviews')

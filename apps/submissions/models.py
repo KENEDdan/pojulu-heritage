@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth import get_user_model
-from apps.core.validators import validate_upload_size, validate_general_media_extension
+from apps.core.uploads import SafeFileField, UploadTo
+from apps.core.validators import validate_media
 
 User = get_user_model()
 
@@ -48,10 +49,10 @@ class Submission(models.Model):
     additional_notes      = models.TextField(blank=True)
 
     # Attachments
-    attachment            = models.FileField(upload_to='submissions/attachments/',
-                                              blank=True, null=True,
-                                              help_text="Document, photo, or audio file",
-                                              validators=[validate_general_media_extension, validate_upload_size])
+    attachment            = SafeFileField(upload_to=UploadTo('submissions/attachments'),
+                                          blank=True, null=True,
+                                          help_text="Document, photo, or audio file",
+                                          validators=[validate_media])
 
     # Workflow
     status                = models.CharField(max_length=20, choices=STATUS_CHOICES,

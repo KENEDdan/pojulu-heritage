@@ -139,3 +139,38 @@ public template at baseline.
 - Security events (role changes, account create/deactivate/reactivate,
   permission denials, refused logins) go to the `phf.security` logger
   (wired to console output in Phase 8).
+
+---
+
+## Phase 3 — File upload security
+
+- `apps/core/validators.py` (content-checking, attached to **model fields** so
+  forms, inline formsets and the admin are all covered):
+
+  | Validator | Extensions | Content check | Max |
+  |---|---|---|---|
+  | `validate_image` | jpg jpeg png gif webp | Pillow format allow-list + `verify()` + full decode; ≤ 60 MP | 8 MB |
+  | `validate_pdf` | pdf | starts with `%PDF-` | 25 MB |
+  | `validate_document` | pdf, docx | PDF header, or a real OOXML zip with **no macros** | 25 MB |
+  | `validate_audio` | mp3 wav m4a ogg aac | magic bytes per format | 200 MB |
+  | `validate_video` | mp4 webm mov | magic bytes / ISO-BMFF atoms | 500 MB |
+  | `validate_media` | union of the above | dispatches by extension, then checks content | per type |
+
+  Files already in storage are not re-validated on every edit.
+- D13: Dropped `.doc` (legacy OLE, macro risk) and `.avi` (browsers can't
+  play it). Existing stored files are untouched; only new uploads are affected.
+  Kept `.docx` (macro-free only) and `.aac` so current workflows keep working.
+- `upload_to=UploadTo('<prefix>')` → `<prefix>/<yyyy>/<mm>/<uuid4>.<ext>`.
+  The user's filename (which often contained real names) is discarded.
+- `SafeFileField` / `SafeImageField` re-encode every new **image** upload in
+  memory just before it's written to storage (works the same on S3): EXIF
+  orientation applied, **all metadata stripped (EXIF incl. GPS, XMP)**, long
+  edge capped at 1600 px (2400 px for certificates so scans stay legible),
+  re-encoded JPEG q85 (WebP q85 if the image has real transparency). Animated
+  GIFs keep their first frame only. Non-image files are stored byte-for-byte.
+- `DATA_UPLOAD_MAX_MEMORY_SIZE` 10 MB, `FILE_UPLOAD_MAX_MEMORY_SIZE` 5 MB
+  (larger uploads stream to a temp file), `FILE_UPLOAD_PERMISSIONS` 0640.
+- Migrations: clans 0004, cultural 0003, elders 0003, genealogy 0004, news 0003,
+  submissions 0003 (field class / upload_to / validators only; no data change).
+- **Note:** a 500 MB video through gunicorn on Railway is slow and fragile.
+  Prefer YouTube/Vimeo links for long videos (see Deferred: direct-to-bucket uploads).
