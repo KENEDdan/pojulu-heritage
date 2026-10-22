@@ -212,6 +212,8 @@ class PersonForm(forms.ModelForm):
             'contributions',
             # Document
             'profile_pdf',
+            # Privacy
+            'show_contact_publicly', 'is_private',
             # Status
             'is_verified', 'is_elder', 'submitted_by',
         ]
@@ -246,6 +248,8 @@ class PersonForm(forms.ModelForm):
             'religion':          FC('e.g. Catholic, Anglican, Evangelical'),
             'contributions':     TA(3, 'Notable contributions to the community…'),
             'profile_pdf':       FIL(),
+            'show_contact_publicly': CHK(),
+            'is_private':        CHK(),
             'is_verified':       CHK(),
             'is_elder':          CHK(),
             'submitted_by':      FC('Name of person who submitted this record'),

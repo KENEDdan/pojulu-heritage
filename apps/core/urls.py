@@ -7,4 +7,5 @@ urlpatterns = [
     path('search/', views.SearchView.as_view(), name='search'),
     path('healthz', views.healthz, name='healthz'),
     path('healthz/', views.healthz),
+    path('private-media/<path:name>', views.private_media, name='private_media'),
 ]

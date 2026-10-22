@@ -11,7 +11,7 @@ class ClanListView(ListView):
     paginate_by = 12
 
     def get_queryset(self):
-        qs = Clan.objects.filter(is_verified=True).prefetch_related('chiefs')
+        qs = Clan.objects.public().prefetch_related('chiefs')
         q = self.request.GET.get('q', '')
         payam = self.request.GET.get('payam', '')
         if q:
@@ -32,17 +32,17 @@ class ClanDetailView(DetailView):
     model = Clan
     template_name = 'clans/detail.html'
     context_object_name = 'clan'
-    queryset = Clan.objects.filter(is_verified=True)
+    queryset = Clan.objects.public()
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         clan = self.object
         ctx['chiefs'] = clan.chiefs.all().order_by('order')
         ctx['events'] = clan.events.all()
-        ctx['families'] = clan.family_set.filter(is_verified=True)[:10]
-        ctx['persons'] = clan.person_set.filter(is_verified=True).order_by('last_name')[:12]
-        ctx['achievements'] = clan.achievements.filter(is_verified=True)[:5]
-        ctx['marriages'] = clan.marriages_husband_clan.filter(is_verified=True)[:5]
-        ctx['interviews'] = clan.elderinterview_set.filter(is_published=True)[:3]
-        ctx['cultural_records'] = clan.culturalrecord_set.filter(is_verified=True)[:5]
+        ctx['families'] = clan.family_set.public()[:10]
+        ctx['persons'] = clan.person_set.public().order_by('last_name')[:12]
+        ctx['achievements'] = clan.achievements.public()[:5]
+        ctx['marriages'] = clan.marriages_husband_clan.public()[:5]
+        ctx['interviews'] = clan.elderinterview_set.public()[:3]
+        ctx['cultural_records'] = clan.culturalrecord_set.public()[:5]
         return ctx

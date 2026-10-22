@@ -9,7 +9,7 @@ class ElderListView(ListView):
     paginate_by = 12
 
     def get_queryset(self):
-        qs = ElderInterview.objects.filter(is_published=True).select_related('clan')
+        qs = ElderInterview.objects.public().select_related('clan')
         q = self.request.GET.get('q','')
         clan = self.request.GET.get('clan','')
         if q:
@@ -23,11 +23,11 @@ class ElderListView(ListView):
         ctx['query'] = self.request.GET.get('q','')
         ctx['selected_clan'] = self.request.GET.get('clan','')
         from apps.clans.models import Clan
-        ctx['clans'] = Clan.objects.filter(is_verified=True).values('name','slug')
+        ctx['clans'] = Clan.objects.public().values('name','slug')
         return ctx
 
 class ElderDetailView(DetailView):
     model = ElderInterview
     template_name = 'elders/detail.html'
     context_object_name = 'interview'
-    queryset = ElderInterview.objects.filter(is_published=True)
+    queryset = ElderInterview.objects.public().select_related('clan')

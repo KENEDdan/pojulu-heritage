@@ -3,6 +3,12 @@ from django.db import models
 from django.urls import reverse
 
 
+class MemorialQuerySet(models.QuerySet):
+    def public(self):
+        # A memorial is public when the person it honours is.
+        return self.filter(person__is_verified=True).exclude(person__is_private=True, person__is_deceased=False)
+
+
 class MemorialRecord(models.Model):
     person        = models.OneToOneField('genealogy.Person', on_delete=models.CASCADE,
                                           related_name='memorial')
@@ -15,6 +21,8 @@ class MemorialRecord(models.Model):
     submitted_by  = models.CharField(max_length=200, blank=True)
     is_featured   = models.BooleanField(default=False)
     created_at    = models.DateTimeField(auto_now_add=True)
+
+    objects = MemorialQuerySet.as_manager()
 
     class Meta:
         ordering = ['-created_at']

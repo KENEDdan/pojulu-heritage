@@ -15,6 +15,7 @@ def _fast_hashing_and_clean_cache(settings, tmp_path):
     # Argon2 is deliberately slow; tests don't need that.
     settings.PASSWORD_HASHERS = ['django.contrib.auth.hashers.MD5PasswordHasher']
     settings.MEDIA_ROOT = tmp_path / 'media'
+    settings.PRIVATE_MEDIA_ROOT = tmp_path / 'private'
     cache.clear()
     yield
     cache.clear()

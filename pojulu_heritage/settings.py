@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'django_filters',
     'mptt',
     'axes',
+    'storages',
     'apps.core',
     'apps.clans',
     'apps.genealogy',
@@ -206,8 +207,56 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
 FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
 FILE_UPLOAD_PERMISSIONS = 0o640
 
+# Private media (profile PDFs, certificates, personal media, interview
+# recordings, submission attachments) lives outside MEDIA_ROOT locally and in
+# a separate bucket in production. See apps/core/storage.py.
+PRIVATE_MEDIA_ROOT = Path(config('PRIVATE_MEDIA_ROOT', default=str(BASE_DIR / 'private_media')))
+PRIVATE_MEDIA_URL_EXPIRE = config('PRIVATE_MEDIA_URL_EXPIRE', default=300, cast=int)  # seconds
+
+# S3-compatible object storage (Cloudflare R2 / Backblaze B2). Enabled when
+# AWS_STORAGE_BUCKET_NAME is set; otherwise media is stored on local disk.
+AWS_STORAGE_BUCKET_NAME = config('AWS_STORAGE_BUCKET_NAME', default='')
+AWS_PRIVATE_STORAGE_BUCKET_NAME = config('AWS_PRIVATE_STORAGE_BUCKET_NAME', default='') or AWS_STORAGE_BUCKET_NAME
+AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID', default='')
+AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY', default='')
+AWS_S3_ENDPOINT_URL = config('AWS_S3_ENDPOINT_URL', default='') or None
+AWS_S3_REGION_NAME = config('AWS_S3_REGION_NAME', default='auto')
+AWS_S3_SIGNATURE_VERSION = 's3v4'
+AWS_DEFAULT_ACL = None
+AWS_S3_FILE_OVERWRITE = False
+# Public base URL of the *public* bucket (custom domain or r2.dev URL),
+# e.g. https://media.example.org. Without it, public files get signed URLs too.
+MEDIA_PUBLIC_BASE_URL = config('MEDIA_PUBLIC_BASE_URL', default='').rstrip('/')
+
+USE_S3_MEDIA = bool(AWS_STORAGE_BUCKET_NAME)
+if USE_S3_MEDIA:
+    if MEDIA_PUBLIC_BASE_URL and AWS_PRIVATE_STORAGE_BUCKET_NAME == AWS_STORAGE_BUCKET_NAME:
+        raise ImproperlyConfigured(
+            'MEDIA_PUBLIC_BASE_URL makes the public bucket world-readable, so private media needs its '
+            'own bucket: set AWS_PRIVATE_STORAGE_BUCKET_NAME to a different, non-public bucket.')
+    _public_opts = {'bucket_name': AWS_STORAGE_BUCKET_NAME, 'location': 'media',
+                    'object_parameters': {'CacheControl': 'public, max-age=86400'}}
+    if MEDIA_PUBLIC_BASE_URL:
+        from urllib.parse import urlsplit
+        _u = urlsplit(MEDIA_PUBLIC_BASE_URL)
+        _public_opts.update({'custom_domain': (_u.netloc + _u.path).rstrip('/'),
+                             'url_protocol': f'{_u.scheme}:', 'querystring_auth': False})
+    else:
+        _public_opts.update({'querystring_auth': True, 'querystring_expire': 6 * 3600})
+    _media_storages = {
+        'default': {'BACKEND': 'storages.backends.s3.S3Storage', 'OPTIONS': _public_opts},
+        'private': {'BACKEND': 'apps.core.storage.PrivateS3Storage',
+                    'OPTIONS': {'bucket_name': AWS_PRIVATE_STORAGE_BUCKET_NAME, 'location': 'private',
+                                'querystring_auth': True, 'querystring_expire': PRIVATE_MEDIA_URL_EXPIRE}},
+    }
+else:
+    _media_storages = {
+        'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
+        'private': {'BACKEND': 'apps.core.storage.PrivateFileSystemStorage'},
+    }
+
 STORAGES = {
-    'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
+    **_media_storages,
     'staticfiles': {
         'BACKEND': (
             'django.contrib.staticfiles.storage.StaticFilesStorage' if DEBUG

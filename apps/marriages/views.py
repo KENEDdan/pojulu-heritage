@@ -9,7 +9,7 @@ class MarriageListView(ListView):
     paginate_by = 20
 
     def get_queryset(self):
-        qs = Marriage.objects.filter(is_verified=True).select_related('husband_clan','wife_clan','husband','wife')
+        qs = Marriage.objects.public().select_related('husband_clan','wife_clan','husband','wife','husband__clan','wife__clan')
         q = self.request.GET.get('q','')
         clan = self.request.GET.get('clan','')
         if q:
@@ -23,10 +23,12 @@ class MarriageListView(ListView):
         ctx['query'] = self.request.GET.get('q','')
         ctx['selected_clan'] = self.request.GET.get('clan','')
         from apps.clans.models import Clan
-        ctx['clans'] = Clan.objects.filter(is_verified=True).values('name','slug')
+        ctx['clans'] = Clan.objects.public().values('name','slug')
         return ctx
 
 class MarriageDetailView(DetailView):
     model = Marriage
     template_name = 'marriages/detail.html'
     context_object_name = 'marriage'
+    queryset = Marriage.objects.public().select_related('husband', 'wife', 'husband_clan', 'wife_clan',
+                                                        'husband__clan', 'wife__clan')

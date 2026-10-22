@@ -24,6 +24,11 @@ TYPE_COLORS = {
 }
 
 
+class NewsQuerySet(models.QuerySet):
+    def public(self):
+        return self.filter(is_published=True)
+
+
 class NewsPost(models.Model):
     title          = models.CharField(max_length=400)
     slug           = models.SlugField(max_length=440, unique=True, blank=True)
@@ -51,6 +56,8 @@ class NewsPost(models.Model):
     tags           = models.CharField(max_length=400, blank=True, help_text='Comma-separated tags')
     created_at     = models.DateTimeField(auto_now_add=True)
     updated_at     = models.DateTimeField(auto_now=True)
+
+    objects = NewsQuerySet.as_manager()
 
     class Meta:
         ordering = ['-published_at', '-created_at']

@@ -27,6 +27,11 @@ CATEGORY_ICONS = {
 }
 
 
+class AchievementQuerySet(models.QuerySet):
+    def public(self):
+        return self.filter(is_verified=True)
+
+
 class Achievement(models.Model):
     person_name  = models.CharField(max_length=200,
                                      help_text="Full name of the person being honoured")
@@ -44,6 +49,8 @@ class Achievement(models.Model):
     is_verified  = models.BooleanField(default=False)
     is_featured  = models.BooleanField(default=False)
     created_at   = models.DateTimeField(auto_now_add=True)
+
+    objects = AchievementQuerySet.as_manager()
 
     class Meta:
         ordering = ['-year', 'person_name']

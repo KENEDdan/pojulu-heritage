@@ -1,7 +1,13 @@
 from django.db import models
 from django.urls import reverse
+from apps.core.storage import get_private_storage
 from apps.core.uploads import SafeFileField, SafeImageField, UploadTo
 from apps.core.validators import validate_audio, validate_image, validate_video
+
+
+class InterviewQuerySet(models.QuerySet):
+    def public(self):
+        return self.filter(is_published=True)
 
 
 class ElderInterview(models.Model):
@@ -24,9 +30,13 @@ class ElderInterview(models.Model):
     topics_covered  = models.CharField(max_length=600, blank=True,
                                         help_text="Comma-separated list of topics covered")
 
+    # Recordings live in private storage; the media gate serves them to the
+    # public only once the interview is published.
     audio_file      = SafeFileField(upload_to=UploadTo('interviews/audio'), blank=True, null=True,
+                                    storage=get_private_storage,
                                     validators=[validate_audio])
     video_file      = SafeFileField(upload_to=UploadTo('interviews/video'), blank=True, null=True,
+                                    storage=get_private_storage,
                                     validators=[validate_video])
     video_url       = models.URLField(blank=True, help_text="External video link")
     photo_of_elder  = SafeImageField(upload_to=UploadTo('interviews/photos'), blank=True, null=True,
@@ -39,6 +49,8 @@ class ElderInterview(models.Model):
     is_featured     = models.BooleanField(default=False)
     created_at      = models.DateTimeField(auto_now_add=True)
     updated_at      = models.DateTimeField(auto_now=True)
+
+    objects = InterviewQuerySet.as_manager()
 
     class Meta:
         ordering = ['-interview_date', 'elder_name']

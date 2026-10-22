@@ -2,6 +2,17 @@ from django.db import models
 from django.urls import reverse
 
 
+class MarriageQuerySet(models.QuerySet):
+    def public(self):
+        """Verified marriages whose linked spouses (if any) are themselves
+        public — otherwise the record would leak a hidden person's name."""
+        from apps.genealogy.models import Person
+        public_people = Person.objects.public().values('pk')
+        return (self.filter(is_verified=True)
+                .filter(models.Q(husband__isnull=True) | models.Q(husband__in=public_people))
+                .filter(models.Q(wife__isnull=True) | models.Q(wife__in=public_people)))
+
+
 class Marriage(models.Model):
     husband           = models.ForeignKey('genealogy.Person', null=True, blank=True,
                                            on_delete=models.SET_NULL,
@@ -33,6 +44,8 @@ class Marriage(models.Model):
                                           help_text="Names of children from this union")
     is_verified       = models.BooleanField(default=False)
     created_at        = models.DateTimeField(auto_now_add=True)
+
+    objects = MarriageQuerySet.as_manager()
 
     class Meta:
         ordering = ['-year']

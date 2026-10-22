@@ -9,7 +9,7 @@ class AchievementListView(ListView):
     paginate_by = 15
 
     def get_queryset(self):
-        qs = Achievement.objects.filter(is_verified=True).select_related('clan')
+        qs = Achievement.objects.public().select_related('clan')
         q = self.request.GET.get('q','')
         cat = self.request.GET.get('category','')
         if q:
@@ -29,3 +29,4 @@ class AchievementDetailView(DetailView):
     model = Achievement
     template_name = 'achievements/detail.html'
     context_object_name = 'achievement'
+    queryset = Achievement.objects.public().select_related('clan', 'person')

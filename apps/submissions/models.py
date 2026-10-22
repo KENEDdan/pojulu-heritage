@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from apps.core.storage import get_private_storage
 from apps.core.uploads import SafeFileField, UploadTo
 from apps.core.validators import validate_media
 
@@ -50,7 +51,7 @@ class Submission(models.Model):
 
     # Attachments
     attachment            = SafeFileField(upload_to=UploadTo('submissions/attachments'),
-                                          blank=True, null=True,
+                                          blank=True, null=True, storage=get_private_storage,
                                           help_text="Document, photo, or audio file",
                                           validators=[validate_media])
 

@@ -9,7 +9,7 @@ class CulturalListView(ListView):
     paginate_by = 16
 
     def get_queryset(self):
-        qs = CulturalRecord.objects.filter(is_verified=True).select_related('clan')
+        qs = CulturalRecord.objects.public().select_related('clan')
         q = self.request.GET.get('q','')
         rtype = self.request.GET.get('type','')
         if q:
@@ -29,4 +29,4 @@ class CulturalDetailView(DetailView):
     model = CulturalRecord
     template_name = 'cultural/detail.html'
     context_object_name = 'record'
-    queryset = CulturalRecord.objects.filter(is_verified=True)
+    queryset = CulturalRecord.objects.public().select_related('clan')

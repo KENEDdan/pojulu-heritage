@@ -9,7 +9,7 @@ class MemorialListView(ListView):
     paginate_by = 12
 
     def get_queryset(self):
-        qs = MemorialRecord.objects.select_related('person','person__clan').order_by('-person__death_year','-created_at')
+        qs = MemorialRecord.objects.public().select_related('person','person__clan').order_by('-person__death_year','-created_at')
         q = self.request.GET.get('q','')
         clan = self.request.GET.get('clan','')
         if q:
@@ -23,10 +23,11 @@ class MemorialListView(ListView):
         ctx['query'] = self.request.GET.get('q','')
         ctx['selected_clan'] = self.request.GET.get('clan','')
         from apps.clans.models import Clan
-        ctx['clans'] = Clan.objects.filter(is_verified=True).values('name','slug')
+        ctx['clans'] = Clan.objects.public().values('name','slug')
         return ctx
 
 class MemorialDetailView(DetailView):
     model = MemorialRecord
     template_name = 'memorial/detail.html'
     context_object_name = 'memorial'
+    queryset = MemorialRecord.objects.public().select_related('person', 'person__clan')

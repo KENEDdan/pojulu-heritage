@@ -2,10 +2,23 @@ from django.db import models
 from django.urls import reverse
 from django.utils.text import slugify
 from apps.core.models import PAYAM_CHOICES
+from apps.core.storage import get_private_storage
 from apps.core.uploads import SafeFileField, SafeImageField, UploadTo
 from apps.core.validators import validate_document_or_image, validate_image, validate_media, validate_pdf
 
 GENDER_CHOICES = [('M', 'Male'), ('F', 'Female'), ('U', 'Unknown')]
+
+
+class FamilyQuerySet(models.QuerySet):
+    def public(self):
+        return self.filter(is_verified=True)
+
+
+class PersonQuerySet(models.QuerySet):
+    def public(self):
+        """Visible on the public site: verified, and not a living person
+        who asked to be private."""
+        return self.filter(is_verified=True).exclude(is_private=True, is_deceased=False)
 
 
 class Family(models.Model):
@@ -18,6 +31,8 @@ class Family(models.Model):
     is_verified    = models.BooleanField(default=False)
     created_at     = models.DateTimeField(auto_now_add=True)
     updated_at     = models.DateTimeField(auto_now=True)
+
+    objects = FamilyQuerySet.as_manager()
 
     class Meta:
         ordering = ['name']
@@ -34,10 +49,10 @@ class Family(models.Model):
     def get_absolute_url(self): return reverse('genealogy:family_detail', kwargs={'slug': self.slug})
 
     @property
-    def member_count(self): return self.person_set.count()
+    def member_count(self): return self.person_set.public().count()
 
     @property
-    def head(self): return self.person_set.filter(father__isnull=True, is_verified=True).first()
+    def head(self): return self.person_set.public().filter(father__isnull=True).first()
 
 
 class Person(models.Model):
@@ -86,8 +101,17 @@ class Person(models.Model):
 
     # ── DOCUMENTS ──
     profile_pdf      = SafeFileField(upload_to=UploadTo('persons/pdfs'), blank=True, null=True,
-                                     help_text='Upload full profile PDF document (max 25 MB)',
+                                     storage=get_private_storage,
+                                     help_text='Upload full profile PDF document (max 25 MB). Staff-only.',
                                      validators=[validate_pdf])
+
+    # ── PRIVACY ──
+    show_contact_publicly = models.BooleanField(
+        default=False,
+        help_text='Show phone, email and address on the public profile. Only tick this with the person\'s consent.')
+    is_private   = models.BooleanField(
+        default=False,
+        help_text='Hide this living person from public pages, search, lists and family trees.')
 
     # ── META ──
     is_verified  = models.BooleanField(default=False)
@@ -95,6 +119,8 @@ class Person(models.Model):
     created_at   = models.DateTimeField(auto_now_add=True)
     updated_at   = models.DateTimeField(auto_now=True)
     submitted_by = models.CharField(max_length=200, blank=True)
+
+    objects = PersonQuerySet.as_manager()
 
     class Meta:
         ordering = ['last_name', 'first_name']
@@ -149,6 +175,34 @@ class Person(models.Model):
             models.Q(father=self) | models.Q(mother=self)
         ).distinct()
 
+    @property
+    def is_public(self):
+        return self.is_verified and not (self.is_private and not self.is_deceased)
+
+    @property
+    def public_contact(self):
+        """Contact details for public templates — empty unless the person
+        consented (show_contact_publicly)."""
+        if not self.show_contact_publicly or self.is_deceased:
+            return {}
+        return {k: v for k, v in (('phone', self.phone), ('email', self.email_contact),
+                                  ('address', self.address)) if v}
+
+    def public_relatives(self):
+        """Parents, spouses, children and siblings filtered to publicly
+        visible people (the unfiltered properties above are for staff/wills)."""
+        public = Person.objects.public()
+        parent_ids = [i for i in (self.father_id, self.mother_id) if i]
+        parents = {p.pk: p for p in public.filter(pk__in=parent_ids)}
+        spouse_ids = [s.pk for s in self.spouses]
+        return {
+            'father': parents.get(self.father_id),
+            'mother': parents.get(self.mother_id),
+            'spouses': list(public.filter(pk__in=spouse_ids)),
+            'children': list(self.children.public()),
+            'siblings': list(self.siblings.public()),
+        }
+
 
 class PersonEducation(models.Model):
     person       = models.ForeignKey(Person, on_delete=models.CASCADE, related_name='education_history')
@@ -161,6 +215,7 @@ class PersonEducation(models.Model):
     honors       = models.CharField(max_length=200, blank=True, help_text='e.g. First Class, Distinction')
     notes        = models.TextField(blank=True)
     certificate  = SafeFileField(upload_to=UploadTo('persons/education'), blank=True, null=True,
+                                 storage=get_private_storage,
                                  help_text='Upload certificate or transcript (PDF/JPG)',
                                  validators=[validate_document_or_image], image_max_edge=2400)
     order        = models.PositiveSmallIntegerField(default=0, help_text='Display order (0 = most recent)')
@@ -214,7 +269,8 @@ class PersonMedia(models.Model):
     person          = models.ForeignKey(Person, on_delete=models.CASCADE, related_name='media_files')
     media_type      = models.CharField(max_length=20, choices=MEDIA_TYPES, default='photo')
     title           = models.CharField(max_length=300, blank=True)
-    file            = SafeFileField(upload_to=UploadTo('persons/media'), help_text='Photo, PDF, audio, or video file',
+    file            = SafeFileField(upload_to=UploadTo('persons/media'), storage=get_private_storage,
+                                    help_text='Photo, PDF, audio, or video file (staff-only)',
                                     validators=[validate_media])
     video_url       = models.URLField(blank=True, help_text='YouTube/Vimeo link (alternative to file upload)')
     caption         = models.TextField(blank=True)

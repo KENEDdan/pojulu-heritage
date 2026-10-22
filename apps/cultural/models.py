@@ -26,6 +26,11 @@ TYPE_ICONS = {
 }
 
 
+class CulturalQuerySet(models.QuerySet):
+    def public(self):
+        return self.filter(is_verified=True)
+
+
 class CulturalRecord(models.Model):
     title         = models.CharField(max_length=300)
     slug          = models.SlugField(max_length=320, unique=True, blank=True)
@@ -52,6 +57,8 @@ class CulturalRecord(models.Model):
     is_featured   = models.BooleanField(default=False)
     created_at    = models.DateTimeField(auto_now_add=True)
     updated_at    = models.DateTimeField(auto_now=True)
+
+    objects = CulturalQuerySet.as_manager()
 
     class Meta:
         ordering = ['record_type', 'title']

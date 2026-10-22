@@ -11,7 +11,7 @@ class FamilyListView(ListView):
     paginate_by = 12
 
     def get_queryset(self):
-        qs = Family.objects.filter(is_verified=True).select_related('clan')
+        qs = Family.objects.public().select_related('clan')
         q = self.request.GET.get('q', '')
         clan = self.request.GET.get('clan', '')
         if q:
@@ -25,7 +25,7 @@ class FamilyListView(ListView):
         ctx['query'] = self.request.GET.get('q', '')
         ctx['selected_clan'] = self.request.GET.get('clan', '')
         from apps.clans.models import Clan
-        ctx['clans'] = Clan.objects.filter(is_verified=True).values('name', 'slug')
+        ctx['clans'] = Clan.objects.public().values('name', 'slug')
         return ctx
 
 
@@ -33,12 +33,12 @@ class FamilyDetailView(DetailView):
     model = Family
     template_name = 'genealogy/family_detail.html'
     context_object_name = 'family'
-    queryset = Family.objects.filter(is_verified=True)
+    queryset = Family.objects.public()
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx['members'] = self.object.person_set.filter(is_verified=True).order_by('birth_year', 'last_name')
-        ctx['roots'] = self.object.person_set.filter(is_verified=True, father__isnull=True)
+        ctx['members'] = self.object.person_set.public().order_by('birth_year', 'last_name')
+        ctx['roots'] = self.object.person_set.public().filter(father__isnull=True)
         return ctx
 
 
@@ -46,7 +46,12 @@ class PersonDetailView(DetailView):
     model = Person
     template_name = 'genealogy/person_detail.html'
     context_object_name = 'person'
-    queryset = Person.objects.filter(is_verified=True)
+    queryset = Person.objects.public().select_related('clan', 'family')
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx['relatives'] = self.object.public_relatives()
+        return ctx
 
 
 DEFAULT_TREE_GENERATIONS = 4
@@ -100,7 +105,7 @@ def _walk_ancestors(person, max_generations):
         parent_ids -= visited
         if not parent_ids:
             break
-        people_map = {pp.pk: pp for pp in Person.objects.filter(pk__in=parent_ids, is_verified=True)}
+        people_map = {pp.pk: pp for pp in Person.objects.public().filter(pk__in=parent_ids)}
         next_frontier = []
         seen_this_gen = set()
         for p, path in frontier:
@@ -133,9 +138,8 @@ def _walk_descendants(person, max_generations):
     frontier_ids = [person.pk]
     truncated = False
     for gen in range(1, max_generations + 1):
-        children = list(Person.objects.filter(
-            Q(father_id__in=frontier_ids) | Q(mother_id__in=frontier_ids),
-            is_verified=True
+        children = list(Person.objects.public().filter(
+            Q(father_id__in=frontier_ids) | Q(mother_id__in=frontier_ids)
         ).exclude(pk__in=visited).distinct())
         if not children:
             break
@@ -143,15 +147,14 @@ def _walk_descendants(person, max_generations):
         generations.append(children)
         frontier_ids = [c.pk for c in children]
         if gen == max_generations:
-            truncated = Person.objects.filter(
-                Q(father_id__in=frontier_ids) | Q(mother_id__in=frontier_ids),
-                is_verified=True
+            truncated = Person.objects.public().filter(
+                Q(father_id__in=frontier_ids) | Q(mother_id__in=frontier_ids)
             ).exclude(pk__in=visited).exists()
     return generations, truncated
 
 
 def family_tree(request, slug):
-    person = get_object_or_404(Person, slug=slug, is_verified=True)
+    person = get_object_or_404(Person.objects.public(), slug=slug)
 
     try:
         requested_generations = int(request.GET.get('gens', DEFAULT_TREE_GENERATIONS))
@@ -186,22 +189,23 @@ def family_tree(request, slug):
     # Kept at one level regardless of the N-generation depth control above —
     # a full N-generation collateral expansion (great-aunts, their
     # descendants, ...) grows combinatorially and isn't shown here.
-    parents = [p for p in [person.father, person.mother] if p]
+    relatives = person.public_relatives()
+    parents = [p for p in [relatives['father'], relatives['mother']] if p]
     aunts_uncles = []
     for parent in parents:
-        for sib in parent.siblings.filter(is_verified=True):
+        for sib in parent.siblings.public():
             aunts_uncles.append(sib)
 
-    siblings = list(person.siblings.filter(is_verified=True))
+    siblings = relatives['siblings']
 
     cousins = []
     for au in aunts_uncles:
-        for child in au.children.filter(is_verified=True):
+        for child in au.children.public():
             cousins.append(child)
 
     nieces_nephews = []
     for sib in siblings:
-        for child in sib.children.filter(is_verified=True):
+        for child in sib.children.public():
             nieces_nephews.append(child)
 
     return render(request, 'genealogy/tree.html', {
@@ -214,7 +218,7 @@ def family_tree(request, slug):
         'siblings': siblings,
         'cousins': cousins,
         'nieces_nephews': nieces_nephews,
-        'spouses': person.spouses,
+        'spouses': relatives['spouses'],
         'generations': generations,
         'default_generations': DEFAULT_TREE_GENERATIONS,
         'max_generations': MAX_TREE_GENERATIONS,

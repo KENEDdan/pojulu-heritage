@@ -6,6 +6,11 @@ from apps.core.uploads import SafeFileField, SafeImageField, UploadTo
 from apps.core.validators import validate_image, validate_media
 
 
+class ClanQuerySet(models.QuerySet):
+    def public(self):
+        return self.filter(is_verified=True)
+
+
 class Clan(models.Model):
     name                 = models.CharField(max_length=200, unique=True)
     slug                 = models.SlugField(max_length=220, unique=True, blank=True)
@@ -42,6 +47,8 @@ class Clan(models.Model):
     created_at           = models.DateTimeField(auto_now_add=True)
     updated_at           = models.DateTimeField(auto_now=True)
 
+    objects = ClanQuerySet.as_manager()
+
     class Meta:
         ordering = ['name']
 
@@ -54,10 +61,10 @@ class Clan(models.Model):
     def get_absolute_url(self): return reverse('clans:detail', kwargs={'slug': self.slug})
 
     @property
-    def person_count(self): return self.person_set.filter(is_verified=True).count()
+    def person_count(self): return self.person_set.public().count()
 
     @property
-    def family_count(self): return self.family_set.filter(is_verified=True).count()
+    def family_count(self): return self.family_set.public().count()
 
     @property
     def sub_clan_list(self): return [s.strip() for s in self.sub_clans.split(',') if s.strip()]

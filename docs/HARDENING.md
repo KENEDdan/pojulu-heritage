@@ -174,3 +174,50 @@ public template at baseline.
   submissions 0003 (field class / upload_to / validators only; no data change).
 - **Note:** a 500 MB video through gunicorn on Railway is slow and fragile.
   Prefer YouTube/Vimeo links for long videos (see Deferred: direct-to-bucket uploads).
+
+---
+
+## Phase 4 — Media storage and privacy
+
+**Storage** (`apps/core/storage.py`, `STORAGES` in settings):
+
+| Alias | Local (no bucket) | Production (bucket configured) | Used for |
+|---|---|---|---|
+| `default` | `MEDIA_ROOT` | S3Storage, prefix `media/`, unsigned URLs on `MEDIA_PUBLIC_BASE_URL` (or signed 6 h URLs if unset) | Person/chief/elder photos, news covers, cultural images & audio, clan/news media |
+| `private` | `PRIVATE_MEDIA_ROOT` (outside `MEDIA_ROOT`) | `PrivateS3Storage`, separate bucket, prefix `private/`, signed URLs | `Person.profile_pdf`, `PersonEducation.certificate`, `PersonMedia.file`, `ElderInterview.audio_file`/`video_file`, `Submission.attachment` |
+
+- Private fields use `storage=get_private_storage` (a callable), so migrations
+  don't change between environments.
+- Every private file's `.url` is `/private-media/<name>` → the
+  `core:private_media` gate (`apps/core/private_media.py`). It works out which
+  record owns the file, checks the role (superadmin always; genealogy files →
+  genealogy/memorial/content admins; interview recordings → elder/cultural/content
+  admins, **or anyone once the interview is published**; submission
+  attachments → content admins), then streams the file (local) or 302s to a
+  **5-minute signed URL** (S3). Responses are `Cache-Control: private, no-store`.
+  Anyone else gets a 404, so the gate never confirms a file exists. Path traversal is rejected.
+- If `MEDIA_PUBLIC_BASE_URL` is set (public bucket), settings refuse to start
+  unless the private bucket is a *different* bucket.
+- Run `py manage.py move_private_media` once after deploying to move
+  existing private-field files out of public storage (idempotent; `--dry-run`).
+
+**Privacy of living people**
+
+- `Person.show_contact_publicly` (default False): phone/email/address only
+  appear on the public person page when ticked (and never for deceased
+  people). Staff dashboards always show them. No other public page renders them.
+- `Person.is_private` (default False): hides a **living** person from every
+  public page, list, search, family tree, relatives list and counts (404 on
+  their URLs). Deceased people are unaffected.
+- Every public model now has a `.public()` queryset (Clan, Family, Person,
+  MemorialRecord, Achievement, Marriage, CulturalRecord, ElderInterview,
+  NewsPost) and **every public view uses it**. This fixes the Phase 0 leaks:
+  memorials of unverified people, achievement/marriage detail by pk,
+  unverified relatives on person pages and in family trees, and marriages
+  naming hidden people (a marriage is public only if both linked spouses are).
+  Links to unverified clans/families on person pages are suppressed.
+- **Unguessable public media:** public files have random 128-bit names, so
+  an unpublished record's photo can't be found by guessing. Sensitive files are
+  in private storage behind the gate.
+- Migrations: elders 0004, genealogy 0005 (new fields default False; existing
+  people stay as they were), submissions 0004.

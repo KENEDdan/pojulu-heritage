@@ -21,3 +21,4 @@ backups/
 .coverage
 htmlcov/
 .pytest_cache/
+private_media/
