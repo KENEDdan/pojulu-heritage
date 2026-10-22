@@ -1,3 +1,4 @@
+from django.conf import settings
 from apps.core.utils import search_term
 from django.views.generic import ListView, DetailView
 from django.db.models import Q
@@ -7,7 +8,7 @@ class CulturalListView(ListView):
     model = CulturalRecord
     template_name = 'cultural/list.html'
     context_object_name = 'records'
-    paginate_by = 16
+    paginate_by = settings.RECORDS_PER_PAGE
 
     def get_queryset(self):
         qs = CulturalRecord.objects.public().select_related('clan')

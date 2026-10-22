@@ -25,6 +25,11 @@ class FamilyQuerySet(models.QuerySet):
     def public(self):
         return self.filter(is_verified=True)
 
+    def with_counts(self):
+        visible = (models.Q(person_set__is_verified=True, person_set__is_deleted=False)
+                   & ~models.Q(person_set__is_private=True, person_set__is_deceased=False))
+        return self.annotate(n_members=models.Count('person_set', filter=visible, distinct=True))
+
 
 class PersonQuerySet(models.QuerySet):
     def public(self):
@@ -65,7 +70,10 @@ class Family(SoftDeleteModel):
     def is_public(self): return self.is_verified and not self.is_deleted
 
     @property
-    def member_count(self): return self.person_set.public().count()
+    def member_count(self):
+        if 'n_members' in self.__dict__:
+            return self.n_members
+        return self.person_set.public().count()
 
     @property
     def head(self): return self.person_set.public().filter(father__isnull=True).first()
@@ -141,6 +149,11 @@ class Person(SoftDeleteModel):
 
     class Meta:
         ordering = ['last_name', 'first_name']
+        indexes = [
+            # FK columns (clan, family, father, mother) are indexed by Django already.
+            models.Index(fields=['last_name', 'first_name'], name='person_name_idx'),
+            models.Index(fields=['is_verified', 'is_deleted'], name='person_visible_idx'),
+        ]
         constraints = [
             models.CheckConstraint(check=~models.Q(father=models.F('id')), name='person_not_own_father',
                                    violation_error_message='A person cannot be their own father.'),

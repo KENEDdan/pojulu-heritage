@@ -36,7 +36,7 @@ def test_search_query_length_is_capped(client, world):
     assert r.context['query'] == ('Juma' + 'x' * 500)[:100]
 
 
-def test_search_is_rate_limited_per_ip(client, world):
+def test_search_is_rate_limited_per_ip(client, world, frozen_ratelimit_window):
     url = reverse('core:search')
     for _ in range(30):
         assert client.get(url, {'q': 'Juma'}).status_code == 200
@@ -47,7 +47,7 @@ def test_search_is_rate_limited_per_ip(client, world):
     assert client.get(url, {'q': 'Juma'}, REMOTE_ADDR='203.0.113.9').status_code == 200
 
 
-def test_tree_is_rate_limited(client, world):
+def test_tree_is_rate_limited(client, world, frozen_ratelimit_window):
     url = reverse('genealogy:tree', args=[world['person'].slug])
     codes = [client.get(url).status_code for _ in range(31)]
     assert codes[:30] == [200] * 30 and codes[30] == 429

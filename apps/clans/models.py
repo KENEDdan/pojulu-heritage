@@ -14,6 +14,17 @@ class ClanQuerySet(models.QuerySet):
     def public(self):
         return self.filter(is_verified=True)
 
+    def with_counts(self):
+        """Annotate public person/family counts in the same query (used by
+        Clan.person_count / family_count instead of one query per clan)."""
+        visible = (models.Q(person_set__is_verified=True, person_set__is_deleted=False)
+                   & ~models.Q(person_set__is_private=True, person_set__is_deceased=False))
+        return self.annotate(
+            n_persons=models.Count('person_set', filter=visible, distinct=True),
+            n_families=models.Count('family_set', distinct=True,
+                                    filter=models.Q(family_set__is_verified=True, family_set__is_deleted=False)),
+        )
+
 
 class Clan(SoftDeleteModel):
     name                 = models.CharField(max_length=200, unique=True)
@@ -76,10 +87,16 @@ class Clan(SoftDeleteModel):
     def get_absolute_url(self): return reverse('clans:detail', kwargs={'slug': self.slug})
 
     @property
-    def person_count(self): return self.person_set.public().count()
+    def person_count(self):
+        if 'n_persons' in self.__dict__:
+            return self.n_persons
+        return self.person_set.public().count()
 
     @property
-    def family_count(self): return self.family_set.public().count()
+    def family_count(self):
+        if 'n_families' in self.__dict__:
+            return self.n_families
+        return self.family_set.public().count()
 
     @property
     def sub_clan_list(self): return [s.strip() for s in self.sub_clans.split(',') if s.strip()]

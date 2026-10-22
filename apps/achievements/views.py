@@ -1,3 +1,4 @@
+from django.conf import settings
 from apps.core.utils import search_term
 from django.views.generic import ListView, DetailView
 from django.db.models import Q
@@ -7,7 +8,7 @@ class AchievementListView(ListView):
     model = Achievement
     template_name = 'achievements/list.html'
     context_object_name = 'achievements'
-    paginate_by = 15
+    paginate_by = settings.RECORDS_PER_PAGE
 
     def get_queryset(self):
         qs = Achievement.objects.public().select_related('clan')

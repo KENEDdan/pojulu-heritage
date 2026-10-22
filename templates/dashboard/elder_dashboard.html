@@ -37,6 +37,7 @@
   <a href="{% url 'dashboard:elder_add' %}" class="dash-btn dash-btn-primary"><i class="bi bi-mic me-1"></i> Add Elder Interview</a>
 </div>
 
+{% include "dashboard/_filters.html" %}
 <div class="dash-table-card">
   <div class="dash-table-header">
     <span class="dash-table-title">All Elder Interviews</span>
@@ -64,6 +65,7 @@
         {% endfor %}
       </tbody>
     </table>
+{% include "partials/pagination.html" with page_obj=interviews %}
   </div>
 </div>
 {% endblock %}

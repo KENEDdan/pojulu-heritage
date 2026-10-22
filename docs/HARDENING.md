@@ -333,3 +333,34 @@ public template at baseline.
   renders within a bounded number of queries.
 - A shared pagination partial (keeps all filters, URL-encoded) is used by the
   Trash and Activity Log and by every public list.
+
+---
+
+## Phase 7 — Performance
+
+- **Indexes** (migrations elders 0007, genealogy 0008, news 0006):
+  `Person(last_name, first_name)`, `Person(is_verified, is_deleted)`,
+  `NewsPost(is_published, -published_at)`, `ElderInterview(is_published, -interview_date)`.
+  Already indexed and left alone: every ForeignKey (`Person.clan/family/father/mother`,
+  `Marriage.husband/wife`) gets an index from Django automatically, and
+  `Clan.slug`/`Family.slug` are `unique` (which implies an index).
+- **N+1 removed**: `Clan.objects.with_counts()` / `Family.objects.with_counts()`
+  annotate the public person/family/member counts in one query, and
+  `Clan.person_count` / `family_count` / `Family.member_count` use the
+  annotation when present (templates unchanged). Clan list, home, clan detail,
+  family list and the dashboards use it. Added `select_related` /
+  `prefetch_related` where templates follow relations (e.g. the home page's
+  `clan.bomas.exists` was one query per featured clan). Cultural/achievement
+  dashboard type counts are now one GROUP BY instead of one query per type.
+  Tests with `CaptureQueriesContext` assert that every public list, search,
+  clan detail and 7 dashboards use **no more queries with 8 rows than with 2**.
+- **Pagination**: 25 per page everywhere (`RECORDS_PER_PAGE`), using one shared
+  `partials/pagination.html` that keeps all active filters (URL-encoded) and
+  supports two tables on one page (`page_param`). Dashboard tables previously
+  showed only the newest 25–50 rows with no way to reach older ones.
+- **Dashboard search/filters** (name, clan, published/draft) on the persons,
+  families, clans, interviews and news tables (`dashboard/_filters.html`).
+  The memorial, cultural and achievement tables are paginated.
+- **Caching**: the home page stats and news blocks are cached for 60 s
+  (`home:stats`, `home:news`) in the default cache: LocMem in dev, Redis when
+  `REDIS_URL` is set.

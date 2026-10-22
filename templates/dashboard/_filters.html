@@ -1,0 +1,16 @@
+<form method="get" class="d-flex gap-2 mb-3 flex-wrap align-items-center" role="search">
+  <input type="search" name="q" value="{{ filters.q }}" maxlength="100" class="form-control" style="max-width:260px"
+         placeholder="{{ filter_placeholder|default:'Search by name…' }}" aria-label="Search">
+  {% if filter_clans %}
+  <select name="clan" class="form-select" style="max-width:200px" aria-label="Clan">
+    <option value="">All clans</option>
+    {% for c in filter_clans %}<option value="{{ c.pk }}" {% if c.pk|stringformat:"s" == filters.clan %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
+  </select>
+  {% endif %}
+  <select name="status" class="form-select" style="max-width:200px" aria-label="Status">
+    <option value="">Any status</option>
+    {% for value, label in status_choices %}<option value="{{ value }}" {% if value == filters.status %}selected{% endif %}>{{ label }}</option>{% endfor %}
+  </select>
+  <button type="submit" class="dash-btn dash-btn-outline"><i class="bi bi-funnel me-1"></i>Filter</button>
+  {% if filters.active %}<a href="{{ request.path }}" class="dash-btn dash-btn-sm" style="color:var(--mid)">Clear</a>{% endif %}
+</form>

@@ -35,6 +35,14 @@ def make_staff(role, username=None, active=True):
 
 
 @pytest.fixture
+def frozen_ratelimit_window(monkeypatch):
+    """django-ratelimit uses fixed windows aligned to the wall clock; pin the
+    window so a test's requests can't straddle a minute boundary."""
+    import django_ratelimit.core as rl
+    monkeypatch.setattr(rl, '_get_window', lambda value, period: 4_000_000_000)
+
+
+@pytest.fixture
 def superadmin(db):
     return User.objects.create_superuser('root', 'root@example.org', PASSWORD)
 

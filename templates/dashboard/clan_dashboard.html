@@ -40,6 +40,7 @@
   <a href="{% url 'dashboard:event_add' %}"  class="dash-btn dash-btn-outline"><i class="bi bi-calendar-plus me-1"></i> Add Historical Event</a>
 </div>
 
+{% include "dashboard/_filters.html" %}
 <div class="dash-table-card">
   <div class="dash-table-header">
     <span class="dash-table-title">All Clans</span>
@@ -66,6 +67,7 @@
         {% endfor %}
       </tbody>
     </table>
+{% include "partials/pagination.html" with page_obj=clans %}
   </div>
 </div>
 {% endblock %}

@@ -23,8 +23,9 @@ def absolute_uri(context, url):
 
 
 @register.simple_tag(takes_context=True)
-def page_url(context, page):
-    """Current query string with `page` replaced — keeps every active filter."""
+def page_url(context, page, param='page'):
+    """Current query string with the page parameter replaced — keeps every
+    active filter (and the other table's page on two-table dashboards)."""
     params = context['request'].GET.copy()
-    params['page'] = page
+    params[param or 'page'] = page
     return '?' + params.urlencode()

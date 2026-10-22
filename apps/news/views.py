@@ -1,3 +1,4 @@
+from django.conf import settings
 from apps.core.utils import search_term
 from django.shortcuts import render, get_object_or_404
 from django.views.generic import ListView, DetailView
@@ -9,7 +10,7 @@ class NewsListView(ListView):
     model               = NewsPost
     template_name       = 'news/list.html'
     context_object_name = 'posts'
-    paginate_by         = 12
+    paginate_by         = settings.RECORDS_PER_PAGE
 
     def get_queryset(self):
         qs       = NewsPost.objects.public()

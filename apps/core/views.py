@@ -1,3 +1,4 @@
+from django.core.cache import cache
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.utils.decorators import method_decorator
@@ -19,6 +20,31 @@ from apps.core.utils import MAX_QUERY_LENGTH, MIN_QUERY_LENGTH, search_term
 IP_KEY = 'apps.core.net.ratelimit_ip_key'
 
 
+HOME_CACHE_SECONDS = 60
+
+
+def _home_news():
+    featured = NewsPost.objects.public().filter(is_featured=True).first()
+    return {
+        'featured_post': featured,
+        'side_posts': list(NewsPost.objects.public().exclude(pk=featured.pk if featured else 0)
+                           .order_by('-published_at')[:2]),
+        'news_posts': list(NewsPost.objects.public().order_by('-published_at')[:6]),
+        'events': list(NewsPost.objects.public().filter(post_type='event').order_by('event_date')[:3]),
+    }
+
+
+def _home_stats():
+    stats, _ = SiteStats.objects.get_or_create(pk=1)
+    return {
+        'clans':      Clan.objects.public().count() or stats.clans_count,
+        'families':   Family.objects.public().count() or stats.families_count,
+        'persons':    Person.objects.public().count() or stats.persons_count,
+        'memorial':   MemorialRecord.objects.public().count() or stats.memorial_count,
+        'interviews': ElderInterview.objects.public().count() or stats.interviews_count,
+    }
+
+
 @method_decorator(ratelimit(key=IP_KEY, rate='120/m', method='GET', block=True), name='get')
 class HomeView(TemplateView):
     template_name = 'core/home.html'
@@ -27,30 +53,15 @@ class HomeView(TemplateView):
         ctx = super().get_context_data(**kwargs)
 
         # Archive highlights
-        ctx['featured_clans']        = Clan.objects.public().filter(is_featured=True)[:6]
-        ctx['recent_persons']        = Person.objects.public().order_by('-created_at')[:5]
+        ctx['featured_clans']        = Clan.objects.public().with_counts().prefetch_related('bomas').filter(is_featured=True).order_by('name')[:6]
+        ctx['recent_persons']        = Person.objects.public().select_related('clan').order_by('-created_at')[:5]
         ctx['recent_memorials']      = MemorialRecord.objects.public().select_related('person', 'person__clan').order_by('-created_at')[:3]
-        ctx['featured_achievements'] = Achievement.objects.public().filter(is_featured=True).order_by('-year')[:3]
-        ctx['recent_interviews']     = ElderInterview.objects.public().order_by('-interview_date')[:3]
+        ctx['featured_achievements'] = Achievement.objects.public().select_related('clan').filter(is_featured=True).order_by('-year')[:3]
+        ctx['recent_interviews']     = ElderInterview.objects.public().select_related('clan').order_by('-interview_date')[:3]
         ctx['announcements']         = Announcement.objects.filter(is_active=True)[:2]
 
-        # News feed
-        ctx['featured_post'] = NewsPost.objects.public().filter(is_featured=True).first()
-        ctx['side_posts']    = NewsPost.objects.public().exclude(
-            pk=ctx['featured_post'].pk if ctx['featured_post'] else 0
-        ).order_by('-published_at')[:2]
-        ctx['news_posts']    = NewsPost.objects.public().order_by('-published_at')[:6]
-        ctx['events']        = NewsPost.objects.public().filter(post_type='event').order_by('event_date')[:3]
-
-        # Stats
-        stats, _ = SiteStats.objects.get_or_create(pk=1)
-        ctx['stats'] = {
-            'clans':      Clan.objects.public().count() or stats.clans_count,
-            'families':   Family.objects.public().count() or stats.families_count,
-            'persons':    Person.objects.public().count() or stats.persons_count,
-            'memorial':   MemorialRecord.objects.public().count() or stats.memorial_count,
-            'interviews': ElderInterview.objects.public().count() or stats.interviews_count,
-        }
+        ctx.update(cache.get_or_set('home:news', _home_news, HOME_CACHE_SECONDS))
+        ctx['stats'] = cache.get_or_set('home:stats', _home_stats, HOME_CACHE_SECONDS)
         return ctx
 
 

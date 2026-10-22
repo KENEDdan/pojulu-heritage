@@ -1,3 +1,4 @@
+from django.conf import settings
 from apps.core.utils import search_term
 from django.views.generic import ListView, DetailView
 from django.db.models import Q
@@ -7,7 +8,7 @@ class MemorialListView(ListView):
     model = MemorialRecord
     template_name = 'memorial/list.html'
     context_object_name = 'memorials'
-    paginate_by = 12
+    paginate_by = settings.RECORDS_PER_PAGE
 
     def get_queryset(self):
         qs = MemorialRecord.objects.public().select_related('person','person__clan').order_by('-person__death_year','-created_at')

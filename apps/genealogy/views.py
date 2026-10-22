@@ -1,3 +1,4 @@
+from django.conf import settings
 from apps.core.utils import search_term
 from django.views.generic import ListView, DetailView
 from django.shortcuts import render, get_object_or_404
@@ -10,10 +11,10 @@ class FamilyListView(ListView):
     model = Family
     template_name = 'genealogy/list.html'
     context_object_name = 'families'
-    paginate_by = 12
+    paginate_by = settings.RECORDS_PER_PAGE
 
     def get_queryset(self):
-        qs = Family.objects.public().select_related('clan')
+        qs = Family.objects.public().with_counts().select_related('clan').order_by('name')
         q = search_term(self.request)
         clan = self.request.GET.get('clan', '')
         if q:

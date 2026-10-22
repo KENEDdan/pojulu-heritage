@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.contrib import messages
+from apps.core.utils import search_term
 from django.core.exceptions import PermissionDenied
 from django.conf import settings
 from django.views.decorators.http import require_POST
@@ -192,36 +193,80 @@ def home(request):
 
 
 # ── ROLE DASHBOARDS ───────────────────────────────────
+# Every table is paginated (settings.RECORDS_PER_PAGE). Persons, families,
+# clans, interviews and news also take ?q= (name), ?clan= and ?status=.
+
+STATUS_CHOICES = [('published', 'Published / verified'), ('draft', 'Draft / unverified')]
+
+
+def table_filters(request):
+    clan = request.GET.get('clan', '')
+    status = request.GET.get('status', '')
+    f = {'q': search_term(request), 'clan': clan if clan.isdigit() else '',
+         'status': status if status in ('published', 'draft') else ''}
+    f['active'] = any(f.values())
+    return f
+
+
+def apply_filters(qs, f, name_fields, status_field, clan_field='clan'):
+    if f['q']:
+        cond = Q()
+        for name in name_fields:
+            cond |= Q(**{f'{name}__icontains': f['q']})
+        qs = qs.filter(cond)
+    if f['clan'] and clan_field:
+        qs = qs.filter(**{f'{clan_field}_id': int(f['clan'])})
+    if f['status']:
+        qs = qs.filter(**{status_field: f['status'] == 'published'})
+    return qs
+
+
+def filter_context(f, show_clan=True, placeholder='Search by name…'):
+    return {'filters': f, 'status_choices': STATUS_CHOICES, 'filter_placeholder': placeholder,
+            'filter_clans': Clan.objects.order_by('name').only('pk', 'name') if show_clan else None}
+
 
 @require_role(['clan_admin', 'content_admin'])
 def clan_dashboard(request):
+    f = table_filters(request)
+    clans = apply_filters(Clan.objects.with_counts().order_by('name'), f, ['name'], 'is_verified', clan_field=None)
     return render(request, 'dashboard/clan_dashboard.html', {
-        'clans':        Clan.objects.order_by('-created_at')[:30],
+        'clans':        paginate(request, clans),
         'total':        Clan.objects.count(),
         'verified':     Clan.objects.filter(is_verified=True).count(),
         'draft':        Clan.objects.filter(is_verified=False).count(),
         'chiefs_total': ClanChief.objects.count(),
         'page_title':   'Clan Management',
+        **filter_context(f, show_clan=False, placeholder='Search clans…'),
     })
 
 
 @require_role(['genealogy_admin', 'content_admin'])
 def genealogy_dashboard(request):
+    f = table_filters(request)
+    persons = apply_filters(Person.objects.select_related('clan').order_by('-created_at'), f,
+                            ['first_name', 'middle_name', 'last_name', 'other_names'], 'is_verified')
+    families = apply_filters(Family.objects.with_counts().select_related('clan').order_by('-created_at'), f,
+                             ['name'], 'is_verified')
     return render(request, 'dashboard/genealogy_dashboard.html', {
-        'persons':          Person.objects.select_related('clan').order_by('-created_at')[:25],
-        'families':         Family.objects.select_related('clan').order_by('-created_at')[:15],
+        'persons':          paginate(request, persons),
+        'families':         Paginator(families, settings.RECORDS_PER_PAGE).get_page(request.GET.get('fpage')),
         'total_persons':    Person.objects.count(),
         'verified_persons': Person.objects.filter(is_verified=True).count(),
         'total_families':   Family.objects.count(),
         'elders':           Person.objects.filter(is_elder=True).count(),
         'page_title':       'Genealogy & Families',
+        **filter_context(f, placeholder='Search people or families…'),
     })
 
 
 @require_role(['memorial_admin', 'content_admin'])
 def memorial_dashboard(request):
+    f = table_filters(request)
+    memorials = apply_filters(MemorialRecord.objects.select_related('person', 'person__clan').order_by('-created_at'),
+                              f, ['person__first_name', 'person__last_name'], 'person__is_verified', clan_field='person__clan')
     return render(request, 'dashboard/memorial_dashboard.html', {
-        'memorials': MemorialRecord.objects.select_related('person', 'person__clan').order_by('-created_at')[:25],
+        'memorials': paginate(request, memorials),
         'total':     MemorialRecord.objects.count(),
         'featured':  MemorialRecord.objects.filter(is_featured=True).count(),
         'page_title': 'Memorial Records',
@@ -230,10 +275,15 @@ def memorial_dashboard(request):
 
 @require_role(['cultural_admin', 'content_admin'])
 def cultural_dashboard(request):
+    from django.db.models import Count
     from apps.cultural.models import RECORD_TYPE_CHOICES
-    type_counts = {label: CulturalRecord.objects.filter(record_type=val).count() for val, label in RECORD_TYPE_CHOICES}
+    counts = dict(CulturalRecord.objects.values_list('record_type').annotate(n=Count('pk')))
+    type_counts = {label: counts.get(val, 0) for val, label in RECORD_TYPE_CHOICES}
+    f = table_filters(request)
+    records = apply_filters(CulturalRecord.objects.select_related('clan').order_by('-created_at'), f,
+                            ['title'], 'is_verified')
     return render(request, 'dashboard/cultural_dashboard.html', {
-        'records':     CulturalRecord.objects.select_related('clan').order_by('-created_at')[:25],
+        'records':     paginate(request, records),
         'total':       CulturalRecord.objects.count(),
         'verified':    CulturalRecord.objects.filter(is_verified=True).count(),
         'type_counts': type_counts,
@@ -243,23 +293,32 @@ def cultural_dashboard(request):
 
 @require_role(['elder_admin', 'cultural_admin', 'content_admin'])
 def elder_dashboard(request):
+    f = table_filters(request)
+    interviews = apply_filters(ElderInterview.objects.select_related('clan').order_by('-interview_date', '-created_at'),
+                               f, ['elder_name', 'interviewer'], 'is_published')
     return render(request, 'dashboard/elder_dashboard.html', {
-        'interviews':  ElderInterview.objects.select_related('clan').order_by('-interview_date')[:25],
+        'interviews':  paginate(request, interviews),
         'total':       ElderInterview.objects.count(),
         'published':   ElderInterview.objects.filter(is_published=True).count(),
         'unpublished': ElderInterview.objects.filter(is_published=False).count(),
-        'with_audio':  ElderInterview.objects.exclude(audio_file='').count(),
+        'with_audio':  ElderInterview.objects.exclude(audio_file='').exclude(audio_file__isnull=True).count(),
         'with_video':  ElderInterview.objects.exclude(video_url='').count(),
         'page_title':  'Elder Interviews',
+        **filter_context(f, placeholder='Search elder or interviewer…'),
     })
 
 
 @require_role(['achievement_admin', 'content_admin'])
 def achievement_dashboard(request):
+    from django.db.models import Count
     from apps.achievements.models import CATEGORY_CHOICES
-    cat_counts = {label: Achievement.objects.filter(category=val).count() for val, label in CATEGORY_CHOICES}
+    counts = dict(Achievement.objects.values_list('category').annotate(n=Count('pk')))
+    cat_counts = {label: counts.get(val, 0) for val, label in CATEGORY_CHOICES}
+    f = table_filters(request)
+    achievements = apply_filters(Achievement.objects.select_related('clan').order_by('-created_at'), f,
+                                 ['person_name', 'title'], 'is_verified')
     return render(request, 'dashboard/achievement_dashboard.html', {
-        'achievements': Achievement.objects.select_related('clan').order_by('-created_at')[:25],
+        'achievements': paginate(request, achievements),
         'total':        Achievement.objects.count(),
         'verified':     Achievement.objects.filter(is_verified=True).count(),
         'featured':     Achievement.objects.filter(is_featured=True).count(),
@@ -814,7 +873,7 @@ def submission_list(request):
     if status_filter:
         subs = subs.filter(status=status_filter)
     return render(request, 'dashboard/submissions.html', {
-        'submissions':     subs[:50],
+        'submissions':     paginate(request, subs),
         'status_filter':   status_filter,
         'pending_count':   Submission.objects.filter(status='pending').count(),
         'page_title':      'Submission Review',
@@ -973,7 +1032,7 @@ def activity_log(request):
 @require_superadmin
 def manage_accounts(request):
     return render(request, 'dashboard/accounts.html', {
-        'admins': AdminProfile.objects.select_related('user', 'assigned_by').order_by('-created_at'),
+        'admins': paginate(request, AdminProfile.objects.select_related('user', 'assigned_by').order_by('-created_at')),
     })
 
 
@@ -1064,7 +1123,7 @@ def reactivate_account(request, pk):
 @require_superadmin
 def family_account_list(request):
     return render(request, 'dashboard/family_accounts.html', {
-        'accounts': FamilyAccount.objects.select_related('user', 'person', 'will').order_by('-created_at'),
+        'accounts': paginate(request, FamilyAccount.objects.select_related('user', 'person', 'will').order_by('-created_at')),
         'page_title': 'Family (Will) Accounts',
     })
 

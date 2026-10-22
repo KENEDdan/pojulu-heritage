@@ -1,3 +1,4 @@
+from django.conf import settings
 from apps.core.utils import search_term
 from django.views.generic import ListView, DetailView
 from django.db.models import Q
@@ -7,7 +8,7 @@ class MarriageListView(ListView):
     model = Marriage
     template_name = 'marriages/list.html'
     context_object_name = 'marriages'
-    paginate_by = 20
+    paginate_by = settings.RECORDS_PER_PAGE
 
     def get_queryset(self):
         qs = Marriage.objects.public().select_related('husband_clan','wife_clan','husband','wife','husband__clan','wife__clan')

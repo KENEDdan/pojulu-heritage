@@ -1,4 +1,5 @@
 # apps/clans/views.py
+from django.conf import settings
 from apps.core.utils import search_term
 from django.shortcuts import render, get_object_or_404
 from django.views.generic import ListView, DetailView
@@ -9,10 +10,10 @@ class ClanListView(ListView):
     model = Clan
     template_name = 'clans/list.html'
     context_object_name = 'clans'
-    paginate_by = 12
+    paginate_by = settings.RECORDS_PER_PAGE
 
     def get_queryset(self):
-        qs = Clan.objects.public().prefetch_related('chiefs')
+        qs = Clan.objects.public().with_counts().prefetch_related('chiefs').order_by('name')
         q = search_term(self.request)
         payam = self.request.GET.get('payam', '')
         if q:
@@ -26,7 +27,7 @@ class ClanListView(ListView):
         ctx['query'] = search_term(self.request)
         ctx['selected_payam'] = self.request.GET.get('payam', '')
         ctx['payam_choices'] = [('rokon','Rokon'),('tijor','Tijor'),('dolo','Dolo'),('juba','Juba County')]
-        ctx['total_count'] = self.get_queryset().count()
+        ctx['total_count'] = ctx['paginator'].count if ctx.get('paginator') else len(ctx['clans'])
         return ctx
 
 class ClanDetailView(DetailView):
@@ -40,8 +41,8 @@ class ClanDetailView(DetailView):
         clan = self.object
         ctx['chiefs'] = clan.chiefs.all().order_by('order')
         ctx['events'] = clan.events.all()
-        ctx['families'] = clan.family_set.public()[:10]
-        ctx['persons'] = clan.person_set.public().order_by('last_name')[:12]
+        ctx['families'] = clan.family_set.public().with_counts().select_related('clan').order_by('name')[:10]
+        ctx['persons'] = clan.person_set.public().select_related('clan').order_by('last_name')[:12]
         ctx['achievements'] = clan.achievements.public()[:5]
         ctx['marriages'] = clan.marriages_husband_clan.public()[:5]
         ctx['interviews'] = clan.elderinterview_set.public()[:3]

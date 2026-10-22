@@ -65,6 +65,7 @@ class NewsPost(SoftDeleteModel):
 
     class Meta:
         ordering = ['-published_at', '-created_at']
+        indexes = [models.Index(fields=['is_published', '-published_at'], name='news_published_idx')]
         verbose_name = 'News Post'
         verbose_name_plural = 'News & Events'
 

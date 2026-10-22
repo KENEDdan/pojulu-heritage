@@ -18,6 +18,7 @@
   <a href="{% url 'dashboard:news_add' %}" class="dash-btn dash-btn-primary"><i class="bi bi-plus-lg me-1"></i> Add Post or Event</a>
 </div>
 
+{% include "dashboard/_filters.html" %}
 <div class="dash-table-card">
   <div class="dash-table-header"><span class="dash-table-title">All Posts</span></div>
   <div style="overflow-x:auto">
@@ -38,6 +39,7 @@
         {% endfor %}
       </tbody>
     </table>
+{% include "partials/pagination.html" with page_obj=posts %}
   </div>
 </div>
 {% endblock %}

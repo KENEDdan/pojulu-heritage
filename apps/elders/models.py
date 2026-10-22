@@ -58,6 +58,7 @@ class ElderInterview(SoftDeleteModel):
 
     class Meta:
         ordering = ['-interview_date', 'elder_name']
+        indexes = [models.Index(fields=['is_published', '-interview_date'], name='interview_published_idx')]
         verbose_name = 'Elder Interview'
 
     def __str__(self):
