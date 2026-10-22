@@ -14,6 +14,11 @@ run against the Railway production database.
 | D5 | Dashboard home quick Approve/Reject buttons (posting to a non-existent `approve_submission` view) were removed; the row keeps the "Full review" link to `dashboard:submission_review` | A one-click approve has no reviewer notes and the submission flow is now internal-only |
 | D6 | `scratch_*.py` is gitignored | `scratch_seed_demo.py` creates demo users with a fixed password |
 
+Later decisions (D7–D17) are recorded inline, in the phase where they were
+made. Most notable: D7 (broken clan/person edit form fixed), D8 (news CRUD
+added to the dashboard), D13 (.doc/.avi uploads dropped), D16 (ClanBoma
+`history` field preserved), D17 (Django 4.2 → 5.2 LTS).
+
 ---
 
 ## Phase 0 — Audit (baseline)
@@ -495,3 +500,145 @@ set `REQUIRE_SUPERADMIN_2FA=True`.
   and `*.yml`, so a Windows checkout can't break the container entrypoint.
 - The Docker image was built locally (PGDG `postgresql-client-17`, baked
   `collectstatic`).
+
+
+---
+
+## Phase 11 — Tests
+
+The pytest-django suite (`tests/`, run with `py -m pytest`) has **320 tests**.
+They're written alongside each phase and cover:
+
+| Requirement | Where |
+|---|---|
+| Anonymous users redirected from every `/dashboard/` URL (GET and POST, all routes discovered from the URLconf) | `test_auth.py` |
+| Role matrix: each role reaches only its sections; superadmin-only pages; only superadmin deletes / manages accounts; deactivated staff blocked mid-session | `test_auth.py` |
+| Lockout after 5 failures (per username+IP; spoofed X-Forwarded-For can't dodge it; family login too) | `test_auth.py` |
+| Uploads: renamed .exe/.php rejected, oversized and corrupt files rejected, valid files accepted, EXIF GPS stripped, random filenames | `test_uploads.py` |
+| Contact details never public without consent; unpublished/private records 404; private media gate | `test_privacy.py` |
+| Soft delete hides publicly, appears in Trash, restores; history rows carry the acting user | `test_integrity.py` |
+| Parent/child cycle prevention (+ DB constraints, tree survives a corrupt loop) | `test_integrity.py` |
+| Every dashboard page renders with data and empty | `test_dashboard_pages.py` |
+| No template links to `/admin/`; every `{% url %}` resolves | `test_settings_and_templates.py` |
+| `check --deploy` emits zero warnings with production env vars | `test_settings_and_templates.py` (and CI) |
+| Rate limits, CSP, video embeds, robots/sitemap, error pages, social meta | `test_public_surface.py` |
+| No N+1 queries, pagination, filters, caching, indexes | `test_performance.py` |
+| Logging, Sentry config, backups, media integrity | `test_observability.py` |
+| Superadmin 2FA | `test_twofactor.py` |
+| Wills: encryption at rest, relatives-only viewing, deactivation, reveal | `test_wills.py` |
+
+---
+
+## Environment variables
+
+| Variable | Purpose | Production value |
+|---|---|---|
+| `SECRET_KEY` | Django signing key. Required when `DEBUG=False` | **new random value (rotate!)** |
+| `DEBUG` | Dev mode. Default `False` | `False` |
+| `ALLOWED_HOSTS` | Comma-separated host names | your domain(s) |
+| `CSRF_TRUSTED_ORIGINS` | Comma-separated origins with scheme; wildcards OK | `https://your-domain,https://*.up.railway.app` |
+| `RAILWAY_PUBLIC_DOMAIN` | Injected by Railway; auto-added to hosts/origins | (automatic) |
+| `DATABASE_URL` | Postgres URL. Railway provides it | `${{Postgres.DATABASE_URL}}` |
+| `DB_NAME` `DB_USER` `DB_PASSWORD` `DB_HOST` `DB_PORT` | Local fallback when `DATABASE_URL` is unset | (unset) |
+| `ENABLE_DJANGO_ADMIN` | Mount the Django admin (superusers only) | `False` |
+| `ADMIN_URL_PREFIX` | Admin path if enabled | an unguessable value |
+| `SECURE_SSL_REDIRECT` `SECURE_HSTS_SECONDS` `SECURE_HSTS_PRELOAD` | HTTPS / HSTS tuning (prod only) | defaults |
+| `TRUSTED_PROXY_COUNT` | Proxies appending to X-Forwarded-For | `1` (default in prod) |
+| `AXES_ENABLED` | Brute-force lockout | `True` |
+| `REQUIRE_SUPERADMIN_2FA` | Force superuser 2FA enrolment | `True` once enrolled |
+| `AWS_STORAGE_BUCKET_NAME` | Public media bucket; enables S3 storage | e.g. `phf-media` |
+| `AWS_PRIVATE_STORAGE_BUCKET_NAME` | Private media bucket | e.g. `phf-private` |
+| `AWS_ACCESS_KEY_ID` `AWS_SECRET_ACCESS_KEY` | Bucket credentials | R2/B2 API token |
+| `AWS_S3_ENDPOINT_URL` | S3 endpoint | `https://<acct>.r2.cloudflarestorage.com` |
+| `AWS_S3_REGION_NAME` | Region | `auto` (R2) |
+| `MEDIA_PUBLIC_BASE_URL` | Public URL of the public bucket (optional) | `https://media.your-domain` |
+| `PRIVATE_MEDIA_URL_EXPIRE` | Signed-URL lifetime (s) for private files | `300` |
+| `PRIVATE_MEDIA_ROOT` | Local private media dir (dev only) | (unset) |
+| `REDIS_URL` | Shared cache for rate limits + home cache | `${{Redis.REDIS_URL}}` |
+| `RATELIMIT_ENABLE` | Per-IP rate limits | `True` |
+| `CSP_ENFORCE` / `CSP_REPORT_URI` | CSP mode / violation report endpoint | `False` / optional |
+| `LOG_LEVEL` | `phf.*` logger level | `INFO` |
+| `SENTRY_DSN` `SENTRY_ENVIRONMENT` `SENTRY_TRACES_SAMPLE_RATE` | Error monitoring | DSN / `production` / `0.1` |
+| `RAILWAY_GIT_COMMIT_SHA` | Injected by Railway; Sentry release | (automatic) |
+| `EMAIL_BACKEND` `DEFAULT_FROM_EMAIL` | Outgoing mail (not used yet) | defaults |
+| `WEB_CONCURRENCY` `GUNICORN_THREADS` `GUNICORN_TIMEOUT` | Gunicorn sizing | `2` / `4` / `120` |
+| `BACKUP_BUCKET_NAME` `BACKUP_PREFIX` `BACKUP_RETENTION_DAYS` `BACKUP_KEEP_MIN` | Backup cron service | private bucket / defaults |
+| `PG_DUMP` | pg_dump command override (local testing) | (unset) |
+| `RUN_MIGRATIONS` | Entrypoint runs migrate (docker-compose only) | (unset on Railway) |
+
+---
+
+## Railway deployment checklist
+
+1. **Rotate `SECRET_KEY`** (a default was committed in git history). Generate one with
+   `py -c "import secrets; print(secrets.token_urlsafe(64))"`. Rotating logs everyone out once.
+2. **Builder**: `railway.toml` switches the service to the Dockerfile, with
+   `preDeployCommand = migrate` and health check `/healthz`. Confirm in
+   Service → Settings that no older Nixpacks start command overrides it.
+3. **Variables** (web service): `SECRET_KEY`, `DEBUG=False`, `ALLOWED_HOSTS`,
+   `CSRF_TRUSTED_ORIGINS`, `DATABASE_URL`, bucket variables, `REDIS_URL`,
+   `SENTRY_DSN`, `ENABLE_DJANGO_ADMIN=False`, `REQUIRE_SUPERADMIN_2FA=False` (for now).
+4. **Buckets** (Cloudflare R2 recommended):
+   - `phf-media`: public photos. Optional public access via a custom domain, then set `MEDIA_PUBLIC_BASE_URL`.
+   - `phf-private`: **no public access**. Private media + database backups.
+   - An API token limited to these buckets (Object Read & Write).
+5. **Redis**: add Railway's Redis plugin and set `REDIS_URL=${{Redis.REDIS_URL}}`.
+6. **Before the first deploy of this branch**, check production data won't fail
+   the new constraint (genealogy 0007 stops and lists IDs if a death date precedes a birth date):
+   `select id from genealogy_person where death_date < birth_date;`
+   This deploy applies **34 project migrations** (7 from the baseline WIP + 27 from
+   hardening) plus the axes and django-otp tables. All are additive except the
+   self-parent cleanup described in Phase 6. **Take a backup first.**
+7. Deploy. Then, from a Railway shell:
+   `python manage.py move_private_media`, `python manage.py check_media_integrity`,
+   optionally `python manage.py populate_history --auto`.
+8. Media uploaded before this deploy probably lived on Railway's ephemeral disk
+   and is already gone. `check_media_integrity` lists what to re-upload.
+9. Every superadmin: Dashboard → **Two-Factor Auth** → enrol, save recovery codes.
+   Then set `REQUIRE_SUPERADMIN_2FA=True`.
+10. **Backup cron service**: see Phase 8. Trigger one run, then do a test restore.
+11. **Domain**: add the custom domain in Railway, update `ALLOWED_HOSTS` /
+    `CSRF_TRUSTED_ORIGINS`. HSTS (1 year, includeSubDomains, preload flag) is
+    sent automatically. Only submit to hstspreload.org if every subdomain is HTTPS.
+12. Watch Sentry and the `phf.security` logs for a few days. Collect CSP
+    reports before switching `CSP_ENFORCE=True`.
+
+---
+
+## Manual QA checklist
+
+- [ ] Public: home, about, every list (search, filters, pagination page 2), every detail page, family tree (change generations), search with 1 character and with a normal term.
+- [ ] Unpublished clan/person/news URL → 404 page in PHF style. Unknown URL → 404.
+- [ ] Person with "show contact publicly" ticked shows phone/email/address. Unticked shows nothing. A private living person is invisible everywhere.
+- [ ] Elder interview with audio: plays publicly once published, not before.
+- [ ] YouTube watch URL pasted into a news post plays as an embed. A non-YouTube URL is refused by the form.
+- [ ] Dashboard login: wrong password shows an error. 5 wrong attempts → lockout page. Logout works.
+- [ ] Each role account: sees and edits only its sections. Delete buttons are superadmin-only.
+- [ ] Add and edit a clan and a person **with media uploads** (Django 5.2 form check). Photo EXIF is stripped (download and inspect).
+- [ ] Upload a renamed .exe as a photo → friendly error.
+- [ ] Person father/mother loop or death-before-birth → field errors.
+- [ ] Delete → record in Trash → Restore → back. Delete permanently → gone (and blocked for a person with a will account).
+- [ ] Activity Log shows the above with your name. Filters work.
+- [ ] Superadmin 2FA: enrol, sign out, sign in with code. Sign in with a recovery code.
+- [ ] Profile PDF link from the dashboard opens (signed URL on S3). The same link logged out → 404.
+- [ ] Family (will) account: first login forces password change; write a will; superadmin reveals; a relative reads it with the passphrase; a non-relative can't.
+- [ ] `/robots.txt`, `/sitemap.xml`, `/healthz`.
+- [ ] Response headers on any page: HSTS, `X-Frame-Options: DENY`, `Content-Security-Policy-Report-Only`.
+
+---
+
+## Skipped / deferred, and why
+
+| Item | Why / what to do |
+|---|---|
+| **CSP enforcing mode** | Inline scripts, ~260 `style=` attributes and inline handlers would break. Inventory in Phase 5. Collect reports first. |
+| ClanBoma, PersonEducation, PersonCareer, Announcement, SiteStats editing in the dashboard | Only editable via the Django admin (D9). Add inline formsets to the clan/person forms, or temporarily enable the admin behind a secret prefix. |
+| Direct-to-bucket (presigned) uploads for large audio/video | Uploads up to 500 MB still go through gunicorn. Prefer YouTube/Vimeo for long videos. |
+| Deleting the previous file when an upload is *replaced* | Old files are kept (history may reference them). Only permanent deletes remove files. |
+| Media files from before this deploy | Likely lost to Railway's ephemeral disk. Re-upload using `check_media_integrity`. |
+| Initial history rows | Run `populate_history --auto` if a baseline "created" entry is wanted. |
+| Rate limits without Redis | Per gunicorn worker. Add Railway Redis. |
+| `FORMS_URLFIELD_ASSUME_HTTPS` | Transitional setting (one deprecation warning). Delete it when moving to Django 6.x (before April 2028, when 5.2 LTS ends). |
+| Email-based password reset | No mail provider configured. Superadmin resets staff/family passwords in the dashboard. |
+| Antivirus scanning of uploads | Content-type verification + re-encoding of images is done, but there's no AV engine (ClamAV would need its own service). |
+| Local tests run on Python 3.12 | Only interpreter installed here. CI and the Docker image use 3.11. |
