@@ -1,0 +1,41 @@
+/* Dark theme + theme toggle for the standalone pages that don't use
+   pojulu.css: the staff and family login pages, the lockout page, the
+   two-step verification page and the error pages (errors.css).
+   theme-init.js sets data-theme on <html>. */
+
+.theme-corner {
+  position: absolute; top: 16px; right: 16px;
+  width: 34px; height: 34px; border-radius: 6px;
+  border: 1.5px solid #C8E6C9; background: transparent; color: #3A5A3A;
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: .95rem; transition: all .18s;
+}
+.theme-corner:hover { border-color: #43A047; color: #2E7D32; }
+.login-card, main.card { position: relative; }
+.login-note { font-size: .76rem; color: #6B8F6B; text-align: center; margin-top: 18px; }
+
+[data-theme="dark"] { color-scheme: dark; }
+[data-theme="dark"] body { background: #0B2A0F; color: #E4EFE4; }
+
+/* Login / lockout cards */
+[data-theme="dark"] .login-card { background: #15241A; color: #E4EFE4; box-shadow: 0 24px 80px rgba(0,0,0,.6); }
+[data-theme="dark"] .login-logo { color: #A5D6A7; }
+[data-theme="dark"] .login-sub,
+[data-theme="dark"] .login-note,
+[data-theme="dark"] .back-link { color: #88A68A; }
+[data-theme="dark"] .back-link:hover { color: #81C784; }
+[data-theme="dark"] .login-card p,
+[data-theme="dark"] .form-label { color: #B7CDB8; }
+[data-theme="dark"] .login-card .form-control { border-color: #2A4630; }
+[data-theme="dark"] .lock-icon { background: #3A2A14; color: #FFB74D; }
+
+/* Error pages and the verification page (errors.css) */
+[data-theme="dark"] main.card { background: #15241A; color: #E4EFE4; box-shadow: 0 24px 80px rgba(0,0,0,.6); }
+[data-theme="dark"] main.card .code { color: #81C784; }
+[data-theme="dark"] main.card .brand { color: #A5D6A7; }
+[data-theme="dark"] main.card .sub { color: #88A68A; }
+[data-theme="dark"] main.card p { color: #B7CDB8; }
+[data-theme="dark"] main.card a:not(.btn) { color: #81C784 !important; }
+
+[data-theme="dark"] .theme-corner { border-color: #2A4630; color: #E4EFE4; }
+[data-theme="dark"] .theme-corner:hover { border-color: #66BB6A; color: #A5D6A7; }

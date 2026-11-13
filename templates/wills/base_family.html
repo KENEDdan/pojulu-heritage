@@ -1,8 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+{% load static %}<html lang="en" data-theme="light" data-bs-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light dark">
+<script src="{% static 'js/theme-init.js' %}"></script>
 <title>{% block title %}Family Portal{% endblock %} | Pojulu Heritage Foundation</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Cormorant+Garamond:wght@600;700&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -15,11 +17,28 @@
   --border: #C8E6C9;
   --font: 'DM Sans', sans-serif; --font-d: 'Cormorant Garamond', serif;
   --shadow: 0 2px 16px rgba(27,94,32,.10);
+  --page: #F0F4F1; --accent: #2E7D32; --chrome: #1B5E20;
 }
+[data-theme="dark"] {
+  color-scheme: dark;
+  --white: #15241A; --g0: #112015; --g1: #1D3322;
+  --text: #E4EFE4; --mid: #B7CDB8; --light: #88A68A; --border: #2A4630;
+  --shadow: 0 2px 16px rgba(0,0,0,.45);
+  --page: #0E1A10; --accent: #81C784; --chrome: #0B2A0F;
+}
+[data-theme="dark"] .fam-btn-outline:hover { color: #fff; border-color: var(--g7); }
+[data-theme="dark"] .fam-badge-grey { background: #2A2F2B; color: #BDBDBD; }
+.fam-topbar-actions { display: flex; align-items: center; gap: 14px; }
+.fam-theme-btn {
+  width: 32px; height: 32px; border-radius: 6px; border: 1px solid rgba(255,255,255,.25);
+  background: rgba(255,255,255,.08); color: rgba(255,255,255,.85); cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.fam-theme-btn:hover { background: rgba(255,255,255,.18); color: white; }
 * { box-sizing: border-box; }
-body { font-family: var(--font); background: #F0F4F1; color: var(--text); min-height: 100vh; margin: 0; }
+body { font-family: var(--font); background: var(--page); color: var(--text); min-height: 100vh; margin: 0; }
 .fam-topbar {
-  background: var(--g9); padding: 16px 28px;
+  background: var(--chrome); padding: 16px 28px;
   display: flex; align-items: center; justify-content: space-between;
 }
 .fam-topbar-title { font-family: var(--font-d); font-size: 1.2rem; font-weight: 700; color: white; }
@@ -28,7 +47,7 @@ body { font-family: var(--font); background: #F0F4F1; color: var(--text); min-he
 .fam-logout:hover { color: white; }
 .fam-content { max-width: 760px; margin: 0 auto; padding: 40px 24px; }
 .fam-card { background: var(--white); border-radius: 10px; padding: 32px; box-shadow: var(--shadow); border: 1px solid var(--border); margin-bottom: 24px; }
-.fam-card-title { font-family: var(--font-d); font-size: 1.3rem; font-weight: 700; color: var(--g7); margin-bottom: 6px; }
+.fam-card-title { font-family: var(--font-d); font-size: 1.3rem; font-weight: 700; color: var(--accent); margin-bottom: 6px; }
 .fam-card-sub { font-size: .85rem; color: var(--light); margin-bottom: 20px; }
 .fam-btn {
   display: inline-flex; align-items: center; gap: 6px;
@@ -37,10 +56,10 @@ body { font-family: var(--font); background: #F0F4F1; color: var(--text); min-he
 }
 .fam-btn-primary { background: var(--g7); color: white; }
 .fam-btn-primary:hover { background: var(--g9); color: white; }
-.fam-btn-outline { background: transparent; color: var(--g7); border: 1.5px solid var(--g7); }
+.fam-btn-outline { background: transparent; color: var(--accent); border: 1.5px solid var(--accent); }
 .fam-btn-outline:hover { background: var(--g7); color: white; }
 .fam-badge { display: inline-block; font-size: .68rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 3px 10px; border-radius: 100px; }
-.fam-badge-green { background: var(--g1); color: var(--g7); }
+.fam-badge-green { background: var(--g1); color: var(--accent); }
 .fam-badge-grey { background: #F5F5F5; color: #616161; }
 .fam-label { font-size: .74rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--mid); margin-bottom: 5px; display: block; }
 </style>
@@ -51,12 +70,15 @@ body { font-family: var(--font); background: #F0F4F1; color: var(--text); min-he
     <div class="fam-topbar-title">Pojulu Heritage Foundation</div>
     <div class="fam-topbar-sub">Family Portal</div>
   </div>
-  {% if request.user.is_authenticated %}
-  <form method="post" action="{% url 'wills:logout' %}">
-    {% csrf_token %}
-    <button type="submit" class="fam-logout"><i class="bi bi-box-arrow-right me-1"></i>Log out</button>
-  </form>
-  {% endif %}
+  <div class="fam-topbar-actions">
+    <button type="button" class="fam-theme-btn" id="themeToggle" title="Switch to dark mode" aria-label="Switch to dark mode" aria-pressed="false"><i class="bi bi-moon-stars-fill" id="themeIcon"></i></button>
+    {% if request.user.is_authenticated %}
+    <form method="post" action="{% url 'wills:logout' %}">
+      {% csrf_token %}
+      <button type="submit" class="fam-logout"><i class="bi bi-box-arrow-right me-1"></i>Log out</button>
+    </form>
+    {% endif %}
+  </div>
 </div>
 <div class="fam-content">
   {% if messages %}

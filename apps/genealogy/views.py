@@ -5,6 +5,7 @@ from django.shortcuts import render, get_object_or_404
 from django.db.models import Q
 from django_ratelimit.decorators import ratelimit
 from .models import Family, Person
+from .relatives import family_generations, relatives_of, relatives_summary, walk_ancestors, walk_descendants
 
 
 class FamilyListView(ListView):
@@ -40,8 +41,12 @@ class FamilyDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx['members'] = self.object.person_set.public().order_by('birth_year', 'last_name')
-        ctx['roots'] = self.object.person_set.public().filter(father__isnull=True)
+        family = self.object
+        ctx['members'] = family.person_set.public().order_by('birth_year', 'last_name')
+        ctx['roots'] = family.person_set.public().filter(father__isnull=True)
+        ctx['chapters'] = family.chapters.all()
+        ctx['generations'] = family_generations(family)
+        ctx['evidence'] = family.attachments.public()
         return ctx
 
 
@@ -54,6 +59,11 @@ class PersonDetailView(DetailView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx['relatives'] = self.object.public_relatives()
+        sections = relatives_of(self.object)
+        ctx['relative_sections'] = sections
+        ctx['relatives_summary'] = relatives_summary(self.object, sections)
+        ctx['relatives_total'] = sum(s['count'] for s in sections)
+        ctx['chief_roles'] = self.object.chief_roles.filter(clan__is_verified=True, clan__is_deleted=False)             .select_related('clan')
         return ctx
 
 
@@ -84,78 +94,6 @@ def _generation_row_title(generation, direction):
     return ('Great-' * (generation - 2)) + noun
 
 
-def _walk_ancestors(person, max_generations):
-    """BFS upward from `person`. Returns (generations, truncated) where
-    generations is a list (index 0 = parents) of lists of (Person, path)
-    tuples; path is the chain of 'Father'/'Mother' steps taken to reach
-    them, used to disambiguate e.g. paternal vs maternal great-grandparents.
-    Stops at unverified records (same visibility rule as the rest of the
-    site) and de-duplicates by pk, so a lineage that loops back on itself
-    (e.g. clan-endogamous marriages producing a shared ancestor) is shown
-    once, at the generation it was first reached.
-    """
-    generations = []
-    visited = {person.pk}
-    frontier = [(person, [])]
-    truncated = False
-    for gen in range(1, max_generations + 1):
-        parent_ids = set()
-        for p, _ in frontier:
-            if p.father_id:
-                parent_ids.add(p.father_id)
-            if p.mother_id:
-                parent_ids.add(p.mother_id)
-        parent_ids -= visited
-        if not parent_ids:
-            break
-        people_map = {pp.pk: pp for pp in Person.objects.public().filter(pk__in=parent_ids)}
-        next_frontier = []
-        seen_this_gen = set()
-        for p, path in frontier:
-            for parent_id, rel in ((p.father_id, 'Father'), (p.mother_id, 'Mother')):
-                if parent_id and parent_id in people_map and parent_id not in seen_this_gen:
-                    seen_this_gen.add(parent_id)
-                    next_frontier.append((people_map[parent_id], path + [rel]))
-        if not next_frontier:
-            break
-        visited.update(seen_this_gen)
-        generations.append(next_frontier)
-        frontier = next_frontier
-        if gen == max_generations:
-            more_ids = set()
-            for p, _ in frontier:
-                if p.father_id and p.father_id not in visited:
-                    more_ids.add(p.father_id)
-                if p.mother_id and p.mother_id not in visited:
-                    more_ids.add(p.mother_id)
-            truncated = bool(more_ids)
-    return generations, truncated
-
-
-def _walk_descendants(person, max_generations):
-    """BFS downward from `person`. Returns (generations, truncated) where
-    generations is a list (index 0 = children) of lists of Person.
-    """
-    generations = []
-    visited = {person.pk}
-    frontier_ids = [person.pk]
-    truncated = False
-    for gen in range(1, max_generations + 1):
-        children = list(Person.objects.public().filter(
-            Q(father_id__in=frontier_ids) | Q(mother_id__in=frontier_ids)
-        ).exclude(pk__in=visited).distinct())
-        if not children:
-            break
-        visited.update(c.pk for c in children)
-        generations.append(children)
-        frontier_ids = [c.pk for c in children]
-        if gen == max_generations:
-            truncated = Person.objects.public().filter(
-                Q(father_id__in=frontier_ids) | Q(mother_id__in=frontier_ids)
-            ).exclude(pk__in=visited).exists()
-    return generations, truncated
-
-
 @ratelimit(key='apps.core.net.ratelimit_ip_key', rate='30/m', method='GET', block=True)
 def family_tree(request, slug):
     person = get_object_or_404(Person.objects.public(), slug=slug)
@@ -166,8 +104,8 @@ def family_tree(request, slug):
         requested_generations = DEFAULT_TREE_GENERATIONS
     generations = max(1, min(requested_generations, MAX_TREE_GENERATIONS))
 
-    ancestor_data, ancestors_truncated = _walk_ancestors(person, generations)
-    descendant_data, descendants_truncated = _walk_descendants(person, generations)
+    ancestor_data, ancestors_truncated = walk_ancestors(person, generations)
+    descendant_data, descendants_truncated = walk_descendants(person, generations)
 
     ancestor_rows = [{
         'generation': i,

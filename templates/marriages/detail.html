@@ -15,4 +15,5 @@
   {% if marriage.notes %}<div class="phf-detail-row"><span class="phf-detail-label" data-en="Notes" data-ar="ملاحظات">Notes</span><span class="phf-detail-value">{{ marriage.notes }}</span></div>{% endif %}
 </div>
 <a href="{% url 'marriages:list' %}" class="phf-btn phf-btn-outline"><i class="bi bi-arrow-left"></i> <span data-en="Back" data-ar="رجوع">Back</span></a>
-</div></section>{% endblock %}
+</div></section>
+<section class="phf-section pt-0"><div class="container-xl" style="max-width:960px">{% include "partials/evidence.html" with evidence=marriage.attachments.public %}</div></section>{% endblock %}

@@ -3,18 +3,7 @@
 ═══════════════════════════════════════ */
 
 // ── THEME ─────────────────────────────────────
-function toggleTheme() {
-  const html = document.documentElement;
-  const next = html.getAttribute('data-theme') === 'forest' ? 'ivory' : 'forest';
-  applyTheme(next);
-  localStorage.setItem('phf-theme', next);
-}
-
-function applyTheme(theme) {
-  document.documentElement.setAttribute('data-theme', theme);
-  const icon = document.getElementById('themeIcon');
-  if (icon) icon.className = theme === 'ivory' ? 'bi bi-moon-stars-fill' : 'bi bi-sun-fill';
-}
+// Handled by theme-init.js (shared with the staff dashboard).
 
 // ── LANGUAGE ──────────────────────────────────
 const LANG_LABELS = { en: 'EN', ar: 'AR' };
@@ -101,9 +90,6 @@ function initAutoSubmit() {
 
 // ── INIT ──────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  // Restore theme
-  applyTheme(localStorage.getItem('phf-theme') || 'forest');
-
   // Restore language
   const savedLang = localStorage.getItem('phf-lang') || 'en';
   if (savedLang !== 'en') setLang(savedLang);

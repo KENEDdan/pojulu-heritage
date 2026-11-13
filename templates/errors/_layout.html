@@ -1,14 +1,19 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex">
 <title>{% block title %}{% endblock %} | Pojulu Heritage Foundation</title>
 <link rel="stylesheet" href="/static/css/errors.css">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<meta name="color-scheme" content="light dark">
+<script src="/static/js/theme-init.js"></script>
+<link rel="stylesheet" href="/static/css/theme-standalone.css">
 </head>
 <body>
 <main class="card">
+  <button type="button" class="theme-corner" id="themeToggle" title="Switch to dark mode" aria-label="Switch to dark mode" aria-pressed="false"><i class="bi bi-moon-stars-fill" id="themeIcon"></i></button>
   <div class="code">{% block code %}{% endblock %}</div>
   <div class="brand">Pojulu Heritage Foundation</div>
   <div class="sub">Preserving Our Roots</div>

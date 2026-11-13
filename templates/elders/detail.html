@@ -34,7 +34,7 @@
   </div>
   <div class="col-lg-8">
     {% if interview.has_audio %}
-    <div class="phf-audio-player mb-4"><div class="phf-audio-icon"><i class="bi bi-mic-fill"></i></div><div class="flex-fill"><p style="font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--g700);margin-bottom:6px" data-en="Audio Recording" data-ar="تسجيل صوتي">Audio Recording</p><audio controls style="width:100%;accent-color:var(--g700)"><source src="{{ interview.audio_file.url }}"><span data-en="Audio not supported." data-ar="الصوت غير مدعوم.">Audio not supported.</span></audio></div></div>
+    <div class="phf-audio-player mb-4"><div class="phf-audio-icon"><i class="bi bi-mic-fill"></i></div><div class="flex-fill"><p style="font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--accent);margin-bottom:6px" data-en="Audio Recording" data-ar="تسجيل صوتي">Audio Recording</p><audio controls style="width:100%;accent-color:var(--accent)"><source src="{{ interview.audio_file.url }}"><span data-en="Audio not supported." data-ar="الصوت غير مدعوم.">Audio not supported.</span></audio></div></div>
     {% endif %}
     {% if interview.has_video %}
     <div class="mb-4">
@@ -49,4 +49,5 @@
     <div class="mt-4"><a href="{% url 'elders:list' %}" class="phf-btn phf-btn-outline"><i class="bi bi-arrow-left"></i> <span data-en="Back to Interviews" data-ar="العودة إلى المقابلات">Back to Interviews</span></a></div>
   </div>
 </div>
-</div></section>{% endblock %}
+</div></section>
+<section class="phf-section pt-0"><div class="container-xl" style="max-width:960px">{% include "partials/evidence.html" with evidence=interview.attachments.public %}</div></section>{% endblock %}

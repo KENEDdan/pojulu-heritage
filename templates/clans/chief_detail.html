@@ -1,0 +1,61 @@
+{% extends "base.html" %}{% load phf %}
+{% block title %}{{ chief.title }} {{ chief.name }} — {{ clan.name }} Clan{% endblock %}
+{% block og_title %}{{ chief.title }} {{ chief.name }}, {{ clan.name }} Clan{% endblock %}
+{% block twitter_title %}{{ chief.title }} {{ chief.name }}, {{ clan.name }} Clan{% endblock %}
+{% block og_type %}profile{% endblock %}
+{% block og_description %}{{ chief.summary|default:chief.biography|default:chief.notes|striptags|truncatechars:200 }}{% endblock %}
+{% block meta_description %}{{ chief.summary|default:chief.biography|default:chief.notes|striptags|truncatechars:200 }}{% endblock %}
+{% block og_image %}{% if chief.photo %}{% absolute_uri chief.photo.url as img %}<meta property="og:image" content="{{ img }}"><meta name="twitter:image" content="{{ img }}"><meta name="twitter:card" content="summary_large_image">{% else %}<meta name="twitter:card" content="summary">{% endif %}{% endblock %}
+{% block content %}
+<div class="phf-page-header">
+  <div class="container-xl">
+    <div class="phf-breadcrumb"><a href="{% url 'core:home' %}" data-en="Home" data-ar="الرئيسية">Home</a><span class="phf-breadcrumb-sep">›</span><a href="{% url 'clans:list' %}" data-en="Clans" data-ar="القبائل">Clans</a><span class="phf-breadcrumb-sep">›</span><a href="{{ clan.get_absolute_url }}">{{ clan.name }}</a><span class="phf-breadcrumb-sep">›</span>{{ chief.name }}</div>
+    <h1>{{ chief.title }} <em>{{ chief.name }}</em></h1>
+    <p>{{ clan.name }} <span data-en="Clan" data-ar="قبيلة">Clan</span>{% if chief.tenure %} · <span data-en="Led" data-ar="قاد">Led</span> {{ chief.tenure }}{% endif %}</p>
+  </div>
+</div>
+<section class="phf-section"><div class="container-xl">
+<div class="row g-5">
+  <div class="col-lg-4">
+    <div class="phf-detail-block mb-4">
+      <div style="padding:28px;text-align:center">
+        <div class="phf-person-photo mx-auto mb-3">{% if chief.photo %}<img src="{{ chief.photo.url }}" alt="{{ chief.name }}">{% else %}{{ chief.name|slice:":1" }}{% endif %}</div>
+        <h4 class="text-display mb-1">{{ chief.name }}</h4>
+        {% if chief.other_names %}<p style="font-size:.82rem;color:var(--text-light)"><span data-en="Also known as:" data-ar="معروف أيضاً باسم:">Also known as:</span> {{ chief.other_names }}</p>{% endif %}
+        <span class="phf-tag phf-tag-dark"><i class="bi bi-award me-1"></i>{{ chief.title }}</span>
+      </div>
+      <div class="phf-detail-row"><span class="phf-detail-label" data-en="Clan" data-ar="القبيلة">Clan</span><span class="phf-detail-value"><a href="{{ clan.get_absolute_url }}">{{ clan.name }}</a></span></div>
+      {% if chief.tenure %}<div class="phf-detail-row"><span class="phf-detail-label" data-en="Leadership" data-ar="فترة القيادة">Leadership</span><span class="phf-detail-value">{{ chief.tenure }}</span></div>{% endif %}
+      {% if chief.lifespan %}<div class="phf-detail-row"><span class="phf-detail-label" data-en="Life" data-ar="الحياة">Life</span><span class="phf-detail-value">{{ chief.lifespan }}</span></div>{% endif %}
+      {% if chief.burial_place %}<div class="phf-detail-row"><span class="phf-detail-label" data-en="Buried" data-ar="مدفون">Buried</span><span class="phf-detail-value">{{ chief.burial_place }}</span></div>{% endif %}
+      {% if predecessor %}<div class="phf-detail-row"><span class="phf-detail-label" data-en="Preceded by" data-ar="سبقه">Preceded by</span><span class="phf-detail-value"><a href="{{ predecessor.get_absolute_url }}">{{ predecessor.name }}</a></span></div>{% endif %}
+      {% if successor %}<div class="phf-detail-row"><span class="phf-detail-label" data-en="Succeeded by" data-ar="خلفه">Succeeded by</span><span class="phf-detail-value"><a href="{{ successor.get_absolute_url }}">{{ successor.name }}</a></span></div>{% endif %}
+      {% if person %}<div class="phf-detail-row"><span class="phf-detail-label" data-en="Family record" data-ar="سجل العائلة">Family record</span><span class="phf-detail-value"><a href="{{ person.get_absolute_url }}">{{ person.full_name }}</a></span></div>{% endif %}
+    </div>
+    {% if line|length > 1 %}
+    <div class="phf-detail-block">
+      <div class="phf-detail-block-header"><i class="bi bi-list-ol text-success me-2"></i><h6 class="phf-detail-block-title" data-en="Line of Chiefs" data-ar="سلسلة الزعماء">Line of Chiefs</h6></div>
+      <div style="padding:10px 24px 16px;font-size:.86rem;line-height:2">
+        {% for c in line %}<div>{% if c.pk == chief.pk %}<strong>{{ c.name }}</strong>{% else %}<a href="{{ c.get_absolute_url }}">{{ c.name }}</a>{% endif %}{% if c.tenure %} <small class="text-muted">({{ c.tenure }})</small>{% endif %}</div>{% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="col-lg-8">
+    {% if chief.summary %}<p style="font-size:1.02rem;line-height:1.85;color:var(--text-mid)"><em>{{ chief.summary }}</em></p>{% endif %}
+    {% if chief.how_appointed %}<div class="phf-detail-block mb-4"><div class="phf-detail-block-header"><i class="bi bi-flag text-success me-2"></i><h6 class="phf-detail-block-title" data-en="How They Became Chief" data-ar="كيف أصبح زعيماً">How They Became Chief</h6></div><div style="padding:24px;font-size:.93rem;line-height:1.85;color:var(--text-mid)">{{ chief.how_appointed|linebreaks }}</div></div>{% endif %}
+    {% if chief.biography %}<div class="phf-detail-block mb-4"><div class="phf-detail-block-header"><i class="bi bi-book text-success me-2"></i><h6 class="phf-detail-block-title" data-en="Life Story" data-ar="قصة الحياة">Life Story</h6></div><div style="padding:24px;font-size:.93rem;line-height:1.85;color:var(--text-mid)">{{ chief.biography|linebreaks }}</div></div>{% endif %}
+    {% if chief.accomplishments %}<div class="phf-detail-block mb-4"><div class="phf-detail-block-header"><i class="bi bi-trophy text-success me-2"></i><h6 class="phf-detail-block-title" data-en="What They Did as Chief" data-ar="إنجازاته كزعيم">What They Did as Chief</h6></div><div style="padding:24px;font-size:.93rem;line-height:1.85;color:var(--text-mid)">{{ chief.accomplishments|linebreaks }}</div></div>{% endif %}
+    {% if chief.major_events %}<div class="phf-detail-block mb-4"><div class="phf-detail-block-header"><i class="bi bi-calendar-event text-success me-2"></i><h6 class="phf-detail-block-title" data-en="Events During Their Rule" data-ar="أحداث فترة حكمه">Events During Their Rule</h6></div><div style="padding:24px;font-size:.93rem;line-height:1.85;color:var(--text-mid)">{{ chief.major_events|linebreaks }}</div></div>{% endif %}
+    {% if chief.challenges %}<div class="phf-detail-block mb-4"><div class="phf-detail-block-header"><i class="bi bi-exclamation-diamond text-success me-2"></i><h6 class="phf-detail-block-title" data-en="Challenges" data-ar="التحديات">Challenges</h6></div><div style="padding:24px;font-size:.93rem;line-height:1.85;color:var(--text-mid)">{{ chief.challenges|linebreaks }}</div></div>{% endif %}
+    {% if chief.legacy %}<div class="phf-detail-block mb-4"><div class="phf-detail-block-header"><i class="bi bi-stars text-success me-2"></i><h6 class="phf-detail-block-title" data-en="Legacy" data-ar="الإرث">Legacy</h6></div><div style="padding:24px;font-size:.93rem;line-height:1.85;color:var(--text-mid)">{{ chief.legacy|linebreaks }}</div></div>{% endif %}
+    {% if chief.notes %}<div class="phf-detail-block mb-4"><div class="phf-detail-block-header"><i class="bi bi-journal-text text-success me-2"></i><h6 class="phf-detail-block-title" data-en="Notes" data-ar="ملاحظات">Notes</h6></div><div style="padding:24px;font-size:.93rem;line-height:1.85;color:var(--text-mid)">{{ chief.notes|linebreaks }}</div></div>{% endif %}
+    {% if not chief.how_appointed and not chief.biography and not chief.accomplishments and not chief.major_events and not chief.legacy and not chief.notes %}
+    <div class="phf-empty"><span class="phf-empty-icon">📜</span><h5 data-en="The full history of this chief has not been written yet" data-ar="لم يُكتب التاريخ الكامل لهذا الزعيم بعد">The full history of this chief has not been written yet</h5></div>
+    {% endif %}
+    {% include "partials/evidence.html" %}
+    {% if chief.sources %}<p style="font-size:.8rem;color:var(--text-light)"><strong data-en="Sources:" data-ar="المصادر:">Sources:</strong> {{ chief.sources|linebreaksbr }}</p>{% endif %}
+  </div>
+</div></div></section>
+{% endblock %}

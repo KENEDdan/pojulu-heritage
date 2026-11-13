@@ -22,6 +22,7 @@ class PrivateField:
     field: str
     staff_roles: frozenset
     public_if: Optional[Callable] = None
+    staff_if: Optional[Callable] = None   # (role, obj) -> bool, for per-record rules
 
     def model_class(self):
         return apps.get_model(self.model)
@@ -34,7 +35,25 @@ def _interview_published(obj):
     return obj.is_published and not getattr(obj, 'is_deleted', False)
 
 
+def _attachment_public(att):
+    from apps.core.models import record_is_public
+    return att.is_public and record_is_public(att.record)
+
+
+# Which dashboard section owns records of each app (see dashboard.ROLE_SECTIONS).
+APP_SECTIONS = {'clans': 'clans', 'genealogy': 'genealogy', 'memorial': 'memorial',
+                'cultural': 'cultural', 'elders': 'elders', 'achievements': 'achievements',
+                'marriages': 'marriages'}
+
+
+def _attachment_staff(role, att):
+    from apps.dashboard.models import ROLE_SECTIONS
+    section = APP_SECTIONS.get(att.content_type.app_label)
+    return bool(section and section in ROLE_SECTIONS.get(role, []))
+
+
 PRIVATE_FIELDS = [
+    PrivateField('core.Attachment', 'file', frozenset(), _attachment_public, _attachment_staff),
     PrivateField('genealogy.Person', 'profile_pdf', frozenset(GENEALOGY_ROLES)),
     PrivateField('genealogy.PersonEducation', 'certificate', frozenset(GENEALOGY_ROLES)),
     PrivateField('genealogy.PersonMedia', 'file', frozenset(GENEALOGY_ROLES)),
@@ -73,6 +92,8 @@ def resolve(name):
 def can_open(user, pf, obj):
     role = staff_role(user)
     if role == 'superadmin' or role in pf.staff_roles:
+        return True
+    if role and pf.staff_if and pf.staff_if(role, obj):
         return True
     return bool(pf.public_if and pf.public_if(obj))
 

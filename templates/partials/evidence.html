@@ -1,0 +1,37 @@
+{# Public photos & evidence for a record. Pass `evidence` (already filtered to public items). #}
+{% if evidence %}
+<div class="phf-detail-block mb-4">
+  <div class="phf-detail-block-header"><i class="bi bi-images text-success me-2"></i><h6 class="phf-detail-block-title" data-en="{{ evidence_title|default:'Photos & Evidence' }}" data-ar="الصور والأدلة">{{ evidence_title|default:"Photos & Evidence" }}</h6></div>
+  <div style="padding:20px 24px">
+    <div class="row g-3">
+      {% for item in evidence %}
+      {% if item.is_image %}
+      <div class="col-6 col-md-4">
+        <a href="{{ item.file.url }}" target="_blank" rel="noopener" class="d-block text-decoration-none">
+          <img src="{{ item.file.url }}" alt="{{ item.title|default:item.caption|default:'Photo' }}" loading="lazy"
+               style="width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:6px;border:1px solid var(--border, #e5e0d5)">
+          {% if item.title %}<div style="font-size:.8rem;font-weight:600;color:var(--text);margin-top:6px">{{ item.title }}</div>{% endif %}
+        </a>
+        {% if item.caption %}<div style="font-size:.76rem;color:var(--text-light, #777);line-height:1.5">{{ item.caption }}</div>{% endif %}
+        {% if item.date_taken or item.source %}<div style="font-size:.7rem;color:var(--text-light, #999)">{{ item.date_taken }}{% if item.date_taken and item.source %} · {% endif %}{{ item.source }}</div>{% endif %}
+      </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+    {% for item in evidence %}{% if not item.is_image %}
+    <div class="d-flex gap-3 align-items-start py-3" style="border-top:1px solid var(--border, #eee)">
+      <i class="bi {% if item.kind == 'audio' or item.is_audio %}bi-mic{% elif item.kind == 'video' or item.is_video %}bi-camera-video{% elif item.kind == 'link' or not item.file %}bi-link-45deg{% else %}bi-file-earmark-text{% endif %} text-success" style="font-size:1.3rem"></i>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:.88rem;font-weight:600">{{ item.title|default:item.get_kind_display }}</div>
+        {% if item.caption %}<div style="font-size:.8rem;color:var(--text-mid, #555);line-height:1.6">{{ item.caption }}</div>{% endif %}
+        {% if item.date_taken or item.source %}<div style="font-size:.72rem;color:var(--text-light, #999)">{{ item.date_taken }}{% if item.date_taken and item.source %} · {% endif %}{{ item.source }}</div>{% endif %}
+        {% if item.file and item.is_audio %}<audio controls preload="none" src="{{ item.file.url }}" style="width:100%;margin-top:8px"></audio>
+        {% elif item.file and item.is_video %}<video controls preload="none" src="{{ item.file.url }}" style="width:100%;max-height:360px;margin-top:8px"></video>
+        {% elif item.file %}<a href="{{ item.file.url }}" target="_blank" rel="noopener" style="font-size:.8rem"><i class="bi bi-box-arrow-up-right me-1"></i><span data-en="Open document" data-ar="فتح المستند">Open document</span></a>{% endif %}
+        {% if item.external_url %}<div><a href="{{ item.external_url }}" target="_blank" rel="noopener nofollow" style="font-size:.8rem"><i class="bi bi-box-arrow-up-right me-1"></i>{{ item.external_url|truncatechars:70 }}</a></div>{% endif %}
+      </div>
+    </div>
+    {% endif %}{% endfor %}
+  </div>
+</div>
+{% endif %}

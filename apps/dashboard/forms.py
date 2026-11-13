@@ -1,6 +1,9 @@
 from django import forms
 from django.contrib.auth.models import User
-from apps.clans.models import Clan, ClanChief, ClanEvent
+from django.contrib.contenttypes.forms import generic_inlineformset_factory
+from apps.clans.models import Clan, ClanChief, ClanEvent, ClanLandmark
+from apps.core.models import Attachment
+from apps.genealogy.models import FamilyHistoryChapter
 from apps.genealogy.models import Person, Family
 from apps.memorial.models import MemorialRecord
 from apps.achievements.models import Achievement, CATEGORY_CHOICES
@@ -42,9 +45,12 @@ class KeepCurrentChoicesMixin:
 
 
 # ── Full-width field names (used in template) ──
-CLAN_FULL     = ['tagline','description','origin_story','migration_history','territorial_notes','cultural_practices','traditional_beliefs','historical_events','sub_clans','allied_clans']
+CLAN_FULL     = ['tagline','description','origin_story','migration_history','territorial_notes','cultural_practices','traditional_beliefs','historical_events','sub_clans','allied_clans',
+                 'territory_description','rivers','landscape','main_activities','infrastructure','boundary_geojson']
+CHIEF_FULL    = ['summary','how_appointed','biography','accomplishments','major_events','challenges','legacy','sources','notes']
+LANDMARK_FULL = ['description','history','location_description']
 PERSON_FULL   = ['biography','contributions','education','other_names']
-FAMILY_FULL   = ['description']
+FAMILY_FULL   = ['description','written_history']
 MEMORIAL_FULL = ['tribute','survived_by','epitaph']
 ACHIEVE_FULL  = ['title','description']
 MARRIAGE_FULL = ['children_names','notes']
@@ -152,8 +158,27 @@ class ClanForm(forms.ModelForm):
         fields = ['name','payam','tagline','description','origin_story',
                   'migration_history','territorial_notes','cultural_practices',
                   'traditional_beliefs','historical_events','sub_clans',
-                  'allied_clans','is_verified','is_featured']
+                  'allied_clans',
+                  'population_estimate','area_estimate','border_north','border_south',
+                  'border_east','border_west','territory_description','rivers','landscape',
+                  'main_activities','infrastructure','map_image','boundary_geojson',
+                  'is_verified','is_featured']
         widgets = {
+            'population_estimate': FC('e.g. about 12,000'),
+            'area_estimate':       FC('e.g. about 120 km²'),
+            'border_north':        FC('Neighbour or landmark to the north'),
+            'border_south':        FC('Neighbour or landmark to the south'),
+            'border_east':         FC('Neighbour or landmark to the east'),
+            'border_west':         FC('Neighbour or landmark to the west'),
+            'territory_description': TA(6,'Where the land starts and ends, how it was acquired, disputes, how it changed over time...'),
+            'rivers':              TA(3,'Rivers, streams, springs and wetlands...'),
+            'landscape':           TA(3,'Hills, forests, plains, soil...'),
+            'main_activities':     TA(3,'Farming, cattle-keeping, fishing, trade...'),
+            'infrastructure':      TA(3,'Schools, health facilities, roads, churches, markets...'),
+            'map_image':           FIL(),
+            'boundary_geojson':    forms.Textarea(attrs={'class': 'form-control font-monospace', 'rows': 3,
+                                                         'data-boundary-editor': '1',
+                                                         'placeholder': 'Draw the boundary on the map above (or paste GeoJSON)'}),
             'name':                FC('e.g. Gumbo'),
             'payam':               SEL(),
             'tagline':             FC('One-sentence description shown on cards'),
@@ -174,16 +199,38 @@ class ClanForm(forms.ModelForm):
 class ClanChiefForm(KeepCurrentChoicesMixin, forms.ModelForm):
     class Meta:
         model  = ClanChief
-        fields = ['clan','name','title','start_year','end_year','order','notes']
+        fields = ['clan','name','other_names','title','person','start_year','end_year',
+                  'birth_year','death_year','burial_place','photo','order',
+                  'summary','how_appointed','biography','accomplishments','major_events',
+                  'challenges','legacy','sources','notes']
         widgets = {
             'clan':       SEL(),
+            'person':     SEL(),
             'name':       FC('Full name of the chief or elder'),
+            'other_names': FC('Traditional names or praise titles'),
             'title':      FC('e.g. Chief, Paramount Chief, Elder'),
             'start_year': FC('e.g. 1955'),
             'end_year':   FC('e.g. 1991 or leave blank if current'),
-            'order':      NUM('Display order (0 = earliest)'),
+            'birth_year': FC('e.g. 1910 or approx. 1910s'),
+            'death_year': FC('Leave blank if living'),
+            'burial_place': FC('Where they are buried'),
+            'photo':      FIL(),
+            'order':      NUM('Order in the line of chiefs (0 = earliest)'),
+            'summary':    FC('One or two sentences shown on the clan page'),
+            'how_appointed': TA(3,'How did they become chief? Inheritance, election, appointment...'),
+            'biography':  TA(8,'Their life story: birth, family, upbringing, character...'),
+            'accomplishments': TA(8,'What they did as chief: disputes settled, land defended, schools, roads, churches, reforms...'),
+            'major_events': TA(5,'Wars, famines, migrations, government visits during their rule...'),
+            'challenges': TA(4,'Difficulties and controversies...'),
+            'legacy':     TA(4,'How they are remembered today...'),
+            'sources':    TA(3,'Who told this history? Documents consulted...'),
             'notes':      TA(3,'Additional notes about this leader...'),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['person'].queryset = Person.objects.order_by('last_name', 'first_name')
+        self.fields['person'].required = False
 
 
 class ClanEventForm(KeepCurrentChoicesMixin, forms.ModelForm):
@@ -205,7 +252,7 @@ class ClanEventForm(KeepCurrentChoicesMixin, forms.ModelForm):
 
 # ── Full-width field names (updated) ──
 PERSON_FULL   = ['biography', 'contributions', 'hobbies', 'skills_talents',
-                 'other_names', 'address']
+                 'other_names', 'address', 'relatives_notes']
 
 class PersonForm(KeepCurrentChoicesMixin, forms.ModelForm):
     class Meta:
@@ -227,6 +274,8 @@ class PersonForm(KeepCurrentChoicesMixin, forms.ModelForm):
             'hobbies', 'skills_talents', 'languages_spoken', 'religion',
             # Contributions
             'contributions',
+            # Relatives
+            'relatives_notes',
             # Document
             'profile_pdf',
             # Privacy
@@ -264,6 +313,8 @@ class PersonForm(KeepCurrentChoicesMixin, forms.ModelForm):
             'languages_spoken':  FC('e.g. Pojulu, Arabic, English, Swahili'),
             'religion':          FC('e.g. Catholic, Anglican, Evangelical'),
             'contributions':     TA(3, 'Notable contributions to the community…'),
+            'relatives_notes':   TA(8, 'All the relatives, including those without their own record: every brother and sister (full and half), '
+                                       'grandparents and great-grandparents on both sides, uncles, aunts, cousins, in-laws…'),
             'profile_pdf':       FIL(),
             'show_contact_publicly': CHK(),
             'is_private':        CHK(),
@@ -282,13 +333,15 @@ class PersonForm(KeepCurrentChoicesMixin, forms.ModelForm):
 class FamilyForm(KeepCurrentChoicesMixin, forms.ModelForm):
     class Meta:
         model  = Family
-        fields = ['name','clan','payam','origin_village','description','is_verified']
+        fields = ['name','clan','payam','origin_village','description','written_history','is_verified']
         widgets = {
             'name':           FC('e.g. Ladu Family'),
             'clan':           SEL(),
             'payam':          SEL(),
             'origin_village': FC('Original village or settlement'),
-            'description':    TA(4,'History and background of this family...'),
+            'description':    TA(3,'A short summary of this family...'),
+            'written_history': TA(14,'The full story of the family: the founders, each generation, all the children '
+                                     '(including those not in the archive), marriages, migrations, where the family lives today...'),
             'is_verified':    CHK(),
         }
 
@@ -513,4 +566,68 @@ NewsMediaFormSet = inlineformset_factory(
         'caption':    TA(2, 'Caption...'),
         'order':      NUM('Order'),
     }
+)
+
+
+# ═══════════════════════════════════════════════
+# LANDMARKS, FAMILY CHAPTERS, PHOTOS & EVIDENCE
+# ═══════════════════════════════════════════════
+
+class ClanLandmarkForm(KeepCurrentChoicesMixin, forms.ModelForm):
+    class Meta:
+        model  = ClanLandmark
+        fields = ['clan', 'name', 'landmark_type', 'photo', 'description', 'history',
+                  'location_description', 'latitude', 'longitude', 'order']
+        widgets = {
+            'clan':          SEL(),
+            'name':          FC('e.g. Mogiri Hill'),
+            'landmark_type': SEL(),
+            'photo':         FIL(),
+            'description':   TA(4, 'What it is and what it looks like...'),
+            'history':       TA(6, 'Its story and why it matters to the clan...'),
+            'location_description': FC('e.g. 2 km east of Kupera market'),
+            'latitude':      forms.NumberInput(attrs={'class': 'form-control', 'step': 'any', 'data-point-lat': '1',
+                                                      'placeholder': 'Click the map, or type e.g. 4.3512'}),
+            'longitude':     forms.NumberInput(attrs={'class': 'form-control', 'step': 'any', 'data-point-lng': '1',
+                                                      'placeholder': 'e.g. 30.9871'}),
+            'order':         NUM('Display order'),
+        }
+
+
+FamilyChapterFormSet = inlineformset_factory(
+    Family, FamilyHistoryChapter,
+    fields=['title', 'period', 'order', 'body'],
+    extra=2, can_delete=True,
+    widgets={
+        'title':  FC('e.g. "Origins", "The children of Lado", "Exile and return"'),
+        'period': FC('e.g. 1920s-1950s'),
+        'order':  NUM('Order'),
+        'body':   TA(8, 'Write this chapter of the family history...'),
+    }
+)
+
+
+class AttachmentForm(forms.ModelForm):
+    class Meta:
+        model = Attachment
+        fields = ['kind', 'title', 'file', 'external_url', 'source', 'date_taken', 'is_public', 'caption']
+        widgets = {
+            'kind':         SEL(),
+            'title':        FC('e.g. "Chief Lado at the 1962 meeting"'),
+            'file':         FIL(),
+            'external_url': forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'https://... (optional)'}),
+            'source':       FC('Who provided it / where it comes from'),
+            'date_taken':   FC('Date or approximate year'),
+            'is_public':    CHK(),
+            'caption':      TA(2, 'What this shows and why it matters...'),
+        }
+
+    def has_changed(self):
+        # "Show publicly" starts ticked; a row where only that box was left
+        # alone is still an empty row and must not be validated.
+        return bool(set(self.changed_data) - {'is_public', 'kind'})
+
+
+AttachmentFormSet = generic_inlineformset_factory(
+    Attachment, form=AttachmentForm, extra=2, can_delete=True,
 )

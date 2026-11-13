@@ -1,5 +1,6 @@
 # apps/memorial/models.py
 from django.core.exceptions import ValidationError
+from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 from simple_history.models import HistoricalRecords
 from apps.core.softdelete import SoftDeleteModel, soft_delete_managers
@@ -28,6 +29,7 @@ class MemorialRecord(SoftDeleteModel):
 
     objects, all_objects = soft_delete_managers(MemorialQuerySet)
     history = HistoricalRecords()
+    attachments = GenericRelation('core.Attachment')
 
     class Meta:
         ordering = ['-created_at']

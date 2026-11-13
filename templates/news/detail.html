@@ -37,7 +37,7 @@
 
         <!-- Event date box -->
         {% if post.post_type == 'event' and post.event_date %}
-        <div style="background:var(--g50);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px 24px;margin-bottom:28px;display:flex;gap:24px;flex-wrap:wrap;align-items:center">
+        <div style="background:var(--surface-alt);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px 24px;margin-bottom:28px;display:flex;gap:24px;flex-wrap:wrap;align-items:center">
           <div style="text-align:center;background:var(--g700);border-radius:8px;padding:12px 20px;color:white;min-width:80px">
             <div style="font-family:var(--font-display);font-size:2rem;font-weight:700;line-height:1">{{ post.event_date|date:"d" }}</div>
             <div style="font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;opacity:.8">{{ post.event_date|date:"M Y" }}</div>
@@ -60,7 +60,7 @@
         <!-- Media gallery -->
         {% if media %}
         <div class="mt-5">
-          <h5 class="text-display mb-3" style="color:var(--g700)" data-en="Photos & Documents" data-ar="الصور والمستندات">Photos & Documents</h5>
+          <h5 class="text-display mb-3" style="color:var(--accent)" data-en="Photos & Documents" data-ar="الصور والمستندات">Photos & Documents</h5>
           <div class="row g-3">
             {% for item in media %}
             {% if item.media_type == 'photo' %}

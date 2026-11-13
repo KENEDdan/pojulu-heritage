@@ -37,6 +37,7 @@
 <div class="d-flex gap-2 mb-4 flex-wrap">
   <a href="{% url 'dashboard:clan_add' %}"   class="dash-btn dash-btn-primary"><i class="bi bi-plus-lg me-1"></i> Add New Clan</a>
   <a href="{% url 'dashboard:chief_add' %}"  class="dash-btn dash-btn-outline"><i class="bi bi-person-plus me-1"></i> Add Chief / Elder</a>
+  <a href="{% url 'dashboard:landmark_add' %}" class="dash-btn dash-btn-outline"><i class="bi bi-geo-alt me-1"></i> Add Landmark</a>
   <a href="{% url 'dashboard:event_add' %}"  class="dash-btn dash-btn-outline"><i class="bi bi-calendar-plus me-1"></i> Add Historical Event</a>
 </div>
 
@@ -68,6 +69,84 @@
       </tbody>
     </table>
 {% include "partials/pagination.html" with page_obj=clans %}
+  </div>
+</div>
+
+<div class="dash-table-card mt-4">
+  <div class="dash-table-header">
+    <span class="dash-table-title">Chiefs &amp; Elders</span>
+    <a href="{% url 'dashboard:chief_add' %}" class="dash-btn dash-btn-outline dash-btn-sm"><i class="bi bi-plus-lg me-1"></i> Add</a>
+  </div>
+  <div style="overflow-x:auto">
+    <table class="dash-table">
+      <thead><tr><th>Name</th><th>Clan</th><th>Tenure</th><th>Full history</th><th>Action</th></tr></thead>
+      <tbody>
+        {% for chief in chiefs %}
+        <tr>
+          <td class="td-name">{{ chief.title }} {{ chief.name }}</td>
+          <td>{{ chief.clan.name }}</td>
+          <td>{{ chief.tenure|default:"—" }}</td>
+          <td>{% if chief.biography or chief.accomplishments %}<span class="dash-badge dash-badge-green">Written</span>{% else %}<span class="dash-badge dash-badge-yellow">Not yet</span>{% endif %}</td>
+          <td><a href="{% url 'dashboard:chief_edit' chief.pk %}" class="dash-btn dash-btn-outline dash-btn-sm">Edit</a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" style="text-align:center;padding:30px;color:var(--light)">No chiefs recorded yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% include "partials/pagination.html" with page_obj=chiefs page_param="chiefs_page" %}
+  </div>
+</div>
+
+<div class="dash-table-card mt-4">
+  <div class="dash-table-header">
+    <span class="dash-table-title">Landmarks</span>
+    <a href="{% url 'dashboard:landmark_add' %}" class="dash-btn dash-btn-outline dash-btn-sm"><i class="bi bi-plus-lg me-1"></i> Add</a>
+  </div>
+  <div style="overflow-x:auto">
+    <table class="dash-table">
+      <thead><tr><th>Landmark</th><th>Clan</th><th>Type</th><th>On map</th><th>Photo</th><th>Action</th></tr></thead>
+      <tbody>
+        {% for lm in landmarks %}
+        <tr>
+          <td class="td-name">{{ lm.name }}</td>
+          <td>{{ lm.clan.name }}</td>
+          <td>{{ lm.get_landmark_type_display }}</td>
+          <td>{% if lm.has_location %}✅{% else %}—{% endif %}</td>
+          <td>{% if lm.photo %}✅{% else %}—{% endif %}</td>
+          <td><a href="{% url 'dashboard:landmark_edit' lm.pk %}" class="dash-btn dash-btn-outline dash-btn-sm">Edit</a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" style="text-align:center;padding:30px;color:var(--light)">No landmarks yet. <a href="{% url 'dashboard:landmark_add' %}">Add the first landmark.</a></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% include "partials/pagination.html" with page_obj=landmarks page_param="landmarks_page" %}
+  </div>
+</div>
+
+<div class="dash-table-card mt-4">
+  <div class="dash-table-header">
+    <span class="dash-table-title">Historical Events</span>
+    <a href="{% url 'dashboard:event_add' %}" class="dash-btn dash-btn-outline dash-btn-sm"><i class="bi bi-plus-lg me-1"></i> Add</a>
+  </div>
+  <div style="overflow-x:auto">
+    <table class="dash-table">
+      <thead><tr><th>Event</th><th>Clan</th><th>Year</th><th>Action</th></tr></thead>
+      <tbody>
+        {% for ev in events %}
+        <tr>
+          <td class="td-name">{{ ev.title }}</td>
+          <td>{{ ev.clan.name }}</td>
+          <td>{{ ev.year|default:"—" }}</td>
+          <td><a href="{% url 'dashboard:event_edit' ev.pk %}" class="dash-btn dash-btn-outline dash-btn-sm">Edit</a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" style="text-align:center;padding:30px;color:var(--light)">No events yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% include "partials/pagination.html" with page_obj=events page_param="events_page" %}
   </div>
 </div>
 {% endblock %}

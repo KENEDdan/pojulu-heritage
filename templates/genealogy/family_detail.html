@@ -1,15 +1,84 @@
 {% extends "base.html" %}
 {% block title %}{{ family.name }}{% endblock %}
+{% block og_title %}{{ family.name }}{% endblock %}
+{% block twitter_title %}{{ family.name }}{% endblock %}
+{% block og_description %}{{ family.description|default:family.written_history|striptags|truncatechars:200 }}{% endblock %}
+{% block meta_description %}{{ family.description|default:family.written_history|striptags|truncatechars:200 }}{% endblock %}
 {% block content %}
-<div class="phf-page-header"><div class="container-xl"><div class="phf-breadcrumb"><a href="{% url 'core:home' %}" data-en="Home" data-ar="الرئيسية">Home</a><span class="phf-breadcrumb-sep">›</span><a href="{% url 'genealogy:list' %}" data-en="Families" data-ar="العائلات">Families</a><span class="phf-breadcrumb-sep">›</span>{{ family.name }}</div><h1>{{ family.name }}</h1><p>{% if family.clan %}{{ family.clan.name }} <span data-en="Clan" data-ar="قبيلة">Clan</span> · {% endif %}{{ family.get_payam_display }}</p></div></div>
+<div class="phf-page-header"><div class="container-xl"><div class="phf-breadcrumb"><a href="{% url 'core:home' %}" data-en="Home" data-ar="الرئيسية">Home</a><span class="phf-breadcrumb-sep">›</span><a href="{% url 'genealogy:list' %}" data-en="Families" data-ar="العائلات">Families</a><span class="phf-breadcrumb-sep">›</span>{{ family.name }}</div><h1>{{ family.name }}</h1><p>{% if family.clan and family.clan.is_public %}{{ family.clan.name }} <span data-en="Clan" data-ar="قبيلة">Clan</span> · {% endif %}{{ family.get_payam_display }}</p></div></div>
 <section class="phf-section"><div class="container-xl">
 <div class="row g-5">
-  <div class="col-lg-4"><div class="phf-detail-block"><div class="phf-detail-block-header"><i class="bi bi-info-circle text-success me-2"></i><h6 class="phf-detail-block-title" data-en="Family Details" data-ar="تفاصيل العائلة">Family Details</h6></div>{% if family.clan %}<div class="phf-detail-row"><span class="phf-detail-label" data-en="Clan" data-ar="القبيلة">Clan</span><span class="phf-detail-value"><a href="{{ family.clan.get_absolute_url }}">{{ family.clan.name }}</a></span></div>{% endif %}<div class="phf-detail-row"><span class="phf-detail-label" data-en="Payam" data-ar="بايام">Payam</span><span class="phf-detail-value">{{ family.get_payam_display }}</span></div>{% if family.origin_village %}<div class="phf-detail-row"><span class="phf-detail-label" data-en="Origin" data-ar="الأصل">Origin</span><span class="phf-detail-value">{{ family.origin_village }}</span></div>{% endif %}<div class="phf-detail-row"><span class="phf-detail-label" data-en="Members" data-ar="الأفراد">Members</span><span class="phf-detail-value">{{ members.count }} <span data-en="recorded" data-ar="مسجل">recorded</span></span></div></div>{% if family.description %}<div class="phf-detail-block"><div class="phf-detail-block-header"><h6 class="phf-detail-block-title" data-en="About This Family" data-ar="عن هذه العائلة">About This Family</h6></div><div style="padding:16px 24px;font-size:.88rem;color:var(--text-mid);line-height:1.7">{{ family.description }}</div></div>{% endif %}</div>
-  <div class="col-lg-8">
-    <h4 class="text-display mb-4" style="color:var(--g700)" data-en="Family Members" data-ar="أفراد العائلة">Family Members</h4>
-    {% if members %}
-    <div class="phf-table-wrap"><table class="table phf-table"><thead><tr><th data-en="Name" data-ar="الاسم">Name</th><th data-en="Birth Year" data-ar="سنة الميلاد">Birth Year</th><th data-en="Status" data-ar="الحالة">Status</th></tr></thead><tbody>{% for p in members %}<tr onclick="window.location='{{ p.get_absolute_url }}'"><td class="td-primary">{{ p.full_name }}</td><td>{{ p.birth_year|default:"—" }}</td><td>{% if p.is_deceased %}<span class="phf-tag" style="background:#fce4ec;color:#c62828" data-en="Deceased" data-ar="متوفى">Deceased</span>{% else %}<span class="phf-tag" data-en="Living" data-ar="على قيد الحياة">Living</span>{% endif %}</td></tr>{% endfor %}</tbody></table></div>
-    {% else %}<div class="phf-empty"><span class="phf-empty-icon">👥</span><h5 data-en="No members yet" data-ar="لا يوجد أفراد بعد">No members yet</h5></div>
+  <div class="col-lg-4">
+    <div class="phf-detail-block">
+      <div class="phf-detail-block-header"><i class="bi bi-info-circle text-success me-2"></i><h6 class="phf-detail-block-title" data-en="Family Details" data-ar="تفاصيل العائلة">Family Details</h6></div>
+      {% if family.clan and family.clan.is_public %}<div class="phf-detail-row"><span class="phf-detail-label" data-en="Clan" data-ar="القبيلة">Clan</span><span class="phf-detail-value"><a href="{{ family.clan.get_absolute_url }}">{{ family.clan.name }}</a></span></div>{% endif %}
+      <div class="phf-detail-row"><span class="phf-detail-label" data-en="Payam" data-ar="بايام">Payam</span><span class="phf-detail-value">{{ family.get_payam_display|default:"—" }}</span></div>
+      {% if family.origin_village %}<div class="phf-detail-row"><span class="phf-detail-label" data-en="Origin" data-ar="الأصل">Origin</span><span class="phf-detail-value">{{ family.origin_village }}</span></div>{% endif %}
+      <div class="phf-detail-row"><span class="phf-detail-label" data-en="Members" data-ar="الأفراد">Members</span><span class="phf-detail-value">{{ members.count }} <span data-en="recorded" data-ar="مسجل">recorded</span></span></div>
+      <div class="phf-detail-row"><span class="phf-detail-label" data-en="Generations" data-ar="الأجيال">Generations</span><span class="phf-detail-value">{{ generations|length }}</span></div>
+    </div>
+
+    {% if chapters or family.written_history or generations %}
+    <div class="phf-detail-block">
+      <div class="phf-detail-block-header"><i class="bi bi-list-ul text-success me-2"></i><h6 class="phf-detail-block-title" data-en="Contents" data-ar="المحتويات">Contents</h6></div>
+      <div style="padding:12px 24px;font-size:.86rem;line-height:2">
+        {% if family.written_history %}<div><a href="#history" data-en="Family history" data-ar="تاريخ العائلة">Family history</a></div>{% endif %}
+        {% for ch in chapters %}<div><a href="#chapter-{{ ch.pk }}">{{ ch.title }}</a>{% if ch.period %} <small class="text-muted">({{ ch.period }})</small>{% endif %}</div>{% endfor %}
+        {% if generations %}<div><a href="#generations" data-en="Generation by generation" data-ar="جيلاً بعد جيل">Generation by generation</a></div>{% endif %}
+        <div><a href="#members" data-en="All members" data-ar="جميع الأفراد">All members</a></div>
+        {% if evidence %}<div><a href="#evidence" data-en="Photos & evidence" data-ar="الصور والأدلة">Photos &amp; evidence</a></div>{% endif %}
+      </div>
+    </div>
     {% endif %}
+  </div>
+
+  <div class="col-lg-8">
+    {% if family.description %}
+    <p style="font-size:1rem;line-height:1.85;color:var(--text-mid)">{{ family.description }}</p>
+    {% endif %}
+
+    {% if family.written_history %}
+    <div class="phf-detail-block mb-4" id="history">
+      <div class="phf-detail-block-header"><i class="bi bi-book text-success me-2"></i><h6 class="phf-detail-block-title" data-en="Family History" data-ar="تاريخ العائلة">Family History</h6></div>
+      <div style="padding:24px;font-size:.93rem;line-height:1.85;color:var(--text-mid)">{{ family.written_history|linebreaks }}</div>
+    </div>
+    {% endif %}
+
+    {% for ch in chapters %}
+    <div class="phf-detail-block mb-4" id="chapter-{{ ch.pk }}">
+      <div class="phf-detail-block-header"><i class="bi bi-bookmark text-success me-2"></i><h6 class="phf-detail-block-title">{{ ch.title }}{% if ch.period %} <span style="font-weight:400;color:var(--text-light)">· {{ ch.period }}</span>{% endif %}</h6></div>
+      <div style="padding:24px;font-size:.93rem;line-height:1.85;color:var(--text-mid)">{{ ch.body|linebreaks }}</div>
+    </div>
+    {% endfor %}
+
+    {% if generations %}
+    <h4 class="text-display mb-2 mt-2" style="color:var(--accent)" id="generations" data-en="The Family, Generation by Generation" data-ar="العائلة جيلاً بعد جيل">The Family, Generation by Generation</h4>
+    <p style="font-size:.84rem;color:var(--text-light)" data-en="Written out from the family records, so that every person, marriage and child is listed, including those a tree cannot fit on one screen." data-ar="مكتوبة من سجلات العائلة بحيث يُذكر كل شخص وزواج وطفل.">Written out from the family records, so that every person, marriage and child is listed, including those a tree cannot fit on one screen.</p>
+    {% for gen in generations %}
+    <div class="phf-detail-block mb-4">
+      <div class="phf-detail-block-header"><span class="phf-tag phf-tag-dark me-2">{{ gen.number }}</span><h6 class="phf-detail-block-title">{{ gen.title }} <span style="font-weight:400;color:var(--text-light)">· {{ gen.entries|length }} {{ gen.entries|length|pluralize:"person,people" }}</span></h6></div>
+      <div style="padding:8px 24px 16px">
+        {% for e in gen.entries %}
+        <div style="padding:12px 0;{% if not forloop.first %}border-top:1px solid var(--border, #eee);{% endif %}font-size:.9rem;line-height:1.75;color:var(--text-mid)">
+          <a href="{{ e.person.get_absolute_url }}" style="font-weight:700">{{ e.person.full_name }}</a>{% if e.person.lifespan %} ({{ e.person.lifespan }}){% endif %}{% if e.person.is_deceased %} †{% endif %}{% if e.married_in %} <span class="phf-tag" style="font-size:.68rem" data-en="married into the family" data-ar="انضم بالزواج">married into the family</span>{% endif %}
+          {% if e.parents %}<br><span style="color:var(--text-light)">{% if e.person.gender == 'M' %}Son{% elif e.person.gender == 'F' %}Daughter{% else %}Child{% endif %} of</span> {% for p in e.parents %}<a href="{{ p.get_absolute_url }}">{{ p.full_name }}</a>{% if not forloop.last %} and {% endif %}{% endfor %}.{% endif %}
+          {% if e.spouses %}<br><span style="color:var(--text-light)">Married</span> {% for s in e.spouses %}<a href="{{ s.get_absolute_url }}">{{ s.full_name }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}.{% endif %}
+          {% if e.children %}<br><span style="color:var(--text-light)">{{ e.children|length }} {{ e.children|length|pluralize:"child,children" }}:</span> {% for c in e.children %}<a href="{{ c.get_absolute_url }}">{{ c.first_name }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}.{% endif %}
+          {% if e.person.occupation or e.person.current_residence %}<br><span style="color:var(--text-light)">{{ e.person.occupation }}{% if e.person.occupation and e.person.current_residence %} · {% endif %}{% if e.person.current_residence %}lives in {{ e.person.current_residence }}{% endif %}</span>{% endif %}
+          <div><a href="{% url 'genealogy:tree' e.person.slug %}" style="font-size:.76rem"><i class="bi bi-diagram-3 me-1"></i><span data-en="Tree" data-ar="الشجرة">Tree</span></a></div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <h4 class="text-display mb-3 mt-2" style="color:var(--accent)" id="members" data-en="All Family Members" data-ar="جميع أفراد العائلة">All Family Members</h4>
+    {% if members %}
+    <div class="phf-table-wrap mb-4"><table class="table phf-table"><thead><tr><th data-en="Name" data-ar="الاسم">Name</th><th data-en="Birth Year" data-ar="سنة الميلاد">Birth Year</th><th data-en="Status" data-ar="الحالة">Status</th></tr></thead><tbody>{% for p in members %}<tr onclick="window.location='{{ p.get_absolute_url }}'"><td class="td-primary"><a href="{{ p.get_absolute_url }}">{{ p.full_name }}</a></td><td>{{ p.birth_year|default:"—" }}</td><td>{% if p.is_deceased %}<span class="phf-tag" style="background:#fce4ec;color:#c62828" data-en="Deceased" data-ar="متوفى">Deceased</span>{% else %}<span class="phf-tag" data-en="Living" data-ar="على قيد الحياة">Living</span>{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+    {% else %}<div class="phf-empty mb-4"><span class="phf-empty-icon">👥</span><h5 data-en="No members yet" data-ar="لا يوجد أفراد بعد">No members yet</h5></div>
+    {% endif %}
+
+    <div id="evidence">{% include "partials/evidence.html" %}</div>
   </div>
 </div></div></section>{% endblock %}

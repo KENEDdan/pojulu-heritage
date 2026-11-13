@@ -1,3 +1,4 @@
+from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 from simple_history.models import HistoricalRecords
 from django.urls import reverse
@@ -53,6 +54,7 @@ class Achievement(models.Model):
 
     objects = AchievementQuerySet.as_manager()
     history = HistoricalRecords()
+    attachments = GenericRelation('core.Attachment')
 
     class Meta:
         ordering = ['-year', 'person_name']

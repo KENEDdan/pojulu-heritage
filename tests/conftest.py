@@ -55,7 +55,7 @@ def staff_factory(db):
 @pytest.fixture
 def world(db):
     """One published and one unpublished record of every public model."""
-    from apps.clans.models import Clan, ClanChief, ClanEvent
+    from apps.clans.models import Clan, ClanChief, ClanEvent, ClanLandmark
     from apps.genealogy.models import Family, Person
     from apps.memorial.models import MemorialRecord
     from apps.achievements.models import Achievement
@@ -70,6 +70,8 @@ def world(db):
     w['clan_draft'] = Clan.objects.create(name='Hidden', payam='kupera', description='Draft clan')
     w['chief'] = ClanChief.objects.create(clan=w['clan'], name='Lado', title='Chief')
     w['event'] = ClanEvent.objects.create(clan=w['clan'], title='Founding', description='d', year='1900')
+    w['landmark'] = ClanLandmark.objects.create(clan=w['clan'], name='Gumbo Hill', landmark_type='hill',
+                                                description='A granite hill', latitude=4.35, longitude=30.95)
     w['family'] = Family.objects.create(name='Ladu Family', clan=w['clan'], is_verified=True)
     w['family_draft'] = Family.objects.create(name='Secret Family', clan=w['clan'])
     w['father'] = Person.objects.create(first_name='Elder', last_name='Ladu', clan=w['clan'], family=w['family'],

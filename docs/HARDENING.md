@@ -642,3 +642,41 @@ They're written alongside each phase and cover:
 | Email-based password reset | No mail provider configured. Superadmin resets staff/family passwords in the dashboard. |
 | Antivirus scanning of uploads | Content-type verification + re-encoding of images is done, but there's no AV engine (ClamAV would need its own service). |
 | Local tests run on Python 3.12 | Only interpreter installed here. CI and the Docker image use 3.11. |
+
+---
+
+## Heritage features (added 2026-11-04)
+
+- **Photos & Evidence on every record.** One shared model, `core.Attachment` (generic relation),
+  is attached to families, chiefs, events, landmarks, memorials, achievements, marriages, cultural
+  records and elder interviews. Persons, clans and news keep their existing media formsets.
+  Files go to **private storage** and are served by the media gate. The public sees a file only when
+  the attachment's "Is public" box is ticked *and* its record is public. Staff see files for
+  the sections their role covers (`APP_SECTIONS` in `core/private_media.py`). Uploads use the same
+  validators, random names and EXIF stripping as everything else.
+- **Families.** `Family.written_history` (long text) and `FamilyHistoryChapter` (ordered chapters).
+  The family page also generates a written "generation by generation" account from the records
+  (`genealogy/relatives.py: family_generations`). People who married into the family are placed in
+  their spouse's generation.
+- **People.** The person page lists every recorded relative: parents, all 4 grandparents (side labelled),
+  8 great-grandparents and beyond, full and half siblings, children down to great-great-grandchildren,
+  uncles/aunts, cousins, nephews/nieces and in-laws. It also has a short written summary.
+  `Person.relatives_notes` holds a free-text account of relatives without their own record.
+  Every walk is bounded and de-duplicated, so corrupt parent loops can't hang it or list anyone twice.
+  Only public people ever appear.
+- **Clans.** New territory fields (written account, area, scanned map image) and a **boundary drawn on a map**
+  (`Clan.boundary_geojson`, validated: Polygon/MultiPolygon only, coordinate ranges, 200 KB cap).
+  New `ClanLandmark` model (type, description, history, location, coordinates, photo, plus evidence).
+  The public clan page has Territory & Map, Landmarks, Chiefs and Gallery tabs.
+- **Chiefs.** Full history fields (how appointed, life story, accomplishments, events, challenges, legacy,
+  sources, life dates, optional link to a person record). Each chief has a public page
+  (`/clans/<clan>/chiefs/<id>/`) with predecessor/successor and the full line of chiefs. Chiefs are in the sitemap.
+- **Maps.** Leaflet 1.9.4 from jsDelivr with **OpenStreetMap tiles** (an external service: viewers'
+  browsers fetch tiles from tile.openstreetmap.org). CSP `img-src` now allows the tile server and
+  jsDelivr. The map code is a static file (`static/js/phf-map.js`, no inline script). Leaflet is loaded only on
+  pages that show or edit a map. If OSM's usage policy becomes a problem at higher traffic, switch the
+  tile URL in that file to a paid provider.
+- Dashboard: the clan dashboard now lists chiefs, landmarks and events (previously chiefs could not be
+  found for editing). Landmark delete is superadmin-only and POST-only, like chiefs.
+- Not done: bomas still have no dashboard form (deferred list above); they now show on the public
+  Territory tab when present.

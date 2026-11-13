@@ -1,5 +1,6 @@
 import re
 
+from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ValidationError
 from django.db import models
 from simple_history.models import HistoricalRecords
@@ -44,13 +45,17 @@ class Family(SoftDeleteModel):
     clan           = models.ForeignKey('clans.Clan', on_delete=models.SET_NULL, null=True, blank=True, related_name='family_set')
     payam          = models.CharField(max_length=50, choices=PAYAM_CHOICES, blank=True)
     origin_village = models.CharField(max_length=200, blank=True)
-    description    = models.TextField(blank=True)
+    description    = models.TextField(blank=True, help_text='Short summary shown at the top of the family page')
+    written_history = models.TextField(blank=True, help_text=(
+        'The full written history of the family: founders, every generation, marriages, '
+        'migrations, relatives who are not in the archive. Use the chapters below for long histories.'))
     is_verified    = models.BooleanField(default=False)
     created_at     = models.DateTimeField(auto_now_add=True)
     updated_at     = models.DateTimeField(auto_now=True)
 
     objects, all_objects = soft_delete_managers(FamilyQuerySet)
     history = HistoricalRecords()
+    attachments = GenericRelation('core.Attachment')
 
     class Meta:
         ordering = ['name']
@@ -122,6 +127,10 @@ class Person(SoftDeleteModel):
     languages_spoken = models.CharField(max_length=300, blank=True, help_text='e.g. Pojulu, Arabic, English')
     religion         = models.CharField(max_length=100, blank=True)
     contributions    = models.TextField(blank=True, help_text='Community contributions and service')
+    relatives_notes  = models.TextField(blank=True, help_text=(
+        'Written account of relatives, especially those without their own record: all siblings '
+        '(full and half), grandparents, great-grandparents, uncles, aunts, cousins, in-laws. '
+        'Shown publicly, so do not include private details of living people without consent.'))
 
     # ── DOCUMENTS ──
     profile_pdf      = SafeFileField(upload_to=UploadTo('persons/pdfs'), blank=True, null=True,
@@ -291,6 +300,25 @@ class Person(SoftDeleteModel):
             'children': list(self.children.public()),
             'siblings': list(self.siblings.public()),
         }
+
+
+class FamilyHistoryChapter(models.Model):
+    """One chapter of a family's written history, e.g. "Origins", "The sons of
+    Lado", "Exile in Uganda, 1990-2005"."""
+    family  = models.ForeignKey(Family, on_delete=models.CASCADE, related_name='chapters')
+    title   = models.CharField(max_length=300)
+    period  = models.CharField(max_length=100, blank=True, help_text='e.g. "1920s-1950s"')
+    body    = models.TextField()
+    order   = models.PositiveSmallIntegerField(default=0)
+
+    history = HistoricalRecords()
+
+    class Meta:
+        ordering = ['order', 'pk']
+        verbose_name = 'Family History Chapter'
+
+    def __str__(self):
+        return f'{self.family.name}: {self.title}'
 
 
 class PersonEducation(models.Model):

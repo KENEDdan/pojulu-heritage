@@ -36,12 +36,42 @@
   <div class="col-lg-8">
     {% if person.biography %}<div class="phf-detail-block mb-4"><div class="phf-detail-block-header"><i class="bi bi-book text-success me-2"></i><h6 class="phf-detail-block-title" data-en="Biography" data-ar="السيرة الذاتية">Biography</h6></div><div style="padding:24px;font-size:.93rem;line-height:1.85;color:var(--text-mid)">{{ person.biography }}</div></div>{% endif %}
     <!-- Family Tree Section -->
-    <h5 class="text-display mb-3" style="color:var(--g700)" data-en="Family Connections" data-ar="روابط العائلة">Family Connections</h5>
+    <h5 class="text-display mb-3" style="color:var(--accent)" data-en="Family Connections" data-ar="روابط العائلة">Family Connections</h5>
     {% if relatives.father or relatives.mother %}
     <div class="phf-tree-section mb-3"><p class="phf-tree-section-title" data-en="Parents" data-ar="الوالدان">Parents</p><div class="d-flex flex-wrap gap-2">{% if relatives.father %}<a href="{{ relatives.father.get_absolute_url }}" class="phf-tree-person-pill"><div class="phf-tree-mini-avatar">{{ relatives.father.initials }}</div><div><div class="phf-tree-pill-name">{{ relatives.father.full_name }}</div><div class="phf-tree-pill-sub" data-en="Father" data-ar="الأب">Father</div></div></a>{% endif %}{% if relatives.mother %}<a href="{{ relatives.mother.get_absolute_url }}" class="phf-tree-person-pill"><div class="phf-tree-mini-avatar">{{ relatives.mother.initials }}</div><div><div class="phf-tree-pill-name">{{ relatives.mother.full_name }}</div><div class="phf-tree-pill-sub" data-en="Mother" data-ar="الأم">Mother</div></div></a>{% endif %}</div></div>
     {% endif %}
     {% if relatives.spouses %}<div class="phf-tree-section mb-3"><p class="phf-tree-section-title" data-en="Spouse(s)" data-ar="الزوج/الزوجة">Spouse(s)</p><div class="d-flex flex-wrap gap-2">{% for sp in relatives.spouses %}<a href="{{ sp.get_absolute_url }}" class="phf-tree-person-pill"><div class="phf-tree-mini-avatar">{{ sp.initials }}</div><div><div class="phf-tree-pill-name">{{ sp.full_name }}</div><div class="phf-tree-pill-sub" data-en="Spouse" data-ar="الزوج/الزوجة">Spouse</div></div></a>{% endfor %}</div></div>{% endif %}
     {% if relatives.children %}<div class="phf-tree-section mb-3"><p class="phf-tree-section-title" data-en="Children" data-ar="الأبناء">Children</p><div class="d-flex flex-wrap gap-2">{% for child in relatives.children %}<a href="{{ child.get_absolute_url }}" class="phf-tree-person-pill"><div class="phf-tree-mini-avatar">{{ child.initials }}</div><div><div class="phf-tree-pill-name">{{ child.full_name }}</div><div class="phf-tree-pill-sub" data-en="Child" data-ar="ابن/ابنة">Child</div></div></a>{% endfor %}</div></div>{% endif %}
     {% if relatives.siblings %}<div class="phf-tree-section"><p class="phf-tree-section-title" data-en="Siblings" data-ar="الإخوة">Siblings</p><div class="d-flex flex-wrap gap-2">{% for sib in relatives.siblings %}<a href="{{ sib.get_absolute_url }}" class="phf-tree-person-pill"><div class="phf-tree-mini-avatar">{{ sib.initials }}</div><div><div class="phf-tree-pill-name">{{ sib.full_name }}</div><div class="phf-tree-pill-sub" data-en="Sibling" data-ar="الأخ/الأخت">Sibling</div></div></a>{% endfor %}</div></div>{% endif %}
+
+    {% if chief_roles %}
+    <div class="phf-detail-block mt-4">
+      <div class="phf-detail-block-header"><i class="bi bi-award text-success me-2"></i><h6 class="phf-detail-block-title" data-en="Leadership" data-ar="القيادة">Leadership</h6></div>
+      <div style="padding:16px 24px;font-size:.9rem">{% for role in chief_roles %}<div><a href="{{ role.get_absolute_url }}">{{ role.title }} of the {{ role.clan.name }} Clan</a>{% if role.tenure %} ({{ role.tenure }}){% endif %}</div>{% endfor %}</div>
+    </div>
+    {% endif %}
+
+    <div class="phf-detail-block mt-4" id="all-relatives">
+      <div class="phf-detail-block-header"><i class="bi bi-people text-success me-2"></i><h6 class="phf-detail-block-title" data-en="All Relatives" data-ar="جميع الأقارب">All Relatives</h6>{% if relatives_total %}<span style="margin-left:auto;font-size:.78rem;color:var(--text-light)">{{ relatives_total }} <span data-en="recorded" data-ar="مسجل">recorded</span></span>{% endif %}</div>
+      <div style="padding:20px 24px">
+        <p style="font-size:.93rem;line-height:1.85;color:var(--text-mid)">{% for sentence in relatives_summary %}{{ sentence }} {% endfor %}</p>
+        {% for section in relative_sections %}
+        <div class="mt-3">
+          <p class="phf-tree-section-title mb-2">{{ section.title }} <span style="font-weight:400;color:var(--text-light)">({{ section.count }})</span></p>
+          <ul style="list-style:none;padding:0;margin:0;columns:2 260px;column-gap:24px;font-size:.88rem;line-height:1.9">
+            {% for e in section.entries %}
+            <li style="break-inside:avoid"><a href="{{ e.person.get_absolute_url }}">{{ e.person.full_name }}</a>{% if e.person.lifespan %} <span style="color:var(--text-light)">({{ e.person.lifespan }})</span>{% endif %} <span style="color:var(--text-light);font-size:.8rem">· {{ e.label }}</span></li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endfor %}
+        {% if person.relatives_notes %}
+        <div class="mt-4 pt-3" style="border-top:1px solid var(--border, #eee)">
+          <p class="phf-tree-section-title mb-2" data-en="Family account" data-ar="رواية العائلة">Family account</p>
+          <div style="font-size:.92rem;line-height:1.85;color:var(--text-mid)">{{ person.relatives_notes|linebreaks }}</div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
   </div>
 </div></div></section>{% endblock %}

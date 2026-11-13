@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+{% load static %}<html lang="en" data-theme="light" data-bs-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -18,9 +18,13 @@ p { font-size: .9rem; color: #3A5A3A; line-height: 1.6; }
 .back-link { display: block; margin-top: 24px; font-size: .82rem; color: #6B8F6B; text-decoration: none; }
 .back-link:hover { color: #2E7D32; }
 </style>
+<meta name="color-scheme" content="light dark">
+<script src="{% static 'js/theme-init.js' %}"></script>
+<link rel="stylesheet" href="{% static 'css/theme-standalone.css' %}">
 </head>
 <body>
 <div class="login-card">
+  <button type="button" class="theme-corner" id="themeToggle" title="Switch to dark mode" aria-label="Switch to dark mode" aria-pressed="false"><i class="bi bi-moon-stars-fill" id="themeIcon"></i></button>
   <div class="lock-icon"><i class="bi bi-shield-lock-fill"></i></div>
   <div class="login-logo">Pojulu Heritage Foundation</div>
   <div class="login-sub">Sign-in temporarily locked</div>

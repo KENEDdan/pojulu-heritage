@@ -4,6 +4,7 @@
 {% block twitter_title %}{{ clan.name }} Clan{% endblock %}
 {% block og_description %}{{ clan.tagline|default:clan.description|striptags|truncatechars:200 }}{% endblock %}
 {% block meta_description %}{{ clan.tagline|default:clan.description|striptags|truncatechars:200 }}{% endblock %}
+{% block extra_css %}{% if has_map %}<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">{% endif %}{% endblock %}
 {% block content %}
 <div class="phf-page-header">
   <div class="container-xl">
@@ -20,47 +21,141 @@
         <div class="phf-detail-block">
           <div class="phf-detail-block-header"><i class="bi bi-info-circle text-success me-2"></i><h6 class="phf-detail-block-title" data-en="Quick Facts" data-ar="حقائق سريعة">Quick Facts</h6></div>
           <div class="phf-detail-row"><span class="phf-detail-label" data-en="Payam" data-ar="البايام">Payam</span><span class="phf-detail-value">{{ clan.get_payam_display }}</span></div>
-          <div class="phf-detail-row"><span class="phf-detail-label" data-en="Families" data-ar="العائلات">Families</span><span class="phf-detail-value">{{ families.count }}</span></div>
-          <div class="phf-detail-row"><span class="phf-detail-label" data-en="Persons" data-ar="الأشخاص">Persons</span><span class="phf-detail-value">{{ persons.count }}</span></div>
+          {% if clan.population_estimate %}<div class="phf-detail-row"><span class="phf-detail-label" data-en="Population" data-ar="السكان">Population</span><span class="phf-detail-value">{{ clan.population_estimate }}</span></div>{% endif %}
+          {% if clan.area_estimate %}<div class="phf-detail-row"><span class="phf-detail-label" data-en="Area" data-ar="المساحة">Area</span><span class="phf-detail-value">{{ clan.area_estimate }}</span></div>{% endif %}
+          <div class="phf-detail-row"><span class="phf-detail-label" data-en="Families" data-ar="العائلات">Families</span><span class="phf-detail-value">{{ families|length }}</span></div>
+          <div class="phf-detail-row"><span class="phf-detail-label" data-en="Persons" data-ar="الأشخاص">Persons</span><span class="phf-detail-value">{{ persons|length }}</span></div>
+          {% if landmarks %}<div class="phf-detail-row"><span class="phf-detail-label" data-en="Landmarks" data-ar="المعالم">Landmarks</span><span class="phf-detail-value">{{ landmarks|length }}</span></div>{% endif %}
           {% if clan.sub_clan_list %}<div class="phf-detail-row"><span class="phf-detail-label" data-en="Sub-Clans" data-ar="القبائل الفرعية">Sub-Clans</span><span class="phf-detail-value">{{ clan.sub_clan_list|join:", " }}</span></div>{% endif %}
         </div>
         {% if chiefs %}
         <div class="phf-detail-block">
           <div class="phf-detail-block-header"><i class="bi bi-person-check text-success me-2"></i><h6 class="phf-detail-block-title" data-en="Chiefs & Elders" data-ar="الزعماء والشيوخ">Chiefs & Elders</h6></div>
-          {% for chief in chiefs %}<div class="phf-detail-row"><span class="phf-detail-label">{{ chief.title }}</span><span class="phf-detail-value">{{ chief.name }}{% if chief.tenure %}<br><small class="text-muted">{{ chief.tenure }}</small>{% endif %}</span></div>{% endfor %}
+          {% for chief in chiefs %}<div class="phf-detail-row"><span class="phf-detail-label">{{ chief.title }}</span><span class="phf-detail-value"><a href="{{ chief.get_absolute_url }}">{{ chief.name }}</a>{% if chief.tenure %}<br><small class="text-muted">{{ chief.tenure }}</small>{% endif %}</span></div>{% endfor %}
         </div>
         {% endif %}
-        
       </div>
       <!-- Main content -->
       <div class="col-lg-9">
-        <ul class="nav phf-tabs mb-4" id="clanTabs">
+        <ul class="nav phf-tabs mb-4 flex-wrap" id="clanTabs">
           <li><button class="phf-tab active" data-target="tab-overview" data-en="Overview" data-ar="نظرة عامة">Overview</button></li>
+          {% if has_territory %}<li><button class="phf-tab" data-target="tab-territory" data-en="Territory & Map" data-ar="الأرض والخريطة">Territory &amp; Map</button></li>{% endif %}
+          {% if landmarks %}<li><button class="phf-tab" data-target="tab-landmarks" data-en="Landmarks" data-ar="المعالم">Landmarks</button></li>{% endif %}
+          {% if chiefs %}<li><button class="phf-tab" data-target="tab-chiefs" data-en="Chiefs" data-ar="الزعماء">Chiefs</button></li>{% endif %}
           {% if clan.origin_story %}<li><button class="phf-tab" data-target="tab-origin" data-en="Origins" data-ar="الأصول">Origins</button></li>{% endif %}
           {% if clan.cultural_practices %}<li><button class="phf-tab" data-target="tab-culture" data-en="Culture" data-ar="الثقافة">Culture</button></li>{% endif %}
           {% if events %}<li><button class="phf-tab" data-target="tab-events" data-en="History" data-ar="التاريخ">History</button></li>{% endif %}
           {% if families %}<li><button class="phf-tab" data-target="tab-families" data-en="Families" data-ar="العائلات">Families</button></li>{% endif %}
           {% if persons %}<li><button class="phf-tab" data-target="tab-persons" data-en="Persons" data-ar="الأشخاص">Persons</button></li>{% endif %}
+          {% if gallery or evidence %}<li><button class="phf-tab" data-target="tab-gallery" data-en="Gallery" data-ar="معرض الصور">Gallery</button></li>{% endif %}
         </ul>
 
         <div id="tab-overview" class="phf-tab-pane active">
-          <p style="font-size:.95rem;line-height:1.8;color:var(--text-mid)">{{ clan.description }}</p>
-          {% if clan.migration_history %}<h5 class="text-display mt-4 mb-2" style="color:var(--g700)" data-en="Migration & Settlement" data-ar="الهجرة والاستيطان">Migration & Settlement</h5><p style="font-size:.93rem;line-height:1.8;color:var(--text-mid)">{{ clan.migration_history }}</p>{% endif %}
-          {% if clan.territorial_notes %}<h5 class="text-display mt-4 mb-2" style="color:var(--g700)" data-en="Territorial History" data-ar="التاريخ الإقليمي">Territorial History</h5><p style="font-size:.93rem;line-height:1.8;color:var(--text-mid)">{{ clan.territorial_notes }}</p>{% endif %}
+          <p style="font-size:.95rem;line-height:1.8;color:var(--text-mid)">{{ clan.description|linebreaksbr }}</p>
+          {% if clan.migration_history %}<h5 class="text-display mt-4 mb-2" style="color:var(--accent)" data-en="Migration & Settlement" data-ar="الهجرة والاستيطان">Migration & Settlement</h5><p style="font-size:.93rem;line-height:1.8;color:var(--text-mid)">{{ clan.migration_history|linebreaksbr }}</p>{% endif %}
+          {% if clan.main_activities %}<h5 class="text-display mt-4 mb-2" style="color:var(--accent)" data-en="Livelihood" data-ar="سبل العيش">Livelihood</h5><p style="font-size:.93rem;line-height:1.8;color:var(--text-mid)">{{ clan.main_activities|linebreaksbr }}</p>{% endif %}
+          {% if clan.infrastructure %}<h5 class="text-display mt-4 mb-2" style="color:var(--accent)" data-en="Schools, Health & Services" data-ar="المدارس والصحة والخدمات">Schools, Health &amp; Services</h5><p style="font-size:.93rem;line-height:1.8;color:var(--text-mid)">{{ clan.infrastructure|linebreaksbr }}</p>{% endif %}
         </div>
+
+        {% if has_territory %}
+        <div id="tab-territory" class="phf-tab-pane" style="display:none">
+          {% if has_map %}
+          <div data-clan-map="clan-map-data" class="mb-2"></div>
+          {{ map_data|json_script:"clan-map-data" }}
+          <p style="font-size:.76rem;color:var(--text-light)" data-en="The green outline is the clan territory as recorded by the clan administrators; pins mark landmarks." data-ar="الخط الأخضر هو حدود أرض القبيلة؛ الدبابيس تشير إلى المعالم.">The green outline is the clan territory as recorded by the clan administrators; pins mark landmarks.</p>
+          {% endif %}
+          {% if clan.territory_description %}<h5 class="text-display mt-4 mb-2" style="color:var(--accent)" data-en="The Clan's Land" data-ar="أرض القبيلة">The Clan's Land</h5><div style="font-size:.93rem;line-height:1.8;color:var(--text-mid)">{{ clan.territory_description|linebreaks }}</div>{% endif %}
+          {% if clan.border_north or clan.border_south or clan.border_east or clan.border_west %}
+          <h5 class="text-display mt-4 mb-2" style="color:var(--accent)" data-en="Boundaries" data-ar="الحدود">Boundaries</h5>
+          <div class="phf-detail-block">
+            {% if clan.border_north %}<div class="phf-detail-row"><span class="phf-detail-label" data-en="North" data-ar="الشمال">North</span><span class="phf-detail-value">{{ clan.border_north }}</span></div>{% endif %}
+            {% if clan.border_south %}<div class="phf-detail-row"><span class="phf-detail-label" data-en="South" data-ar="الجنوب">South</span><span class="phf-detail-value">{{ clan.border_south }}</span></div>{% endif %}
+            {% if clan.border_east %}<div class="phf-detail-row"><span class="phf-detail-label" data-en="East" data-ar="الشرق">East</span><span class="phf-detail-value">{{ clan.border_east }}</span></div>{% endif %}
+            {% if clan.border_west %}<div class="phf-detail-row"><span class="phf-detail-label" data-en="West" data-ar="الغرب">West</span><span class="phf-detail-value">{{ clan.border_west }}</span></div>{% endif %}
+          </div>
+          {% endif %}
+          {% if clan.territorial_notes %}<h5 class="text-display mt-4 mb-2" style="color:var(--accent)" data-en="Territorial History" data-ar="التاريخ الإقليمي">Territorial History</h5><p style="font-size:.93rem;line-height:1.8;color:var(--text-mid)">{{ clan.territorial_notes|linebreaksbr }}</p>{% endif %}
+          {% if clan.rivers %}<h5 class="text-display mt-4 mb-2" style="color:var(--accent)" data-en="Rivers & Water" data-ar="الأنهار والمياه">Rivers &amp; Water</h5><p style="font-size:.93rem;line-height:1.8;color:var(--text-mid)">{{ clan.rivers|linebreaksbr }}</p>{% endif %}
+          {% if clan.landscape %}<h5 class="text-display mt-4 mb-2" style="color:var(--accent)" data-en="Landscape" data-ar="التضاريس">Landscape</h5><p style="font-size:.93rem;line-height:1.8;color:var(--text-mid)">{{ clan.landscape|linebreaksbr }}</p>{% endif %}
+          {% if clan.map_image %}
+          <h5 class="text-display mt-4 mb-2" style="color:var(--accent)" data-en="Territory Map" data-ar="خريطة الأرض">Territory Map</h5>
+          <a href="{{ clan.map_image.url }}" target="_blank" rel="noopener"><img src="{{ clan.map_image.url }}" alt="Map of the {{ clan.name }} clan territory" style="max-width:100%;border-radius:8px;border:1px solid var(--border, #e5e0d5)" loading="lazy"></a>
+          {% endif %}
+          {% if bomas %}
+          <h5 class="text-display mt-4 mb-2" style="color:var(--accent)" data-en="Bomas (Sub-territories)" data-ar="البومات">Bomas (Sub-territories)</h5>
+          {% for boma in bomas %}
+          <div class="phf-detail-block mb-3">
+            <div class="phf-detail-block-header"><i class="bi bi-house text-success me-2"></i><h6 class="phf-detail-block-title">{{ boma.name }}{% if boma.year_established %} <span style="font-weight:400;color:var(--text-light)">· est. {{ boma.year_established }}</span>{% endif %}</h6></div>
+            <div style="padding:16px 24px;font-size:.88rem;color:var(--text-mid);line-height:1.7">
+              {{ boma.history|linebreaksbr }}
+              {% if boma.current_leader %}<div class="mt-2"><strong data-en="Leader:" data-ar="القائد:">Leader:</strong> {{ boma.current_leader }}</div>{% endif %}
+              {% if boma.population %}<div><strong data-en="Population:" data-ar="السكان:">Population:</strong> {{ boma.population }}</div>{% endif %}
+              {% if boma.location_description %}<div><strong data-en="Location:" data-ar="الموقع:">Location:</strong> {{ boma.location_description }}</div>{% endif %}
+            </div>
+          </div>
+          {% endfor %}
+          {% endif %}
+        </div>
+        {% endif %}
+
+        {% if landmarks %}
+        <div id="tab-landmarks" class="phf-tab-pane" style="display:none">
+          <div class="row g-4">
+            {% for lm in landmarks %}
+            <div class="col-md-6" id="landmark-{{ lm.pk }}">
+              <div class="phf-detail-block h-100 mb-0">
+                {% if lm.photo %}<a href="{{ lm.photo.url }}" target="_blank" rel="noopener"><img src="{{ lm.photo.url }}" alt="{{ lm.name }}" loading="lazy" style="width:100%;aspect-ratio:16/10;object-fit:cover;border-radius:8px 8px 0 0"></a>{% endif %}
+                <div style="padding:18px 22px">
+                  <span class="phf-tag mb-2">{{ lm.get_landmark_type_display }}</span>
+                  <h5 class="text-display mb-2" style="color:var(--accent)">{{ lm.name }}</h5>
+                  <div style="font-size:.88rem;line-height:1.75;color:var(--text-mid)">{{ lm.description|linebreaksbr }}</div>
+                  {% if lm.history %}<div class="mt-2" style="font-size:.88rem;line-height:1.75;color:var(--text-mid)"><strong data-en="History:" data-ar="التاريخ:">History:</strong> {{ lm.history|linebreaksbr }}</div>{% endif %}
+                  {% if lm.location_description %}<div class="mt-2" style="font-size:.8rem;color:var(--text-light)"><i class="bi bi-geo-alt me-1"></i>{{ lm.location_description }}</div>{% endif %}
+                  {% with extra=lm.attachments.all %}{% if extra %}
+                  <div class="d-flex flex-wrap gap-2 mt-3">
+                    {% for a in extra %}{% if a.is_public and a.is_image %}<a href="{{ a.file.url }}" target="_blank" rel="noopener" title="{{ a.title|default:a.caption }}"><img src="{{ a.file.url }}" alt="{{ a.title|default:lm.name }}" loading="lazy" style="width:72px;height:72px;object-fit:cover;border-radius:6px"></a>{% endif %}{% endfor %}
+                  </div>
+                  {% endif %}{% endwith %}
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        {% if chiefs %}
+        <div id="tab-chiefs" class="phf-tab-pane" style="display:none">
+          <p style="font-size:.86rem;color:var(--text-light)" data-en="The line of chiefs and elders, earliest first. Open a chief to read their full history." data-ar="سلسلة الزعماء من الأقدم. افتح أي زعيم لقراءة تاريخه الكامل.">The line of chiefs and elders, earliest first. Open a chief to read their full history.</p>
+          {% for chief in chiefs %}
+          <a href="{{ chief.get_absolute_url }}" class="text-decoration-none">
+            <div class="phf-detail-block mb-3 d-flex gap-3 align-items-center" style="padding:16px 20px">
+              <div class="phf-person-photo" style="width:72px;height:72px;min-width:72px;font-size:1.2rem">{% if chief.photo %}<img src="{{ chief.photo.url }}" alt="{{ chief.name }}">{% else %}{{ chief.name|slice:":1" }}{% endif %}</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:.74rem;color:var(--text-light);text-transform:uppercase;letter-spacing:.04em">{{ chief.title }}{% if chief.tenure %} · {{ chief.tenure }}{% endif %}</div>
+                <h5 class="text-display mb-1" style="color:var(--accent)">{{ chief.name }}</h5>
+                {% if chief.summary %}<div style="font-size:.86rem;color:var(--text-mid)">{{ chief.summary }}</div>{% elif chief.notes %}<div style="font-size:.86rem;color:var(--text-mid)">{{ chief.notes|truncatewords:30 }}</div>{% endif %}
+              </div>
+              <i class="bi bi-chevron-right" style="color:var(--text-light)"></i>
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+        {% endif %}
+
         {% if clan.origin_story %}
         <div id="tab-origin" class="phf-tab-pane" style="display:none">
-          <p style="font-size:.95rem;line-height:1.8;color:var(--text-mid)">{{ clan.origin_story }}</p>
+          <p style="font-size:.95rem;line-height:1.8;color:var(--text-mid)">{{ clan.origin_story|linebreaksbr }}</p>
         </div>{% endif %}
         {% if clan.cultural_practices %}
         <div id="tab-culture" class="phf-tab-pane" style="display:none">
-          <p style="font-size:.95rem;line-height:1.8;color:var(--text-mid)">{{ clan.cultural_practices }}</p>
-          {% if clan.traditional_beliefs %}<h5 class="text-display mt-4 mb-2" style="color:var(--g700)" data-en="Traditional Beliefs" data-ar="المعتقدات التقليدية">Traditional Beliefs</h5><p style="font-size:.93rem;line-height:1.8;color:var(--text-mid)">{{ clan.traditional_beliefs }}</p>{% endif %}
+          <p style="font-size:.95rem;line-height:1.8;color:var(--text-mid)">{{ clan.cultural_practices|linebreaksbr }}</p>
+          {% if clan.traditional_beliefs %}<h5 class="text-display mt-4 mb-2" style="color:var(--accent)" data-en="Traditional Beliefs" data-ar="المعتقدات التقليدية">Traditional Beliefs</h5><p style="font-size:.93rem;line-height:1.8;color:var(--text-mid)">{{ clan.traditional_beliefs|linebreaksbr }}</p>{% endif %}
         </div>{% endif %}
         {% if events %}
         <div id="tab-events" class="phf-tab-pane" style="display:none">
           {% for event in events %}
-          <div class="phf-detail-block mb-3"><div class="phf-detail-block-header"><i class="bi bi-calendar-event text-success me-2"></i><h6 class="phf-detail-block-title">{{ event.title }} {% if event.year %}({{ event.year }}){% endif %}</h6></div><div style="padding:16px 24px;font-size:.88rem;color:var(--text-mid);line-height:1.7">{{ event.description }}</div></div>
+          <div class="phf-detail-block mb-3"><div class="phf-detail-block-header"><i class="bi bi-calendar-event text-success me-2"></i><h6 class="phf-detail-block-title">{{ event.title }} {% if event.year %}({{ event.year }}){% endif %}</h6></div><div style="padding:16px 24px;font-size:.88rem;color:var(--text-mid);line-height:1.7">{{ event.description|linebreaksbr }}{% if event.significance %}<div class="mt-2" style="color:var(--text-light)"><em>{{ event.significance }}</em></div>{% endif %}</div></div>
           {% endfor %}
         </div>{% endif %}
         {% if families %}
@@ -71,19 +166,46 @@
         <div id="tab-persons" class="phf-tab-pane" style="display:none">
           <div class="phf-table-wrap"><table class="table phf-table"><thead><tr><th data-en="Name" data-ar="الاسم">Name</th><th data-en="Birth Year" data-ar="سنة الميلاد">Birth Year</th><th data-en="Status" data-ar="الحالة">Status</th></tr></thead><tbody>{% for p in persons %}<tr onclick="window.location='{{ p.get_absolute_url }}'"><td class="td-primary">{{ p.full_name }}</td><td>{{ p.birth_year|default:"—" }}</td><td>{% if p.is_deceased %}<span class="phf-tag" style="background:#fce4ec;color:#c62828" data-en="Deceased" data-ar="متوفى">Deceased</span>{% else %}<span class="phf-tag" data-en="Living" data-ar="على قيد الحياة">Living</span>{% endif %}</td></tr>{% endfor %}</tbody></table></div>
         </div>{% endif %}
+        {% if gallery or evidence %}
+        <div id="tab-gallery" class="phf-tab-pane" style="display:none">
+          {% if gallery %}
+          <div class="row g-3 mb-4">
+            {% for m in gallery %}
+            <div class="col-6 col-md-4">
+              {% if m.media_type == 'photo' and m.file %}
+              <a href="{{ m.file.url }}" target="_blank" rel="noopener"><img src="{{ m.file.url }}" alt="{{ m.title }}" loading="lazy" style="width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:6px"></a>
+              {% elif m.video_url and m.video_url|embed_url %}
+              <div class="ratio ratio-16x9"><iframe src="{{ m.video_url|embed_url }}" title="{{ m.title }}" allowfullscreen loading="lazy"></iframe></div>
+              {% elif m.file %}
+              <a href="{{ m.file.url }}" target="_blank" rel="noopener" class="phf-detail-block d-block p-3 text-decoration-none"><i class="bi bi-file-earmark-text me-1"></i>{{ m.get_media_type_display }}</a>
+              {% endif %}
+              <div style="font-size:.8rem;font-weight:600;margin-top:6px">{{ m.title }}</div>
+              {% if m.caption %}<div style="font-size:.76rem;color:var(--text-light)">{{ m.caption }}</div>{% endif %}
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+          {% include "partials/evidence.html" %}
+        </div>{% endif %}
       </div>
     </div>
   </div>
 </section>
 {% endblock %}
 {% block extra_js %}
+{% if has_map %}{% load static %}
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="{% static 'js/phf-map.js' %}"></script>
+{% endif %}
 <script>
 document.querySelectorAll('.phf-tab[data-target]').forEach(btn=>{
   btn.addEventListener('click',()=>{
     document.querySelectorAll('.phf-tab').forEach(b=>b.classList.remove('active'));
     document.querySelectorAll('.phf-tab-pane').forEach(p=>p.style.display='none');
     btn.classList.add('active');
-    document.getElementById(btn.dataset.target).style.display='block';
+    var pane=document.getElementById(btn.dataset.target);
+    pane.style.display='block';
+    window.dispatchEvent(new Event('resize'));  // lets the map size itself once its tab is visible
   });
 });
 </script>

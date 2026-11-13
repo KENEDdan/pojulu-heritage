@@ -342,7 +342,8 @@ _CSP_DIRECTIVES = {
     'script-src': [SELF, 'https://cdn.jsdelivr.net'],
     'style-src': [SELF, 'https://cdn.jsdelivr.net', 'https://fonts.googleapis.com'],
     'font-src': [SELF, 'https://fonts.gstatic.com', 'https://cdn.jsdelivr.net'],
-    'img-src': [SELF, 'data:', *_csp_media_sources()],
+    # OpenStreetMap tiles for clan maps; Leaflet's marker icons come from jsDelivr.
+    'img-src': [SELF, 'data:', 'https://tile.openstreetmap.org', 'https://cdn.jsdelivr.net', *_csp_media_sources()],
     'media-src': [SELF, *_csp_media_sources()],
     'frame-src': ['https://www.youtube-nocookie.com', 'https://player.vimeo.com'],
     'connect-src': [SELF],

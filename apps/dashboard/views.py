@@ -13,6 +13,7 @@ from django.http import Http404
 from django.core.paginator import Paginator
 from django.utils import timezone
 from .forms import ClanMediaFormSet, PersonMediaFormSet, NewsMediaFormSet
+from .forms import AttachmentFormSet, ClanLandmarkForm, FamilyChapterFormSet, CHIEF_FULL, LANDMARK_FULL
 
 from .models import AdminProfile, ROLE_CHOICES
 from .forms import (
@@ -26,8 +27,9 @@ from .forms import (
     CLAN_FULL, PERSON_FULL, FAMILY_FULL, MEMORIAL_FULL,
     ACHIEVE_FULL, MARRIAGE_FULL, CULTURAL_FULL, ELDER_FULL, NEWS_FULL,
 )
-from apps.clans.models import Clan, ClanChief, ClanEvent, ClanBoma
-from apps.genealogy.models import Person, Family
+from apps.clans.models import Clan, ClanChief, ClanEvent, ClanBoma, ClanLandmark
+from apps.genealogy.models import Person, Family, FamilyHistoryChapter
+from apps.core.models import Attachment
 from apps.memorial.models import MemorialRecord
 from apps.achievements.models import Achievement
 from apps.marriages.models import Marriage
@@ -122,7 +124,8 @@ def paginate(request, object_list, per_page=None):
 
 def _render_form(request, form, title, cancel_url, full_fields=None,
                  obj=None, delete_url=None, subtitle='', page_title=None, submit_label='Save Record',
-                 media_formset=None, media_title='', media_help='', soft_delete=False):
+                 media_formset=None, media_title='', media_help='', soft_delete=False,
+                 formsets=None, map_editor=None):
     trash_wording = {
         'delete_heading': 'Move this record to the Trash?',
         'delete_message': 'It will disappear from the public site and the dashboards. '
@@ -140,10 +143,34 @@ def _render_form(request, form, title, cancel_url, full_fields=None,
         'delete_url':   delete_url,
         'page_title':   page_title or title,
         'submit_label': submit_label,
-        'media_formset': media_formset,
-        'media_title':   media_title,
-        'media_help':    media_help,
+        'formsets':      ([{'formset': media_formset, 'title': media_title, 'help': media_help}]
+                          if media_formset is not None else []) + list(formsets or []),
+        'map_editor':    map_editor,
     })
+
+
+EVIDENCE_TITLE = 'Photos & Evidence'
+EVIDENCE_HELP = ('Upload photos, letters, certificates, recordings or other evidence for this record, '
+                 'or link to where it is kept online. Untick "Is public" for evidence only staff should see.')
+
+
+def evidence_formset(request, instance):
+    return AttachmentFormSet(request.POST or None, request.FILES or None, instance=instance, prefix='evidence')
+
+
+def evidence_section(formset):
+    return {'formset': formset, 'title': EVIDENCE_TITLE, 'help': EVIDENCE_HELP}
+
+
+def chapters_section(formset):
+    return {'formset': formset, 'title': 'Written Family History: Chapters',
+            'help': 'Break a long family history into chapters (e.g. "Origins", "The children of Lado", '
+                    '"Exile and return"). They appear in this order on the family page, after the main history.'}
+
+
+def save_formset(formset, instance):
+    formset.instance = instance
+    formset.save()
 
 
 # ── AUTH ──────────────────────────────────────────────
@@ -244,6 +271,12 @@ def clan_dashboard(request):
         'verified':     Clan.objects.filter(is_verified=True).count(),
         'draft':        Clan.objects.filter(is_verified=False).count(),
         'chiefs_total': ClanChief.objects.count(),
+        'chiefs':       Paginator(ClanChief.objects.select_related('clan').order_by('clan__name', 'order', 'start_year'),
+                                  settings.RECORDS_PER_PAGE).get_page(request.GET.get('chiefs_page')),
+        'landmarks':    Paginator(ClanLandmark.objects.select_related('clan').order_by('clan__name', 'order', 'name'),
+                                  settings.RECORDS_PER_PAGE).get_page(request.GET.get('landmarks_page')),
+        'events':       Paginator(ClanEvent.objects.select_related('clan').order_by('clan__name', 'year'),
+                                  settings.RECORDS_PER_PAGE).get_page(request.GET.get('events_page')),
         'page_title':   'Clan Management',
         **filter_context(f, show_clan=False, placeholder='Search clans…'),
     })
@@ -358,7 +391,7 @@ def content_dashboard(request):
 
 @require_role(['clan_admin', 'content_admin'])
 def clan_add(request):
-    form = ClanForm(request.POST or None)
+    form = ClanForm(request.POST or None, request.FILES or None)
     media_formset = ClanMediaFormSet(request.POST or None, request.FILES or None, instance=Clan())
     if request.method == 'POST' and form.is_valid() and media_formset.is_valid():
         clan = form.save()
@@ -373,13 +406,13 @@ def clan_add(request):
         full_fields=CLAN_FULL,
         media_formset=media_formset, media_title='Photos, Documents & Media for this Clan',
         media_help='Upload photos, PDFs, audio, or video for any section above (history, geography, boma, culture, leadership, etc.) — tag each item to the relevant section.',
-        page_title='Add Clan', submit_label='Create Clan')
+        page_title='Add Clan', submit_label='Create Clan', map_editor='boundary')
 
 
 @require_role(['clan_admin', 'content_admin'])
 def clan_edit(request, pk):
     clan = get_object_or_404(Clan, pk=pk)
-    form = ClanForm(request.POST or None, instance=clan)
+    form = ClanForm(request.POST or None, request.FILES or None, instance=clan)
     media_formset = ClanMediaFormSet(request.POST or None, request.FILES or None, instance=clan)
     if request.method == 'POST' and form.is_valid() and media_formset.is_valid():
         form.save()
@@ -394,7 +427,7 @@ def clan_edit(request, pk):
         delete_url=reverse('dashboard:clan_delete', args=[pk]), soft_delete=True,
         media_formset=media_formset, media_title='Photos, Documents & Media for this Clan',
         media_help='Upload photos, PDFs, audio, or video for any section above — tag each item to the relevant section (history, geography, boma, culture, leadership, etc.).',
-        page_title=f'Edit {clan.name} Clan')
+        page_title=f'Edit {clan.name} Clan', map_editor='boundary')
 
 
 @require_superadmin
@@ -410,30 +443,34 @@ def clan_delete(request, pk):
 
 @require_role(['clan_admin', 'content_admin'])
 def chief_add(request):
-    form = ClanChiefForm(request.POST or None)
-    if request.method == 'POST' and form.is_valid():
+    form = ClanChiefForm(request.POST or None, request.FILES or None)
+    evidence = evidence_formset(request, ClanChief())
+    if request.method == 'POST' and form.is_valid() and evidence.is_valid():
         chief = form.save()
+        save_formset(evidence, chief)
         messages.success(request, f'✅ {chief.name} added as {chief.title}.')
         return redirect('dashboard:clan_dashboard')
-    return _render_form(request, form,
+    return _render_form(request, form, formsets=[evidence_section(evidence)],
         title='Add Chief / Elder',
-        subtitle='Record a traditional leader or elder in the clan leadership history.',
+        subtitle='Record a traditional leader and the full history of what they did. Each chief gets their own page on the public site.',
         cancel_url=reverse('dashboard:clan_dashboard'),
-        full_fields=['notes'], page_title='Add Chief / Elder', submit_label='Add Leader')
+        full_fields=CHIEF_FULL, page_title='Add Chief / Elder', submit_label='Add Leader')
 
 
 @require_role(['clan_admin', 'content_admin'])
 def chief_edit(request, pk):
     chief = get_object_or_404(ClanChief, pk=pk)
-    form = ClanChiefForm(request.POST or None, instance=chief)
-    if request.method == 'POST' and form.is_valid():
+    form = ClanChiefForm(request.POST or None, request.FILES or None, instance=chief)
+    evidence = evidence_formset(request, chief)
+    if request.method == 'POST' and form.is_valid() and evidence.is_valid():
         form.save()
+        evidence.save()
         messages.success(request, f'✅ {chief.name} updated.')
         return redirect('dashboard:clan_dashboard')
-    return _render_form(request, form,
+    return _render_form(request, form, formsets=[evidence_section(evidence)],
         title=f'Edit: {chief.title} {chief.name}',
         cancel_url=reverse('dashboard:clan_dashboard'),
-        full_fields=['notes'], obj=chief,
+        full_fields=CHIEF_FULL, obj=chief,
         delete_url=reverse('dashboard:chief_delete', args=[pk]),
         page_title=f'Edit {chief.name}')
 
@@ -451,12 +488,14 @@ def chief_delete(request, pk):
 
 @require_role(['clan_admin', 'content_admin'])
 def event_add(request):
-    form = ClanEventForm(request.POST or None)
-    if request.method == 'POST' and form.is_valid():
+    form = ClanEventForm(request.POST or None, request.FILES or None)
+    evidence = evidence_formset(request, ClanEvent())
+    if request.method == 'POST' and form.is_valid() and evidence.is_valid():
         event = form.save()
+        save_formset(evidence, event)
         messages.success(request, f'✅ Historical event "{event.title}" added.')
         return redirect('dashboard:clan_dashboard')
-    return _render_form(request, form,
+    return _render_form(request, form, formsets=[evidence_section(evidence)],
         title='Add Historical Event',
         subtitle='Record a significant historical event for a Pojulu clan.',
         cancel_url=reverse('dashboard:clan_dashboard'),
@@ -467,12 +506,14 @@ def event_add(request):
 @require_role(['clan_admin', 'content_admin'])
 def event_edit(request, pk):
     event = get_object_or_404(ClanEvent, pk=pk)
-    form = ClanEventForm(request.POST or None, instance=event)
-    if request.method == 'POST' and form.is_valid():
+    form = ClanEventForm(request.POST or None, request.FILES or None, instance=event)
+    evidence = evidence_formset(request, event)
+    if request.method == 'POST' and form.is_valid() and evidence.is_valid():
         form.save()
+        evidence.save()
         messages.success(request, f'✅ Event updated.')
         return redirect('dashboard:clan_dashboard')
-    return _render_form(request, form,
+    return _render_form(request, form, formsets=[evidence_section(evidence)],
         title=f'Edit Event: {event.title}',
         cancel_url=reverse('dashboard:clan_dashboard'),
         full_fields=['description','significance'], obj=event,
@@ -487,6 +528,55 @@ def event_delete(request, pk):
     if request.method == 'POST':
         event.delete()
         messages.success(request, '🗑️ Event deleted.')
+    return redirect('dashboard:clan_dashboard')
+
+
+# ── LANDMARK CRUD ─────────────────────────────────────
+
+@require_role(['clan_admin', 'content_admin'])
+def landmark_add(request):
+    initial = {'clan': request.GET.get('clan')} if request.GET.get('clan', '').isdigit() else None
+    form = ClanLandmarkForm(request.POST or None, request.FILES or None, initial=initial)
+    evidence = evidence_formset(request, ClanLandmark())
+    if request.method == 'POST' and form.is_valid() and evidence.is_valid():
+        landmark = form.save()
+        save_formset(evidence, landmark)
+        messages.success(request, f'✅ Landmark "{landmark.name}" added.')
+        return redirect('dashboard:clan_dashboard')
+    return _render_form(request, form, formsets=[evidence_section(evidence)],
+        title='Add Landmark',
+        subtitle='A hill, river, shrine, tree, market or other place that matters to the clan. Click the map to mark where it is.',
+        cancel_url=reverse('dashboard:clan_dashboard'),
+        full_fields=LANDMARK_FULL, map_editor='point',
+        page_title='Add Landmark', submit_label='Add Landmark')
+
+
+@require_role(['clan_admin', 'content_admin'])
+def landmark_edit(request, pk):
+    landmark = get_object_or_404(ClanLandmark, pk=pk)
+    form = ClanLandmarkForm(request.POST or None, request.FILES or None, instance=landmark)
+    evidence = evidence_formset(request, landmark)
+    if request.method == 'POST' and form.is_valid() and evidence.is_valid():
+        form.save()
+        evidence.save()
+        messages.success(request, f'✅ Landmark "{landmark.name}" updated.')
+        return redirect('dashboard:clan_dashboard')
+    return _render_form(request, form, formsets=[evidence_section(evidence)],
+        title=f'Edit Landmark: {landmark.name}',
+        cancel_url=reverse('dashboard:clan_dashboard'),
+        full_fields=LANDMARK_FULL, obj=landmark, map_editor='point',
+        delete_url=reverse('dashboard:landmark_delete', args=[pk]),
+        page_title=f'Edit {landmark.name}')
+
+
+@require_superadmin
+@require_POST
+def landmark_delete(request, pk):
+    landmark = get_object_or_404(ClanLandmark, pk=pk)
+    name = landmark.name
+    landmark.delete()
+    security_log.warning('Deleted permanently: %s pk=%s "%s" by=%s', 'ClanLandmark', pk, name, request.user.username)
+    messages.success(request, f'🗑️ Landmark "{name}" deleted.')
     return redirect('dashboard:clan_dashboard')
 
 
@@ -548,12 +638,16 @@ def person_delete(request, pk):
 
 @require_role(['genealogy_admin', 'content_admin'])
 def family_add(request):
-    form = FamilyForm(request.POST or None)
-    if request.method == 'POST' and form.is_valid():
+    form = FamilyForm(request.POST or None, request.FILES or None)
+    evidence = evidence_formset(request, Family())
+    chapters = FamilyChapterFormSet(request.POST or None, instance=Family(), prefix='chapters')
+    if request.method == 'POST' and form.is_valid() and evidence.is_valid() and chapters.is_valid():
         family = form.save()
+        save_formset(evidence, family)
+        save_formset(chapters, family)
         messages.success(request, f'✅ {family.name} created.')
         return redirect('dashboard:genealogy_dashboard')
-    return _render_form(request, form,
+    return _render_form(request, form, formsets=[chapters_section(chapters), evidence_section(evidence)],
         title='Add Family',
         subtitle='Create a family unit linked to a Pojulu clan.',
         cancel_url=reverse('dashboard:genealogy_dashboard'),
@@ -564,12 +658,16 @@ def family_add(request):
 @require_role(['genealogy_admin', 'content_admin'])
 def family_edit(request, pk):
     family = get_object_or_404(Family, pk=pk)
-    form = FamilyForm(request.POST or None, instance=family)
-    if request.method == 'POST' and form.is_valid():
+    form = FamilyForm(request.POST or None, request.FILES or None, instance=family)
+    evidence = evidence_formset(request, family)
+    chapters = FamilyChapterFormSet(request.POST or None, instance=family, prefix='chapters')
+    if request.method == 'POST' and form.is_valid() and evidence.is_valid() and chapters.is_valid():
         form.save()
+        evidence.save()
+        chapters.save()
         messages.success(request, f'✅ {family.name} updated.')
         return redirect('dashboard:genealogy_dashboard')
-    return _render_form(request, form,
+    return _render_form(request, form, formsets=[chapters_section(chapters), evidence_section(evidence)],
         title=f'Edit: {family.name}',
         cancel_url=reverse('dashboard:genealogy_dashboard'),
         full_fields=FAMILY_FULL, obj=family,
@@ -592,12 +690,14 @@ def family_delete(request, pk):
 
 @require_role(['memorial_admin', 'content_admin'])
 def memorial_add(request):
-    form = MemorialRecordForm(request.POST or None)
-    if request.method == 'POST' and form.is_valid():
+    form = MemorialRecordForm(request.POST or None, request.FILES or None)
+    evidence = evidence_formset(request, MemorialRecord())
+    if request.method == 'POST' and form.is_valid() and evidence.is_valid():
         mem = form.save()
+        save_formset(evidence, mem)
         messages.success(request, f'✅ Memorial record for {mem.person.full_name} created.')
         return redirect('dashboard:memorial_dashboard')
-    return _render_form(request, form,
+    return _render_form(request, form, formsets=[evidence_section(evidence)],
         title='Add Memorial Record',
         subtitle='Create an In Memoriam record honouring a Pojulu person who has passed.',
         cancel_url=reverse('dashboard:memorial_dashboard'),
@@ -608,12 +708,14 @@ def memorial_add(request):
 @require_role(['memorial_admin', 'content_admin'])
 def memorial_edit(request, pk):
     mem = get_object_or_404(MemorialRecord, pk=pk)
-    form = MemorialRecordForm(request.POST or None, instance=mem)
-    if request.method == 'POST' and form.is_valid():
+    form = MemorialRecordForm(request.POST or None, request.FILES or None, instance=mem)
+    evidence = evidence_formset(request, mem)
+    if request.method == 'POST' and form.is_valid() and evidence.is_valid():
         form.save()
+        evidence.save()
         messages.success(request, f'✅ Memorial for {mem.person.full_name} updated.')
         return redirect('dashboard:memorial_dashboard')
-    return _render_form(request, form,
+    return _render_form(request, form, formsets=[evidence_section(evidence)],
         title=f'Edit Memorial: {mem.person.full_name}',
         cancel_url=reverse('dashboard:memorial_dashboard'),
         full_fields=MEMORIAL_FULL, obj=mem,
@@ -636,12 +738,14 @@ def memorial_delete(request, pk):
 
 @require_role(['achievement_admin', 'content_admin'])
 def achievement_add(request):
-    form = AchievementForm(request.POST or None)
-    if request.method == 'POST' and form.is_valid():
+    form = AchievementForm(request.POST or None, request.FILES or None)
+    evidence = evidence_formset(request, Achievement())
+    if request.method == 'POST' and form.is_valid() and evidence.is_valid():
         ach = form.save()
+        save_formset(evidence, ach)
         messages.success(request, f'✅ Achievement for {ach.person_name} added.')
         return redirect('dashboard:achievement_dashboard')
-    return _render_form(request, form,
+    return _render_form(request, form, formsets=[evidence_section(evidence)],
         title='Add Achievement',
         subtitle='Record a notable achievement by a Pojulu person.',
         cancel_url=reverse('dashboard:achievement_dashboard'),
@@ -652,12 +756,14 @@ def achievement_add(request):
 @require_role(['achievement_admin', 'content_admin'])
 def achievement_edit(request, pk):
     ach = get_object_or_404(Achievement, pk=pk)
-    form = AchievementForm(request.POST or None, instance=ach)
-    if request.method == 'POST' and form.is_valid():
+    form = AchievementForm(request.POST or None, request.FILES or None, instance=ach)
+    evidence = evidence_formset(request, ach)
+    if request.method == 'POST' and form.is_valid() and evidence.is_valid():
         form.save()
+        evidence.save()
         messages.success(request, f'✅ Achievement updated.')
         return redirect('dashboard:achievement_dashboard')
-    return _render_form(request, form,
+    return _render_form(request, form, formsets=[evidence_section(evidence)],
         title=f'Edit: {ach.person_name}',
         cancel_url=reverse('dashboard:achievement_dashboard'),
         full_fields=ACHIEVE_FULL, obj=ach,
@@ -679,12 +785,14 @@ def achievement_delete(request, pk):
 
 @require_role(['genealogy_admin', 'content_admin'])
 def marriage_add(request):
-    form = MarriageForm(request.POST or None)
-    if request.method == 'POST' and form.is_valid():
+    form = MarriageForm(request.POST or None, request.FILES or None)
+    evidence = evidence_formset(request, Marriage())
+    if request.method == 'POST' and form.is_valid() and evidence.is_valid():
         m = form.save()
+        save_formset(evidence, m)
         messages.success(request, f'✅ Marriage record for {m.husband_display} & {m.wife_display} created.')
         return redirect('dashboard:genealogy_dashboard')
-    return _render_form(request, form,
+    return _render_form(request, form, formsets=[evidence_section(evidence)],
         title='Add Marriage Record',
         subtitle='Record a marriage union connecting Pojulu families and clans.',
         cancel_url=reverse('dashboard:genealogy_dashboard'),
@@ -695,12 +803,14 @@ def marriage_add(request):
 @require_role(['genealogy_admin', 'content_admin'])
 def marriage_edit(request, pk):
     m = get_object_or_404(Marriage, pk=pk)
-    form = MarriageForm(request.POST or None, instance=m)
-    if request.method == 'POST' and form.is_valid():
+    form = MarriageForm(request.POST or None, request.FILES or None, instance=m)
+    evidence = evidence_formset(request, m)
+    if request.method == 'POST' and form.is_valid() and evidence.is_valid():
         form.save()
+        evidence.save()
         messages.success(request, f'✅ Marriage record updated.')
         return redirect('dashboard:genealogy_dashboard')
-    return _render_form(request, form,
+    return _render_form(request, form, formsets=[evidence_section(evidence)],
         title=f'Edit Marriage: {m.husband_display} & {m.wife_display}',
         cancel_url=reverse('dashboard:genealogy_dashboard'),
         full_fields=MARRIAGE_FULL, obj=m,
@@ -723,11 +833,13 @@ def marriage_delete(request, pk):
 @require_role(['cultural_admin', 'content_admin'])
 def cultural_add(request):
     form = CulturalRecordForm(request.POST or None, request.FILES or None)
-    if request.method == 'POST' and form.is_valid():
+    evidence = evidence_formset(request, CulturalRecord())
+    if request.method == 'POST' and form.is_valid() and evidence.is_valid():
         rec = form.save()
+        save_formset(evidence, rec)
         messages.success(request, f'✅ "{rec.title}" added to Cultural Archive.')
         return redirect('dashboard:cultural_dashboard')
-    return _render_form(request, form,
+    return _render_form(request, form, formsets=[evidence_section(evidence)],
         title='Add Cultural Record',
         subtitle='Add a song, proverb, ceremony, story, or other cultural heritage item.',
         cancel_url=reverse('dashboard:cultural_dashboard'),
@@ -739,11 +851,13 @@ def cultural_add(request):
 def cultural_edit(request, pk):
     rec = get_object_or_404(CulturalRecord, pk=pk)
     form = CulturalRecordForm(request.POST or None, request.FILES or None, instance=rec)
-    if request.method == 'POST' and form.is_valid():
+    evidence = evidence_formset(request, rec)
+    if request.method == 'POST' and form.is_valid() and evidence.is_valid():
         form.save()
+        evidence.save()
         messages.success(request, f'✅ "{rec.title}" updated.')
         return redirect('dashboard:cultural_dashboard')
-    return _render_form(request, form,
+    return _render_form(request, form, formsets=[evidence_section(evidence)],
         title=f'Edit: {rec.title}',
         cancel_url=reverse('dashboard:cultural_dashboard'),
         full_fields=CULTURAL_FULL, obj=rec,
@@ -767,11 +881,13 @@ def cultural_delete(request, pk):
 @require_role(['elder_admin', 'cultural_admin', 'content_admin'])
 def elder_add(request):
     form = ElderInterviewForm(request.POST or None, request.FILES or None)
-    if request.method == 'POST' and form.is_valid():
+    evidence = evidence_formset(request, ElderInterview())
+    if request.method == 'POST' and form.is_valid() and evidence.is_valid():
         iv = form.save()
+        save_formset(evidence, iv)
         messages.success(request, f'✅ Interview with {iv.elder_name} saved.')
         return redirect('dashboard:elder_dashboard')
-    return _render_form(request, form,
+    return _render_form(request, form, formsets=[evidence_section(evidence)],
         title='Add Elder Interview',
         subtitle='Record an oral history interview with a Pojulu elder.',
         cancel_url=reverse('dashboard:elder_dashboard'),
@@ -783,11 +899,13 @@ def elder_add(request):
 def elder_edit(request, pk):
     iv = get_object_or_404(ElderInterview, pk=pk)
     form = ElderInterviewForm(request.POST or None, request.FILES or None, instance=iv)
-    if request.method == 'POST' and form.is_valid():
+    evidence = evidence_formset(request, iv)
+    if request.method == 'POST' and form.is_valid() and evidence.is_valid():
         form.save()
+        evidence.save()
         messages.success(request, f'✅ Interview with {iv.elder_name} updated.')
         return redirect('dashboard:elder_dashboard')
-    return _render_form(request, form,
+    return _render_form(request, form, formsets=[evidence_section(evidence)],
         title=f'Edit Interview: {iv.elder_name}',
         cancel_url=reverse('dashboard:elder_dashboard'),
         full_fields=ELDER_FULL, obj=iv,
@@ -975,7 +1093,10 @@ AUDITED_MODELS = {
     'clanchief':   (ClanChief, 'history'),
     'clanevent':   (ClanEvent, 'history'),
     'clanboma':    (ClanBoma, 'change_history'),
+    'landmark':    (ClanLandmark, 'change_history'),
     'family':      (Family, 'history'),
+    'chapter':     (FamilyHistoryChapter, 'history'),
+    'attachment':  (Attachment, 'history'),
     'person':      (Person, 'history'),
     'memorial':    (MemorialRecord, 'history'),
     'achievement': (Achievement, 'history'),

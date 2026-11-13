@@ -1,8 +1,12 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="forest" dir="ltr">
+<html lang="en" data-theme="light" data-bs-theme="light" dir="ltr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light dark">
+{% load static %}
+{# Sets the light/dark theme before first paint (external file, so CSP stays strict). #}
+<script src="{% static 'js/theme-init.js' %}"></script>
 <title>{% block title %}{% endblock %} | Pojulu Heritage Foundation</title>
 {% load phf %}
 {# Social / search meta. Pages override the og_* blocks; never put contact details or unpublished data here. #}
@@ -79,8 +83,8 @@
       </div>
 
       <!-- Theme toggle -->
-      <button class="phf-ctrl-btn" onclick="toggleTheme()" id="themeToggle" title="Toggle theme">
-        <i class="bi bi-sun-fill" id="themeIcon"></i>
+      <button class="phf-ctrl-btn" type="button" id="themeToggle" title="Switch to dark mode" aria-label="Switch to dark mode" aria-pressed="false">
+        <i class="bi bi-moon-stars-fill" id="themeIcon"></i>
       </button>
 
       <!-- Search -->

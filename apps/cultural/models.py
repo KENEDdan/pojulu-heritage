@@ -1,3 +1,4 @@
+from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 from simple_history.models import HistoricalRecords
 from apps.core.embeds import validate_video_url
@@ -62,6 +63,7 @@ class CulturalRecord(models.Model):
 
     objects = CulturalQuerySet.as_manager()
     history = HistoricalRecords()
+    attachments = GenericRelation('core.Attachment')
 
     class Meta:
         ordering = ['record_type', 'title']

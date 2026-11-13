@@ -28,4 +28,5 @@
     {% if record.source %}<div class="phf-detail-row"><span class="phf-detail-label" data-en="Source" data-ar="المصدر">Source</span><span class="phf-detail-value">{{ record.source }}</span></div>{% endif %}
   </div>
   <a href="{% url 'cultural:list' %}" class="phf-btn phf-btn-outline"><i class="bi bi-arrow-left"></i> <span data-en="Back to Cultural Archive" data-ar="العودة إلى التراث الثقافي">Back to Cultural Archive</span></a>
-</div></section>{% endblock %}
+</div></section>
+<section class="phf-section pt-0"><div class="container-xl" style="max-width:960px">{% include "partials/evidence.html" with evidence=record.attachments.public %}</div></section>{% endblock %}

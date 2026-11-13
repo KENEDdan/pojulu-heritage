@@ -34,6 +34,9 @@ urlpatterns = [
     path('events/add/',              views.event_add,    name='event_add'),
     path('events/<int:pk>/edit/',    views.event_edit,   name='event_edit'),
     path('events/<int:pk>/delete/',  views.event_delete, name='event_delete'),
+    path('landmarks/add/',             views.landmark_add,    name='landmark_add'),
+    path('landmarks/<int:pk>/edit/',   views.landmark_edit,   name='landmark_edit'),
+    path('landmarks/<int:pk>/delete/', views.landmark_delete, name='landmark_delete'),
 
     # Person & Family CRUD
     path('persons/add/',              views.person_add,    name='person_add'),

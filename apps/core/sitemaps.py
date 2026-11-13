@@ -1,7 +1,7 @@
 from django.contrib.sitemaps import Sitemap
 from django.urls import reverse
 
-from apps.clans.models import Clan
+from apps.clans.models import Clan, ClanChief
 from apps.elders.models import ElderInterview
 from apps.genealogy.models import Family, Person
 from apps.news.models import NewsPost
@@ -28,6 +28,14 @@ class ClanSitemap(Sitemap):
 
     def lastmod(self, obj):
         return obj.updated_at
+
+
+class ChiefSitemap(Sitemap):
+    changefreq = 'monthly'
+    priority = 0.6
+
+    def items(self):
+        return ClanChief.objects.filter(clan__in=Clan.objects.public()).select_related('clan').order_by('pk')
 
 
 class FamilySitemap(Sitemap):
@@ -79,6 +87,7 @@ class InterviewSitemap(Sitemap):
 SITEMAPS = {
     'static': StaticSitemap,
     'clans': ClanSitemap,
+    'chiefs': ChiefSitemap,
     'families': FamilySitemap,
     'people': PersonSitemap,
     'news': NewsSitemap,
