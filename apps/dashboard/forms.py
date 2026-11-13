@@ -577,7 +577,7 @@ class ClanLandmarkForm(KeepCurrentChoicesMixin, forms.ModelForm):
     class Meta:
         model  = ClanLandmark
         fields = ['clan', 'name', 'landmark_type', 'photo', 'description', 'history',
-                  'location_description', 'latitude', 'longitude', 'order']
+                  'location_description', 'latitude', 'longitude', 'show_on_public_map', 'order']
         widgets = {
             'clan':          SEL(),
             'name':          FC('e.g. Mogiri Hill'),
@@ -590,6 +590,7 @@ class ClanLandmarkForm(KeepCurrentChoicesMixin, forms.ModelForm):
                                                       'placeholder': 'Click the map, or type e.g. 4.3512'}),
             'longitude':     forms.NumberInput(attrs={'class': 'form-control', 'step': 'any', 'data-point-lng': '1',
                                                       'placeholder': 'e.g. 30.9871'}),
+            'show_on_public_map': CHK(),
             'order':         NUM('Display order'),
         }
 

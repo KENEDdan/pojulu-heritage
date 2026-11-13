@@ -24,7 +24,7 @@ Environment
   PG_DUMP                 pg_dump command (default "pg_dump"); may be a prefix
                           such as "docker exec -i pojulu_heritage_db pg_dump"
 
-Exit status is non-zero on any failure, so the Railway cron run shows as failed.
+Exit status is non-zero on any failure, so a scheduled run shows as failed.
 See scripts/restore_db.md for restoring.
 """
 import argparse

@@ -14,8 +14,8 @@ compared with the source: identical).
 ## 0. Prerequisites
 
 - `pg_restore` / `psql` **of the same or newer major version** than the server
-  (the project Dockerfile installs the PGDG client, so a Railway shell on the
-  web or backup service has them).
+  (the project Dockerfile installs the PGDG client, so a shell inside the
+  app container has them).
 - The bucket credentials (`AWS_*` variables) to download the file.
 
 ## 1. Download the backup
@@ -48,9 +48,9 @@ Get-Content .\phf.dump -AsByteStream -Raw | docker exec -i pojulu_heritage_db pg
 
 (Git Bash: `docker exec -i pojulu_heritage_db pg_restore -U postgres --no-owner --no-privileges --exit-on-error -d phf_restore < phf.dump`)
 
-### Railway
+### Hosted Postgres
 
-1. In the Railway project, **add a new PostgreSQL service** (e.g. `phf-db-restore`). Do not reuse the live one.
+1. **Create a new, empty database** on the same host (e.g. `phf_restore`). Do not reuse the live one.
 2. Copy its connection URL, then from any machine with `pg_restore`:
 
 ```bash
@@ -77,12 +77,11 @@ Remove-Item Env:DATABASE_URL
 
 ## 4. Switch production to the restored database
 
-1. Put the site in maintenance if needed (scale the web service to 0 replicas).
-2. In the **web** service variables, change `DATABASE_URL` to reference the
-   restored Postgres service (`${{phf-db-restore.DATABASE_URL}}`).
-3. Redeploy. The pre-deploy `migrate` step applies any migrations newer than the backup.
+1. Stop the web app (or put it in maintenance) so nothing writes to the old database.
+2. Change the app's `DATABASE_URL` to the restored database.
+3. Run `python manage.py migrate --noinput` (applies any migrations newer than the backup), then start the app.
 4. Check `/healthz`, log in to `/dashboard/`, and spot-check recent records.
-5. Keep the old database service for at least a week before deleting it.
+5. Keep the old database for at least a week before deleting it.
 
 ## 5. Media files
 

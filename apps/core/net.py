@@ -1,10 +1,10 @@
-"""Client IP resolution behind Railway's proxy.
+"""Client IP resolution behind a reverse proxy.
 
 X-Forwarded-For is a comma-separated list that each proxy *appends* to. The
 left-most entries are whatever the client claimed and can be forged; only the
 entries appended by proxies we control are trustworthy. With
 TRUSTED_PROXY_COUNT = N, the real client address is the N-th entry from the
-right. Railway's edge appends exactly one hop, so production uses N = 1.
+right. A single load balancer / reverse proxy appends one hop, so N = 1.
 With N = 0 (local dev, no proxy) X-Forwarded-For is ignored entirely.
 """
 import ipaddress

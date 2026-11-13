@@ -10,7 +10,17 @@ from apps.news.models import NewsPost
 pytestmark = pytest.mark.django_db
 
 
+def test_demo_data_refuses_without_debug(settings):
+    settings.DEBUG = False
+    for args in ([], ['--extend']):
+        with pytest.raises(CommandError, match='DEBUG=True'):
+            call_command('demo_data', *args)
+    assert not Person.all_objects.exists()
+    assert not User.objects.exists()
+
+
 def test_demo_data_seeds_and_deletes_only_its_own_rows(settings):
+    settings.DEBUG = True
     real_admin = User.objects.create_superuser('realadmin', 'r@example.org', 'x' * 16)
     real_clan = Clan.objects.create(name='Real Clan', payam='kupera', description='Real', is_verified=True)
 

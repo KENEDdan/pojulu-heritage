@@ -19,7 +19,7 @@ def _prod_env(**extra):
         'DEBUG': 'False',
         'SECRET_KEY': secrets.token_urlsafe(64),
         'ALLOWED_HOSTS': 'phf.example.org',
-        'CSRF_TRUSTED_ORIGINS': 'https://phf.example.org,https://*.up.railway.app',
+        'CSRF_TRUSTED_ORIGINS': 'https://phf.example.org,https://*.phf.example.org',
     })
     env.update(extra)
     return env

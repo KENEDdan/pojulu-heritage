@@ -1,7 +1,14 @@
 # PHF Hardening Log
 
-Branch: `hardening`. Each phase is one commit. Nothing here has been pushed or
-run against the Railway production database.
+Branch: `hardening`. Each phase is one commit. Nothing here has been run
+against a production database.
+
+> **Hosting status (2026-11-12):** Railway was dropped on 2026-11-04 and no
+> other host has been chosen; the project runs locally only. The Railway-specific
+> code (`railway.toml`, `RAILWAY_PUBLIC_DOMAIN`, the `healthcheck.railway.app`
+> host, `RAILWAY_GIT_COMMIT_SHA`) has been removed. Railway mentions in the phase
+> notes below are kept as history. For going live anywhere, use the
+> **Going online checklist** near the end.
 
 ## Decisions (running log)
 
@@ -29,8 +36,8 @@ already set when `DEBUG=False`). No tests existed.
 
 **Secrets:** git history contains
 `SECRET_KEY = config('SECRET_KEY', default='django-insecure-pojulu-heritage-foundation-change-in-production')`.
-If Railway ever ran without `SECRET_KEY` set, sessions/CSRF/password-reset
-tokens were signed with a public key. **Rotate `SECRET_KEY` in Railway.** No real
+If the old Railway service ever ran without `SECRET_KEY` set, sessions/CSRF/password-reset
+tokens were signed with a public key. **Use a new `SECRET_KEY` on any future host.** No real
 DB passwords or tokens found in history (placeholders only). `.env` was never tracked.
 
 **Broken / dead links fixed in Phase 0:**
@@ -403,23 +410,22 @@ public template at baseline.
   (including the Trash) whose file is missing from storage. `--fail` exits 1, for
   cron or alerts.
 
-### Scheduling the backup on Railway (cron service)
+### Scheduling the backup
 
-1. In the Railway project: **New → GitHub Repo → this repo** (a second
-   service built from the same Dockerfile). Name it `phf-backup`.
-2. Settings → **Cron Schedule**: `0 1 * * *` (01:00 UTC = 03:00 Juba time).
-3. Settings → **Custom Start Command**: `python scripts/backup_db.py`
-   (no web server; the container exits when the backup finishes).
-4. Remove the health check and pre-deploy command for this service (the
-   `railway.toml` values apply to the web service; override them in the
-   service settings).
-5. Variables: `DATABASE_URL=${{Postgres.DATABASE_URL}}`, `SECRET_KEY`
-   (any value; Django isn't started), and `AWS_ACCESS_KEY_ID`,
-   `AWS_SECRET_ACCESS_KEY`, `AWS_S3_ENDPOINT_URL`, `AWS_S3_REGION_NAME`,
-   `BACKUP_BUCKET_NAME` (a **private** bucket; a dedicated `phf-backups` bucket is ideal).
-6. Trigger one run manually and confirm a `.dump` object appears. Then do
-   a test restore following `scripts/restore_db.md`. A backup that has never been
-   restored is not a backup.
+Run `python scripts/backup_db.py` once a day on whatever machine or host runs the
+app, with `DATABASE_URL`, `SECRET_KEY` (any value; Django isn't started) and the
+`AWS_*` / `BACKUP_BUCKET_NAME` variables set (a **private** bucket).
+
+- **Linux host / container platform:** a cron job or scheduled task,
+  e.g. `0 1 * * *` (01:00 UTC = 03:00 Juba time).
+- **This Windows machine (local only, for now):** Task Scheduler → Create Basic Task →
+  daily → start `venv\Scripts\python.exe` with argument `scripts\backup_db.py`,
+  "Start in" = the project folder. Without a bucket, set `PG_DUMP` (see
+  `.env.example`) and copy the dump to a second drive.
+
+Trigger one run manually and confirm a `.dump` file appears. Then do a test
+restore following `scripts/restore_db.md`. A backup that has never been
+restored is not a backup.
 
 ---
 
@@ -536,9 +542,8 @@ They're written alongside each phase and cover:
 | `SECRET_KEY` | Django signing key. Required when `DEBUG=False` | **new random value (rotate!)** |
 | `DEBUG` | Dev mode. Default `False` | `False` |
 | `ALLOWED_HOSTS` | Comma-separated host names | your domain(s) |
-| `CSRF_TRUSTED_ORIGINS` | Comma-separated origins with scheme; wildcards OK | `https://your-domain,https://*.up.railway.app` |
-| `RAILWAY_PUBLIC_DOMAIN` | Injected by Railway; auto-added to hosts/origins | (automatic) |
-| `DATABASE_URL` | Postgres URL. Railway provides it | `${{Postgres.DATABASE_URL}}` |
+| `CSRF_TRUSTED_ORIGINS` | Comma-separated origins with scheme; wildcards OK | `https://your-domain` |
+| `DATABASE_URL` | Postgres URL (most hosts provide one) | your host's Postgres URL |
 | `DB_NAME` `DB_USER` `DB_PASSWORD` `DB_HOST` `DB_PORT` | Local fallback when `DATABASE_URL` is unset | (unset) |
 | `ENABLE_DJANGO_ADMIN` | Mount the Django admin (superusers only) | `False` |
 | `ADMIN_URL_PREFIX` | Admin path if enabled | an unguessable value |
@@ -554,53 +559,53 @@ They're written alongside each phase and cover:
 | `MEDIA_PUBLIC_BASE_URL` | Public URL of the public bucket (optional) | `https://media.your-domain` |
 | `PRIVATE_MEDIA_URL_EXPIRE` | Signed-URL lifetime (s) for private files | `300` |
 | `PRIVATE_MEDIA_ROOT` | Local private media dir (dev only) | (unset) |
-| `REDIS_URL` | Shared cache for rate limits + home cache | `${{Redis.REDIS_URL}}` |
+| `REDIS_URL` | Shared cache for rate limits + home cache | `redis://...` |
 | `RATELIMIT_ENABLE` | Per-IP rate limits | `True` |
 | `CSP_ENFORCE` / `CSP_REPORT_URI` | CSP mode / violation report endpoint | `False` / optional |
 | `LOG_LEVEL` | `phf.*` logger level | `INFO` |
 | `SENTRY_DSN` `SENTRY_ENVIRONMENT` `SENTRY_TRACES_SAMPLE_RATE` | Error monitoring | DSN / `production` / `0.1` |
-| `RAILWAY_GIT_COMMIT_SHA` | Injected by Railway; Sentry release | (automatic) |
+| `SENTRY_RELEASE` | Release name / git commit shown in Sentry | optional |
 | `EMAIL_BACKEND` `DEFAULT_FROM_EMAIL` | Outgoing mail (not used yet) | defaults |
 | `WEB_CONCURRENCY` `GUNICORN_THREADS` `GUNICORN_TIMEOUT` | Gunicorn sizing | `2` / `4` / `120` |
-| `BACKUP_BUCKET_NAME` `BACKUP_PREFIX` `BACKUP_RETENTION_DAYS` `BACKUP_KEEP_MIN` | Backup cron service | private bucket / defaults |
+| `BACKUP_BUCKET_NAME` `BACKUP_PREFIX` `BACKUP_RETENTION_DAYS` `BACKUP_KEEP_MIN` | Scheduled backups | private bucket / defaults |
 | `PG_DUMP` | pg_dump command override (local testing) | (unset) |
-| `RUN_MIGRATIONS` | Entrypoint runs migrate (docker-compose only) | (unset on Railway) |
+| `RUN_MIGRATIONS` | Entrypoint runs migrate (docker-compose only) | (unset elsewhere) |
 
 ---
 
-## Railway deployment checklist
+## Going online checklist (any host)
 
-1. **Rotate `SECRET_KEY`** (a default was committed in git history). Generate one with
-   `py -c "import secrets; print(secrets.token_urlsafe(64))"`. Rotating logs everyone out once.
-2. **Builder**: `railway.toml` switches the service to the Dockerfile, with
-   `preDeployCommand = migrate` and health check `/healthz`. Confirm in
-   Service → Settings that no older Nixpacks start command overrides it.
-3. **Variables** (web service): `SECRET_KEY`, `DEBUG=False`, `ALLOWED_HOSTS`,
-   `CSRF_TRUSTED_ORIGINS`, `DATABASE_URL`, bucket variables, `REDIS_URL`,
-   `SENTRY_DSN`, `ENABLE_DJANGO_ADMIN=False`, `REQUIRE_SUPERADMIN_2FA=False` (for now).
+No host has been chosen yet. Whichever one is picked, it needs: Docker or a
+Procfile runtime, managed Postgres 16+, HTTPS in front of the app, and ideally
+Redis and an S3-compatible bucket.
+
+1. **New `SECRET_KEY`** (a default was committed in git history). Generate one with
+   `py -c "import secrets; print(secrets.token_urlsafe(64))"`.
+2. **Build/run**: the `Dockerfile` (collectstatic baked in, honours `$PORT`) or the
+   `Procfile` (`release` = migrate, `web` = gunicorn). Run `migrate` once per deploy,
+   not on every container start. Point the host's health check at `/healthz`.
+3. **Variables**: `SECRET_KEY`, `DEBUG=False`, `ALLOWED_HOSTS`, `CSRF_TRUSTED_ORIGINS`,
+   `DATABASE_URL`, bucket variables, `REDIS_URL`, `SENTRY_DSN`,
+   `ENABLE_DJANGO_ADMIN=False`, `REQUIRE_SUPERADMIN_2FA=False` (for now), and
+   `TRUSTED_PROXY_COUNT` = the number of proxies in front of the app (usually 1).
+   If the host's health checker sends its own `Host` header, add that host to `ALLOWED_HOSTS`.
 4. **Buckets** (Cloudflare R2 recommended):
    - `phf-media`: public photos. Optional public access via a custom domain, then set `MEDIA_PUBLIC_BASE_URL`.
-   - `phf-private`: **no public access**. Private media + database backups.
+   - `phf-private`: **no public access**. Private media, evidence attachments and database backups.
    - An API token limited to these buckets (Object Read & Write).
-5. **Redis**: add Railway's Redis plugin and set `REDIS_URL=${{Redis.REDIS_URL}}`.
-6. **Before the first deploy of this branch**, check production data won't fail
-   the new constraint (genealogy 0007 stops and lists IDs if a death date precedes a birth date):
-   `select id from genealogy_person where death_date < birth_date;`
-   This deploy applies **34 project migrations** (7 from the baseline WIP + 27 from
-   hardening) plus the axes and django-otp tables. All are additive except the
-   self-parent cleanup described in Phase 6. **Take a backup first.**
-7. Deploy. Then, from a Railway shell:
-   `python manage.py move_private_media`, `python manage.py check_media_integrity`,
-   optionally `python manage.py populate_history --auto`.
-8. Media uploaded before this deploy probably lived on Railway's ephemeral disk
-   and is already gone. `check_media_integrity` lists what to re-upload.
-9. Every superadmin: Dashboard → **Two-Factor Auth** → enrol, save recovery codes.
+5. **Redis**: any Redis; set `REDIS_URL`. Without it rate limits are per worker.
+6. **Data check before migrating** (genealogy 0007 stops and lists IDs if a death date
+   precedes a birth date): `select id from genealogy_person where death_date < birth_date;`
+   **Take a backup first.**
+7. After the first deploy: `python manage.py move_private_media`,
+   `python manage.py check_media_integrity`, optionally `python manage.py populate_history --auto`.
+8. Every superadmin: Dashboard → **Two-Factor Auth** → enrol, save recovery codes.
    Then set `REQUIRE_SUPERADMIN_2FA=True`.
-10. **Backup cron service**: see Phase 8. Trigger one run, then do a test restore.
-11. **Domain**: add the custom domain in Railway, update `ALLOWED_HOSTS` /
-    `CSRF_TRUSTED_ORIGINS`. HSTS (1 year, includeSubDomains, preload flag) is
-    sent automatically. Only submit to hstspreload.org if every subdomain is HTTPS.
-12. Watch Sentry and the `phf.security` logs for a few days. Collect CSP
+9. **Backups**: schedule `scripts/backup_db.py` (see Phase 8). Run once, then do a test restore.
+10. **Domain**: update `ALLOWED_HOSTS` / `CSRF_TRUSTED_ORIGINS`. HSTS (1 year,
+    includeSubDomains, preload flag) is sent automatically. Only submit to
+    hstspreload.org if every subdomain is HTTPS.
+11. Watch Sentry and the `phf.security` logs for a few days. Collect CSP
     reports before switching `CSP_ENFORCE=True`.
 
 ---
@@ -635,9 +640,9 @@ They're written alongside each phase and cover:
 | ClanBoma, PersonEducation, PersonCareer, Announcement, SiteStats editing in the dashboard | Only editable via the Django admin (D9). Add inline formsets to the clan/person forms, or temporarily enable the admin behind a secret prefix. |
 | Direct-to-bucket (presigned) uploads for large audio/video | Uploads up to 500 MB still go through gunicorn. Prefer YouTube/Vimeo for long videos. |
 | Deleting the previous file when an upload is *replaced* | Old files are kept (history may reference them). Only permanent deletes remove files. |
-| Media files from before this deploy | Likely lost to Railway's ephemeral disk. Re-upload using `check_media_integrity`. |
+| Media files from the old Railway service | Likely lost to its ephemeral disk. Re-upload using `check_media_integrity`. |
 | Initial history rows | Run `populate_history --auto` if a baseline "created" entry is wanted. |
-| Rate limits without Redis | Per gunicorn worker. Add Railway Redis. |
+| Rate limits without Redis | Per gunicorn worker. Add Redis when hosting. |
 | `FORMS_URLFIELD_ASSUME_HTTPS` | Transitional setting (one deprecation warning). Delete it when moving to Django 6.x (before April 2028, when 5.2 LTS ends). |
 | Email-based password reset | No mail provider configured. Superadmin resets staff/family passwords in the dashboard. |
 | Antivirus scanning of uploads | Content-type verification + re-encoding of images is done, but there's no AV engine (ClamAV would need its own service). |

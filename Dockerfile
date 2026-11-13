@@ -4,7 +4,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1
 
-# pg_dump/pg_restore for scripts/backup_db.py (Railway cron service). They
+# pg_dump/pg_restore for scripts/backup_db.py (scheduled backups). They
 # must be at least the server's major version, so install them from the
 # PostgreSQL project's apt repo rather than Debian's older default.
 ARG PG_CLIENT_VERSION=17

@@ -112,7 +112,7 @@
           <td class="td-name">{{ lm.name }}</td>
           <td>{{ lm.clan.name }}</td>
           <td>{{ lm.get_landmark_type_display }}</td>
-          <td>{% if lm.has_location %}✅{% else %}—{% endif %}</td>
+          <td>{% if lm.has_public_location %}✅{% elif lm.has_location %}<span title="Location kept private">🔒 Private</span>{% else %}—{% endif %}</td>
           <td>{% if lm.photo %}✅{% else %}—{% endif %}</td>
           <td><a href="{% url 'dashboard:landmark_edit' lm.pk %}" class="dash-btn dash-btn-outline dash-btn-sm">Edit</a></td>
         </tr>

@@ -286,6 +286,10 @@ class ClanLandmark(models.Model):
                                             help_text='How to find it, e.g. "2 km east of Kupera market"')
     latitude     = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     longitude    = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    show_on_public_map = models.BooleanField(
+        default=True,
+        help_text='Untick to keep the exact spot private (recommended for shrines, sacred sites and '
+                  'burial grounds). Staff still see it; the public page shows the description only.')
     photo        = SafeImageField(upload_to=UploadTo('clans/landmarks'), blank=True, null=True,
                                   validators=[validate_image],
                                   help_text='Main photo (add more under Photos & Evidence)')
@@ -314,6 +318,10 @@ class ClanLandmark(models.Model):
     @property
     def has_location(self):
         return self.latitude is not None and self.longitude is not None
+
+    @property
+    def has_public_location(self):
+        return self.has_location and self.show_on_public_map
 
 
 CLAN_SECTION_CHOICES = [

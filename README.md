@@ -192,27 +192,12 @@ The Django admin is fully configured for all models. Log in at `/admin/` with yo
 
 ---
 
-## 🚢 Deployment (Railway.app)
+## 🚢 Deployment
 
-```powershell
-# Install Railway CLI, then:
-railway login
-railway init
-railway add postgresql
-railway up
-```
-
-Set these environment variables in Railway dashboard:
-```
-SECRET_KEY=<generate a strong key>
-DEBUG=False
-ALLOWED_HOSTS=<your-railway-domain>.railway.app
-DB_NAME=railway
-DB_USER=postgres
-DB_PASSWORD=<railway provides this>
-DB_HOST=<railway postgres host>
-DB_PORT=5432
-```
+Not hosted yet: the project runs locally (docker-compose Postgres + the Django dev
+server). No hosting platform has been chosen. When one is, follow the
+"Going online checklist" in `docs/HARDENING.md`; the `Dockerfile`, `Procfile`
+and `/healthz` endpoint work on any container or Procfile-based host.
 
 ---
 

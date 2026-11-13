@@ -11,6 +11,7 @@ from django.urls import reverse
 from django.db.models import Q
 from django.http import Http404
 from django.core.paginator import Paginator
+from django.db import transaction
 from django.utils import timezone
 from .forms import ClanMediaFormSet, PersonMediaFormSet, NewsMediaFormSet
 from .forms import AttachmentFormSet, ClanLandmarkForm, FamilyChapterFormSet, CHIEF_FULL, LANDMARK_FULL
@@ -390,6 +391,7 @@ def content_dashboard(request):
 # ── CLAN CRUD ─────────────────────────────────────────
 
 @require_role(['clan_admin', 'content_admin'])
+@transaction.atomic
 def clan_add(request):
     form = ClanForm(request.POST or None, request.FILES or None)
     media_formset = ClanMediaFormSet(request.POST or None, request.FILES or None, instance=Clan())
@@ -410,6 +412,7 @@ def clan_add(request):
 
 
 @require_role(['clan_admin', 'content_admin'])
+@transaction.atomic
 def clan_edit(request, pk):
     clan = get_object_or_404(Clan, pk=pk)
     form = ClanForm(request.POST or None, request.FILES or None, instance=clan)
@@ -442,6 +445,7 @@ def clan_delete(request, pk):
 
 
 @require_role(['clan_admin', 'content_admin'])
+@transaction.atomic
 def chief_add(request):
     form = ClanChiefForm(request.POST or None, request.FILES or None)
     evidence = evidence_formset(request, ClanChief())
@@ -458,6 +462,7 @@ def chief_add(request):
 
 
 @require_role(['clan_admin', 'content_admin'])
+@transaction.atomic
 def chief_edit(request, pk):
     chief = get_object_or_404(ClanChief, pk=pk)
     form = ClanChiefForm(request.POST or None, request.FILES or None, instance=chief)
@@ -487,6 +492,7 @@ def chief_delete(request, pk):
 
 
 @require_role(['clan_admin', 'content_admin'])
+@transaction.atomic
 def event_add(request):
     form = ClanEventForm(request.POST or None, request.FILES or None)
     evidence = evidence_formset(request, ClanEvent())
@@ -504,6 +510,7 @@ def event_add(request):
 
 
 @require_role(['clan_admin', 'content_admin'])
+@transaction.atomic
 def event_edit(request, pk):
     event = get_object_or_404(ClanEvent, pk=pk)
     form = ClanEventForm(request.POST or None, request.FILES or None, instance=event)
@@ -534,6 +541,7 @@ def event_delete(request, pk):
 # ── LANDMARK CRUD ─────────────────────────────────────
 
 @require_role(['clan_admin', 'content_admin'])
+@transaction.atomic
 def landmark_add(request):
     initial = {'clan': request.GET.get('clan')} if request.GET.get('clan', '').isdigit() else None
     form = ClanLandmarkForm(request.POST or None, request.FILES or None, initial=initial)
@@ -552,6 +560,7 @@ def landmark_add(request):
 
 
 @require_role(['clan_admin', 'content_admin'])
+@transaction.atomic
 def landmark_edit(request, pk):
     landmark = get_object_or_404(ClanLandmark, pk=pk)
     form = ClanLandmarkForm(request.POST or None, request.FILES or None, instance=landmark)
@@ -583,6 +592,7 @@ def landmark_delete(request, pk):
 # ── PERSON CRUD ───────────────────────────────────────
 
 @require_role(['genealogy_admin', 'memorial_admin', 'content_admin'])
+@transaction.atomic
 def person_add(request):
     form = PersonForm(request.POST or None, request.FILES or None)
     media_formset = PersonMediaFormSet(request.POST or None, request.FILES or None, instance=Person())
@@ -603,6 +613,7 @@ def person_add(request):
 
 
 @require_role(['genealogy_admin', 'memorial_admin', 'content_admin'])
+@transaction.atomic
 def person_edit(request, pk):
     person = get_object_or_404(Person, pk=pk)
     form = PersonForm(request.POST or None, request.FILES or None, instance=person)
@@ -637,6 +648,7 @@ def person_delete(request, pk):
 # ── FAMILY CRUD ───────────────────────────────────────
 
 @require_role(['genealogy_admin', 'content_admin'])
+@transaction.atomic
 def family_add(request):
     form = FamilyForm(request.POST or None, request.FILES or None)
     evidence = evidence_formset(request, Family())
@@ -656,6 +668,7 @@ def family_add(request):
 
 
 @require_role(['genealogy_admin', 'content_admin'])
+@transaction.atomic
 def family_edit(request, pk):
     family = get_object_or_404(Family, pk=pk)
     form = FamilyForm(request.POST or None, request.FILES or None, instance=family)
@@ -689,6 +702,7 @@ def family_delete(request, pk):
 # ── MEMORIAL CRUD ─────────────────────────────────────
 
 @require_role(['memorial_admin', 'content_admin'])
+@transaction.atomic
 def memorial_add(request):
     form = MemorialRecordForm(request.POST or None, request.FILES or None)
     evidence = evidence_formset(request, MemorialRecord())
@@ -706,6 +720,7 @@ def memorial_add(request):
 
 
 @require_role(['memorial_admin', 'content_admin'])
+@transaction.atomic
 def memorial_edit(request, pk):
     mem = get_object_or_404(MemorialRecord, pk=pk)
     form = MemorialRecordForm(request.POST or None, request.FILES or None, instance=mem)
@@ -737,6 +752,7 @@ def memorial_delete(request, pk):
 # ── ACHIEVEMENT CRUD ──────────────────────────────────
 
 @require_role(['achievement_admin', 'content_admin'])
+@transaction.atomic
 def achievement_add(request):
     form = AchievementForm(request.POST or None, request.FILES or None)
     evidence = evidence_formset(request, Achievement())
@@ -754,6 +770,7 @@ def achievement_add(request):
 
 
 @require_role(['achievement_admin', 'content_admin'])
+@transaction.atomic
 def achievement_edit(request, pk):
     ach = get_object_or_404(Achievement, pk=pk)
     form = AchievementForm(request.POST or None, request.FILES or None, instance=ach)
@@ -784,6 +801,7 @@ def achievement_delete(request, pk):
 # ── MARRIAGE CRUD ─────────────────────────────────────
 
 @require_role(['genealogy_admin', 'content_admin'])
+@transaction.atomic
 def marriage_add(request):
     form = MarriageForm(request.POST or None, request.FILES or None)
     evidence = evidence_formset(request, Marriage())
@@ -801,6 +819,7 @@ def marriage_add(request):
 
 
 @require_role(['genealogy_admin', 'content_admin'])
+@transaction.atomic
 def marriage_edit(request, pk):
     m = get_object_or_404(Marriage, pk=pk)
     form = MarriageForm(request.POST or None, request.FILES or None, instance=m)
@@ -831,6 +850,7 @@ def marriage_delete(request, pk):
 # ── CULTURAL RECORD CRUD ──────────────────────────────
 
 @require_role(['cultural_admin', 'content_admin'])
+@transaction.atomic
 def cultural_add(request):
     form = CulturalRecordForm(request.POST or None, request.FILES or None)
     evidence = evidence_formset(request, CulturalRecord())
@@ -848,6 +868,7 @@ def cultural_add(request):
 
 
 @require_role(['cultural_admin', 'content_admin'])
+@transaction.atomic
 def cultural_edit(request, pk):
     rec = get_object_or_404(CulturalRecord, pk=pk)
     form = CulturalRecordForm(request.POST or None, request.FILES or None, instance=rec)
@@ -879,6 +900,7 @@ def cultural_delete(request, pk):
 # ── ELDER INTERVIEW CRUD ──────────────────────────────
 
 @require_role(['elder_admin', 'cultural_admin', 'content_admin'])
+@transaction.atomic
 def elder_add(request):
     form = ElderInterviewForm(request.POST or None, request.FILES or None)
     evidence = evidence_formset(request, ElderInterview())
@@ -896,6 +918,7 @@ def elder_add(request):
 
 
 @require_role(['elder_admin', 'cultural_admin', 'content_admin'])
+@transaction.atomic
 def elder_edit(request, pk):
     iv = get_object_or_404(ElderInterview, pk=pk)
     form = ElderInterviewForm(request.POST or None, request.FILES or None, instance=iv)
@@ -940,6 +963,7 @@ def news_dashboard(request):
 
 
 @require_role(['content_admin'])
+@transaction.atomic
 def news_add(request):
     form = NewsPostForm(request.POST or None, request.FILES or None)
     media_formset = NewsMediaFormSet(request.POST or None, request.FILES or None, instance=NewsPost())
@@ -961,6 +985,7 @@ def news_add(request):
 
 
 @require_role(['content_admin'])
+@transaction.atomic
 def news_edit(request, pk):
     post = get_object_or_404(NewsPost, pk=pk)
     form = NewsPostForm(request.POST or None, request.FILES or None, instance=post)

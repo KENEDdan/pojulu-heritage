@@ -211,6 +211,17 @@ def test_clan_page_without_map_does_not_load_leaflet(client, world):
     assert 'leaflet' not in html
 
 
+def test_private_landmark_location_is_not_published(client, world):
+    lm = world['landmark']
+    lm.landmark_type, lm.show_on_public_map = 'sacred', False
+    lm.latitude, lm.longitude = 4.123456, 30.654321
+    lm.save()
+    html = client.get(world['clan'].get_absolute_url()).content.decode()
+    assert 'Gumbo Hill' in html                      # the landmark itself is still described
+    assert '4.123456' not in html and '30.654321' not in html
+    assert 'leaflet' not in html                     # no boundary and no public pins → no map
+
+
 # ── chiefs ───────────────────────────────────────────────────────────────────
 
 def test_chief_page_shows_full_history_and_succession(client, world):
@@ -353,6 +364,22 @@ def test_empty_evidence_rows_are_ignored(client, superadmin, world):
     assert r.status_code == 302
     chief.refresh_from_db()
     assert chief.name == 'Lado Renamed' and chief.biography == 'A long life.'
+
+
+def test_record_is_rolled_back_when_its_evidence_fails_to_save(client, superadmin, world, monkeypatch):
+    from apps.clans.models import ClanChief
+    from apps.core.models import Attachment
+
+    def broken_save(self, *args, **kwargs):
+        raise OSError('storage unavailable')
+    monkeypatch.setattr(Attachment, 'save', broken_save)
+    client.force_login(superadmin)
+    data = {'clan': world['clan'].pk, 'name': 'Half Saved', 'title': 'Chief', 'order': '0',
+            **_mgmt('evidence', 1), 'evidence-0-kind': 'photo', 'evidence-0-title': 'Photo',
+            'evidence-0-is_public': 'on', 'evidence-0-file': SimpleUploadedFile('p.png', png())}
+    with pytest.raises(OSError):
+        client.post(reverse('dashboard:chief_add'), data)
+    assert not ClanChief.objects.filter(name='Half Saved').exists()
 
 
 @pytest.mark.parametrize('url_name,kwargs_key', [

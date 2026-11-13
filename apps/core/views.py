@@ -109,7 +109,7 @@ class SearchView(TemplateView):
         return ctx
 
 def healthz(request):
-    """Liveness/readiness probe for Railway. Reports only up/down — never
+    """Liveness/readiness probe for a load balancer or monitor. Reports only up/down — never
     versions, hostnames, or error details."""
     from django.db import connection
     from django.http import JsonResponse

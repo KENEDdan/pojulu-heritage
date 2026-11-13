@@ -51,7 +51,7 @@ class ClanDetailView(DetailView):
             'boundary': clan.boundary_geojson or None,
             'landmarks': [{'name': lm.name, 'type': lm.get_landmark_type_display(),
                            'lat': float(lm.latitude), 'lng': float(lm.longitude)}
-                          for lm in ctx['landmarks'] if lm.has_location],
+                          for lm in ctx['landmarks'] if lm.has_public_location],
         }
         ctx['has_map'] = bool(clan.boundary_geojson or ctx['map_data']['landmarks'])
         ctx['has_territory'] = ctx['has_map'] or any([

@@ -107,6 +107,11 @@ class Command(BaseCommand):
     def handle(self, *args, **opts):
         if opts['delete']:
             return self.delete()
+        if not settings.DEBUG:
+            # Fake people, accounts with published passwords and invented
+            # histories must never land in a real archive.
+            raise CommandError('demo_data only runs with DEBUG=True (local development). '
+                               'It writes fake records and demo logins into the configured database.')
         if opts['extend']:
             return self.extend()
         if manifest_path().exists():

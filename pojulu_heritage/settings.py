@@ -27,15 +27,6 @@ if not SECRET_KEY:
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=Csv())
 CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='http://localhost,http://127.0.0.1', cast=Csv())
 
-# Railway injects RAILWAY_PUBLIC_DOMAIN (e.g. phf-production.up.railway.app);
-# trust it automatically so a fresh service works without extra variables.
-RAILWAY_PUBLIC_DOMAIN = config('RAILWAY_PUBLIC_DOMAIN', default='')
-if RAILWAY_PUBLIC_DOMAIN:
-    ALLOWED_HOSTS.append(RAILWAY_PUBLIC_DOMAIN)
-    CSRF_TRUSTED_ORIGINS.append(f'https://{RAILWAY_PUBLIC_DOMAIN}')
-# Railway's deploy health check calls the container with this Host header.
-ALLOWED_HOSTS.append('healthcheck.railway.app')
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -110,7 +101,7 @@ TEMPLATES = [
 WSGI_APPLICATION = 'pojulu_heritage.wsgi.application'
 
 # ── DATABASE ──────────────────────────────────────────────────────────────────
-# DATABASE_URL wins (Railway sets it). Otherwise fall back to the local
+# DATABASE_URL wins (most hosts provide one). Otherwise fall back to the local
 # docker-compose Postgres on port 5435.
 
 _LOCAL_DB_URL = 'postgresql://{user}:{pw}@{host}:{port}/{name}'.format(
@@ -163,7 +154,7 @@ SESSION_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_SAMESITE = 'Lax'
 
 # Number of reverse proxies in front of the app that append to
-# X-Forwarded-For (Railway's edge = 1). 0 ignores X-Forwarded-For entirely.
+# X-Forwarded-For (one load balancer / reverse proxy = 1). 0 ignores it entirely.
 # See apps/core/net.py.
 TRUSTED_PROXY_COUNT = config('TRUSTED_PROXY_COUNT', default=0 if DEBUG else 1, cast=int)
 
@@ -283,7 +274,7 @@ STORAGES = {
 
 # ── SECURITY ──────────────────────────────────────────────────────────────────
 
-# Railway terminates TLS at its edge and forwards X-Forwarded-Proto.
+# The reverse proxy in front of the app terminates TLS and forwards X-Forwarded-Proto.
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_REFERRER_POLICY = 'same-origin'
@@ -293,7 +284,7 @@ CSRF_COOKIE_HTTPONLY = True
 
 if not DEBUG:
     SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=True, cast=bool)
-    # Railway's internal health check is plain HTTP.
+    # Load-balancer health checks usually call /healthz over plain HTTP.
     SECURE_REDIRECT_EXEMPT = [r'^healthz/?$']
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
@@ -366,7 +357,7 @@ else:
 SIMPLE_HISTORY_FILEFIELD_TO_CHARFIELD = True
 
 # ── LOGGING ───────────────────────────────────────────────────────────────────
-# JSON lines on stdout (Railway collects them). Security events go to the
+# JSON lines on stdout (for any log collector). Security events go to the
 # `phf.security` logger: failed logins, lockouts (axes), permission denials,
 # role/account changes, Trash moves and permanent deletes.
 LOG_LEVEL = config('LOG_LEVEL', default='INFO')
@@ -401,7 +392,7 @@ if SENTRY_DSN:
         dsn=SENTRY_DSN,
         integrations=[DjangoIntegration()],
         environment=config('SENTRY_ENVIRONMENT', default='development' if DEBUG else 'production'),
-        release=config('RAILWAY_GIT_COMMIT_SHA', default='') or None,
+        release=config('SENTRY_RELEASE', default='') or None,
         traces_sample_rate=config('SENTRY_TRACES_SAMPLE_RATE', default=0.1, cast=float),
         # No user IPs, cookies, headers or request bodies (wills, passwords,
         # personal data) are ever sent to Sentry.

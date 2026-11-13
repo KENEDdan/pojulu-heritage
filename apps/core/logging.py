@@ -1,4 +1,4 @@
-"""One-line JSON log records for Railway's log viewer (searchable, no
+"""One-line JSON log records for a log viewer (searchable, no
 multi-line tracebacks splitting across entries)."""
 import json
 import logging
